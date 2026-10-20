@@ -1,0 +1,122 @@
+// V4 · Fase 3 — rotinas/exercícios do aluno só leitura no PUT /api/data; fluxo editorial completo
+// (rascunho → revisão → correção → aprovação sem autoaprovação → publicação versionada → selos → arquivamento/revogação).
+import { call, get, post, login, signup, check, summary, q } from './v3-lib.mjs'
+import { pool } from '../db/pool.js'
+const adm = await login('admin.e2e@avadesk.local')
+const admId = (await q(`select id from users where email='admin.e2e@avadesk.local'`)).rows[0].id
+async function pro(label, publish = true) {
+  const p = await signup(adm, label, 'profissional')
+  await q(`insert into professional_profiles(user_id,tenant_id,display_name,state,can_publish,verification_status) select id,tenant_id,'Prof '||$2,'ativo',$3,'verificado' from users where id=$1
+    on conflict (user_id) do update set can_publish=$3, verification_status='verificado', state='ativo'`, [p.id, label, publish])
+  return p
+}
+const ex = (await q(`select id from exercises order by id limit 3`)).rows.map(r => r.id)
+const content = (title, n = 1) => ({ title, description: 'Programa de teste', goal: 'hypertrophy', level: 'beginner', location: 'gym', weeks: 4, days_per_week: 2, minutes: 40,
+  workouts: [{ name: 'Treino A', exercises: ex.slice(0, n).map(id => ({ exercise_id: id, sets: 3, reps_min: 8, reps_max: 12, rest_sec: 60 })) }] })
+
+console.log('— PUT /api/data: rotinas e exercícios próprios somente leitura')
+const al = await signup(adm, 'v4f3aluno')
+const old = { _ts: 1, routines: [{ id: 'r1', name: 'Antiga' }], customEx: [{ id: 'c1', n: 'Meu ex' }], workouts: [] }
+await q(`insert into user_app_state(user_id,tenant_id,state) select id,tenant_id,$2 from users where id=$1`, [al.id, JSON.stringify(old)])
+let r = await call(al.tok, 'PUT', '/api/data', { state: { ...old, _ts: 2, unit: 'lb', routines: [...old.routines, { id: 'r2', name: 'Nova' }], customEx: [] } })
+check(r.s === 200 && r.d.code === 'ROUTINES_READ_ONLY' && r.d.rejected.routines === 1 && r.d.rejected.customEx === 1, 'rotina nova e remoção de exercício próprio recusadas (resto sincroniza)')
+const st = (await q('select state from user_app_state where user_id=$1', [al.id])).rows[0].state
+check(st.routines.length === 1 && st.customEx.length === 1 && st.unit === 'lb', 'rotina/exercício existentes preservados; outras preferências salvas')
+check((await q('select count(*)::int n from user_app_state_rejections where user_id=$1', [al.id])).rows[0].n === 2, 'itens recusados guardados em quarentena (nada perdido)')
+
+console.log('— criação e permissões')
+const pa = await pro('v4f3autor'), pb = await pro('v4f3semlib', false)
+r = await post(pb.tok, '/api/pro/programs', content('X'))
+check(r.s === 201, 'profissional cria rascunho sem aprovação cadastral prévia')
+r = await post(al.tok, '/api/pro/programs', content('X'))
+check(r.s === 403, 'aluno não cria programa')
+r = await post(pa.tok, '/api/pro/programs', content('Força V4', 0))
+check(r.s === 201 && r.d.missing.length > 0, 'rascunho criado; lista o que falta')
+const pid = r.d.id
+r = await post(pa.tok, '/api/pro/programs/submit', { id: pid })
+check(r.s === 400 && r.d.code === 'PROGRAM_INCOMPLETE', 'envio de rascunho incompleto é recusado')
+r = await call(pa.tok, 'PATCH', '/api/pro/programs', { id: pid, ...content('Força V4', 2) })
+check(r.s === 200 && r.d.missing.length === 0, 'autor completa o rascunho')
+r = await call(pa.tok, 'PATCH', '/api/pro/programs', { id: pid, ...content('Força V4', 2), workouts: [{ name: 'A', exercises: [{ exercise_id: 'nao-existe', sets: 3, reps_min: 8 }] }] })
+check(r.s === 400 && r.d.code === 'UNKNOWN_EXERCISE', 'exercício fora do catálogo é recusado')
+r = await get(al.tok, '/api/guided/program?id=' + pid)
+check(r.s === 404, 'aluno não vê rascunho')
+r = await post(pa.tok, '/api/pro/programs/submit', { id: pid })
+check(r.s === 200 && r.d.status === 'revisao', 'enviado para avaliação')
+r = await call(pa.tok, 'PATCH', '/api/pro/programs', { id: pid, ...content('Força V4', 3) })
+check(r.s === 409 && r.d.code === 'PROGRAM_NOT_EDITABLE', 'versão em avaliação não é editável')
+const rev1 = r.d.revision_id || (await q('select id from program_revisions where program_id=$1 and version_number=1', [pid])).rows[0].id
+check(!!(await get(adm, '/api/admin/program-reviews')).d.reviews.find(x => x.revision_id === rev1), 'aparece na fila editorial do admin')
+
+console.log('— avaliação')
+r = await post(adm, '/api/admin/program-reviews/decision', { revision_id: rev1, decision: 'correcao_solicitada' })
+check(r.s === 400 && r.d.code === 'REVIEW_REQUIRED', 'pedir correção exige justificativa')
+r = await post(adm, '/api/admin/program-reviews/decision', { revision_id: rev1, decision: 'correcao_solicitada', reason: 'Inclua aquecimento' })
+check(r.s === 200 && r.d.status === 'correcao_solicitada', 'admin pede correção')
+check((await q(`select count(*)::int n from notifications where user_id=$1 and kind='programa_avaliado'`, [pa.id])).rows[0].n === 1, 'autor notificado')
+r = await call(pa.tok, 'PATCH', '/api/pro/programs', { id: pid, ...content('Força V4', 3) })
+check(r.s === 200 && r.d.revision_id === rev1, 'autor corrige a mesma versão')
+await post(pa.tok, '/api/pro/programs/submit', { id: pid })
+r = await post(adm, '/api/admin/programs/publish', { revision_id: rev1 })
+check(r.s === 409 && r.d.code === 'REVIEW_REQUIRED', 'não publica sem aprovação')
+// admin autor não aprova a própria revisão
+const own = await post(adm, '/api/pro/programs', content('Do admin', 1)); await post(adm, '/api/pro/programs/submit', { id: own.d.id })
+const ownRev = (await q('select id from program_revisions where program_id=$1', [own.d.id])).rows[0].id
+r = await post(adm, '/api/admin/program-reviews/decision', { revision_id: ownRev, decision: 'aprovado' })
+check(r.s === 403 && r.d.code === 'SELF_APPROVAL_FORBIDDEN', 'admin autor não aprova o próprio programa')
+r = await post(adm, '/api/admin/program-reviews/decision', { revision_id: rev1, decision: 'aprovado' })
+check(r.s === 200 && r.d.status === 'aprovado', 'admin aprova revisão de outro autor')
+r = await post(adm, '/api/admin/programs/publish', { revision_id: rev1 })
+check(r.s === 200 && r.d.version === 1, 'publicado (versão 1)')
+r = await get(al.tok, '/api/guided/programs')
+const cat = r.d.programs.find(x => x.id === pid)
+check(cat && cat.author_verified && cat.approved && cat.badges.length === 0 && cat.workouts_count === 1, 'catálogo: verificado + aprovado, sem selo oficial automático')
+check((await q(`select count(*)::int n from audit_log where entity='program' and entity_id=$1`, [pid])).rows[0].n >= 6, 'trilha de auditoria do fluxo')
+
+console.log('— versão 2 não altera quem está na versão 1')
+await post(al.tok, '/api/guided/onboarding', { objetivo: 'hypertrophy', nivel: 'beginner', local: 'gym', dias: 3, minutos: 45, restricoes: [] })
+await post(al.tok, '/api/guided/start', { program_id: pid })
+let t = await get(al.tok, '/api/guided/today')
+check(t.d.workout?.exercises.length === 3, 'aluno treina a versão 1 (3 exercícios)')
+r = await call(pa.tok, 'PATCH', '/api/pro/programs', { id: pid, ...content('Força V4', 1) })
+check(r.s === 200 && r.d.new_version && r.d.version_number === 2, 'editar programa publicado abre a versão 2 (rascunho)')
+const rev2 = r.d.revision_id
+await post(pa.tok, '/api/pro/programs/submit', { id: pid })
+await post(adm, '/api/admin/program-reviews/decision', { revision_id: rev2, decision: 'aprovado' })
+r = await post(adm, '/api/admin/programs/publish', { revision_id: rev2 })
+check(r.s === 200 && r.d.version === 2, 'versão 2 publicada')
+t = await get(al.tok, '/api/guided/today')
+check(t.d.workout?.exercises.length === 3, 'aluno da versão 1 continua com a versão 1')
+const s1 = await post(al.tok, '/api/guided/sessions/start', { client_id: 'f3-' + Date.now(), user_program_id: t.d.active.id, program_workout_id: t.d.workout.id, workout_name: 'A' })
+check(s1.s === 201 && (await q('select revision_id from program_session_versions where session_id=$1', [s1.d.id])).rows[0]?.revision_id === rev1, 'sessão registra a revisão usada (v1)')
+await post(al.tok, '/api/guided/sessions/events', { client_id: 'x', events: [] })
+await q(`update sessions set state='descartada', status='discarded' where id=$1`, [s1.d.id])
+const al2 = await signup(adm, 'v4f3aluno2')
+await post(al2.tok, '/api/guided/onboarding', { objetivo: 'hypertrophy', nivel: 'beginner', local: 'gym', dias: 3, minutos: 45, restricoes: [] })
+await post(al2.tok, '/api/guided/start', { program_id: pid })
+check((await get(al2.tok, '/api/guided/today')).d.workout?.exercises.length === 1, 'nova adesão usa a versão 2')
+check((await q('select status from program_revisions where id=$1', [rev1])).rows[0].status === 'arquivado', 'versão 1 arquivada (preservada)')
+
+console.log('— selos, arquivamento e revogação')
+r = await post(adm, '/api/admin/programs/badges', { program_id: pid, badge_type: 'oficial' })
+check(r.s === 400 && r.d.code === 'REVIEW_REQUIRED', 'selo exige motivo')
+r = await post(adm, '/api/admin/programs/badges', { program_id: pid, badge_type: 'oficial', reason: 'Curadoria' })
+check(r.s === 201, 'selo oficial concedido')
+r = await post(adm, '/api/admin/programs/badges', { program_id: pid, badge_type: 'oficial', reason: 'de novo' })
+check(r.s === 409, 'não duplica selo ativo')
+const bid = (await post(adm, '/api/admin/programs/badges', { program_id: pid, badge_type: 'destaque', reason: 'Semana', expires_at: new Date(Date.now() + 86400e3).toISOString() })).d.id
+check((await get(al.tok, '/api/guided/programs')).d.programs.find(x => x.id === pid).badges.join() === 'destaque,oficial', 'catálogo mostra oficial + destaque')
+r = await post(adm, '/api/admin/program-badges/revoke', { id: bid, reason: 'fim' })
+check(r.s === 200 && (await get(al.tok, '/api/guided/programs')).d.programs.find(x => x.id === pid).badges.join() === 'oficial', 'destaque revogado (histórico mantido)')
+r = await post(adm, '/api/guided/admin/program-status', { id: pid, status: 'rascunho' })
+check(r.s === 409, 'mudança de status "na mão" bloqueada')
+r = await post(adm, '/api/admin/programs/revoke', { program_id: pid })
+check(r.s === 400, 'revogação exige motivo')
+r = await post(adm, '/api/admin/programs/revoke', { program_id: pid, reason: 'Exercício com risco' })
+check(r.s === 200 && r.d.notified === 2, 'revogado; alunos ativos avisados')
+r = await post(al.tok, '/api/guided/sessions/start', { client_id: 'f3b-' + Date.now(), user_program_id: t.d.active.id, program_workout_id: t.d.workout.id, workout_name: 'A' })
+check(r.s === 403 && r.d.code === 'PROGRAM_REVOKED', 'programa revogado não inicia sessão')
+check(!(await get(al.tok, '/api/guided/programs')).d.programs.find(x => x.id === pid), 'revogado some do catálogo')
+check((await get(al.tok, '/api/guided/today')).d.revoked === true, 'tela do aluno sabe que foi revogado')
+check((await q('select count(*)::int n from sessions where id=$1', [s1.d.id])).rows[0].n === 1, 'histórico preservado')
+await pool.end(); process.exit(summary() ? 1 : 0)

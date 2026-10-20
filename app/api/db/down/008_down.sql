@@ -1,0 +1,1 @@
+begin; alter table users drop column if exists same_person_id; drop table if exists exercise_media; update tenants set name='AVADESK Academia' where slug='avadesk'; delete from schema_migrations where name='008_midia_exercicios_tenant.sql'; commit;

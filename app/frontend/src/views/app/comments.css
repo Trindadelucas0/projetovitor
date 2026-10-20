@@ -1,0 +1,10 @@
+/* ORNY V5 - comentários encadeados */
+.ag .com-thread{padding:10px 0;border-bottom:1px solid var(--ag-line)}
+.ag .com-thread:last-child{border-bottom:0}
+.ag .com-c{display:flex;gap:10px;align-items:flex-start;padding:6px 0}
+.ag .com-c-b{flex:1;min-width:0}
+.ag .com-reply{margin-left:22px;padding-left:12px;border-left:2px solid var(--ag-line)}
+.ag .com-c-act{gap:14px;margin-top:4px;flex-wrap:wrap}
+.ag .com-c-act .g-link{min-height:32px;display:inline-flex;align-items:center;gap:4px}
+.ag .com-more{margin:4px 0 0 34px;min-height:36px}
+.ag .com-reply-box{margin:8px 0 0 34px}

@@ -1,0 +1,25 @@
+{
+  "name": "gym-api",
+  "version": "1.9.0",
+  "private": true,
+  "type": "module",
+  "main": "server.js",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "start": "node server.js",
+    "test:email": "node --test test/email-templates.test.mjs test/email-worker.test.mjs",
+    "test:email:integration": "node --test test/email-integration.test.mjs",
+    "email:previews": "node scripts/email-previews.mjs",
+    "migrate": "node db/migrate.js",
+    "dev": "node server.js",
+    "create-admin": "node scripts/create-admin.mjs",
+    "zerar-dados": "node scripts/zerar-dados.mjs",
+    "remover-usuarios": "node scripts/remover-usuarios.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.1",
+    "web-push": "^3.6.7"
+  }
+}

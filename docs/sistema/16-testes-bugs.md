@@ -1,0 +1,42 @@
+# Testes e registro de bugs
+
+- Testes **somente** no banco `avagym_test` e na API de teste (porta 8797, e-mail desligado); nunca no banco real.
+- API: 53 arquivos em `app/api/test` (node:test). Escrita sem Origin precisa do preload `test/_origin-preload.mjs`.
+- E2E: 30 specs Playwright em `app/frontend/e2e`, rodando contra o gateway local (:4459 -> 8797).
+- Regra de bugs: todo bug é corrigido **e** documentado em `docs/BUGS.md` + `docs/bugs/BUG-XXX.md` (passos, causa, correção, teste, lição). A seção "Reteste QA" é preenchida só pelo QA.
+
+Registro atual:
+
+| ID | Data | Título | Perfil | Status |
+|---|---|---|---|---|
+| [BUG-001](bugs/BUG-001.md) | 2026-10-16 | Termos pedidos duas vezes (ALTA) | aluno, personal (toda conta nova) | corrigido, aguardando reteste |
+| [BUG-002](bugs/BUG-002.md) | 2026-10-16 | AD-27: conta liberada continua na fila de pedidos | admin | corrigido, aguardando reteste |
+| [BUG-003](bugs/BUG-003.md) | 2026-10-16 | AD-40/43: /admin/painel para aluno/personal | aluno, personal | corrigido, aguardando reteste |
+| [BUG-004](bugs/BUG-004.md) | 2026-10-16 | /home de aluno novo abria /treinos?aba=historico vazio | aluno | corrigido, aguardando reteste |
+| [BUG-005](bugs/BUG-005.md) | 2026-10-16 | Acessibilidade dos switches de Configurações | todos | corrigido, aguardando reteste |
+| [BUG-006](bugs/BUG-006.md) | 2026-10-16 | `fetchpriority` em JSX | todos (Login) | corrigido, aguardando reteste |
+| [BUG-007](bugs/BUG-007.md) | 2026-10-16 | PWA: nome, cores, ícone maskable, zoom e natoGym | todos (instalação) | reprovado no reteste; corrigido de novo, aguardando reteste |
+| [BUG-008](bugs/BUG-008.md) | 2026-10-16 | HSTS desligado no nginx de produção | todos | corrigido, aguardando reteste |
+| [BUG-009](bugs/BUG-009.md) | 2026-10-16 | Avatares fora do DATA_DIR | todos | corrigido, aguardando reteste |
+| [BUG-010](bugs/BUG-010.md) | 2026-10-16 | Incidente PERSONAS_BASE/CASOS_DIR: testes no banco real | dados reais (admin/Lucas) | corrigido, aguardando reteste |
+| [BUG-011](bugs/BUG-011.md) | 2026-10-16 | Migration 028 falha em banco novo | infra/testes | corrigido, aguardando reteste |
+| [BUG-012](bugs/BUG-012.md) | 2026-10-16 | Aluno do personal travado: 403 em POST /api/legal/accept (ALTA) | aluno do personal | corrigido, aguardando reteste |
+| [BUG-013](bugs/BUG-013.md) | 2026-10-16 | Mídia gravada fora do DATA_DIR (MÉDIA) | todos; infra/backup | corrigido, aguardando reteste |
+| [BUG-014](bugs/BUG-014.md) | 2026-10-16 | Banco novo sem organização padrão | infra/testes | corrigido, aguardando reteste |
+| [BUG-015](bugs/BUG-015.md) | 2026-10-16 | program_equipment vazio em banco novo | infra/testes | corrigido, aguardando reteste |
+| [BUG-016](bugs/BUG-016.md) | 2026-10-16 | qualifications/verify: 500 com id inválido | admin | corrigido, aguardando reteste |
+| [BUG-017](bugs/BUG-017.md) | 2026-10-16 | Configuração "comentários de alunos" ignorada | aluno, admin | aberto: aguardando decisão do Lucas |
+| [BUG-018](bugs/BUG-018.md) | 2026-10-16 | API caiu na subida com a 043 (tabelas da 001 com o mesmo nome) (ALTA) | todos | corrigido, aguardando reteste |
+| [BUG-019](bugs/BUG-019.md) | 2026-10-16 | Aceite de Termos/Privacidade/18+ só depois do login (gate) em vez de no cadastro | visitante, aluno, profissional | corrigido, aguardando reteste |
+| [BUG-020](bugs/BUG-020.md) | 2026-10-16 | Gateway de produção sem cabeçalhos de segurança (clickjacking) | todos (produção) | corrigido, aguardando reteste |
+| [BUG-021](bugs/BUG-021.md) | 2026-10-16 | Service worker com título padrão "AVADESK" | todos (notificações push) | corrigido, aguardando reteste |
+| [BUG-022](bugs/BUG-022.md) | 2026-10-16 | HTTP não redireciona para HTTPS | todos (produção) | corrigido, aguardando reteste |
+| [BUG-023](bugs/BUG-023.md) | 2026-10-16 | CSRF só era checado depois da validação do corpo / sem Origin passava | todos | corrigido, aguardando reteste |
+| [BUG-024](bugs/BUG-024.md) | 2026-10-16 | /api/health público expunha contagens/detalhes | público | corrigido, aguardando reteste |
+| [BUG-025](bugs/BUG-025.md) | 2026-10-16 | HEAD /api/health não respondia 200 | monitoração | corrigido, aguardando reteste |
+| [BUG-026](bugs/BUG-026.md) | 2026-10-16 | Sem envio de teste de e-mail no admin | admin | corrigido, aguardando reteste |
+| [BUG-027](bugs/BUG-027.md) | 2026-10-16 | Cadastro em produção exigia 18+ sem campo na tela; troca por data de nascimento | visitante (cadastro) | corrigido, aguardando reteste |
+| [BUG-028](bugs/BUG-028.md) | 2026-10-16 | Termos públicos (/api/terms) diziam "versão provisória" e "AVADESK Fitness" | todos | corrigido, aguardando reteste |
+| [BUG-029](bugs/BUG-029.md) | 2026-10-16 | academ.avadesk.com.br fora do ar (TLS unexpected eof) | quem usa o endereço antigo | encerrado: domínio abandonado (decisão do Lucas) |
+| [BUG-030](bugs/BUG-030.md) | 2026-10-16 | /api/admin/programs devolve 404 | admin | esperado (documentado) |
+

@@ -1,0 +1,85 @@
+/* Task-based organization; colors belong to the existing light/dark theme. */
+.org-list { margin-top: 16px; }
+.org-list .g-li { width: 100%; text-align: left; }
+.org-details { margin: 16px 0; border-bottom: 1px solid var(--ag-line); padding-bottom: 16px; }
+.org-details > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.org-details > summary::after { content: '+'; margin-left: auto; color: var(--ag-mut); }
+.org-details[open] > summary::after { content: '−'; }
+.org-section { margin-top: 24px; }
+.org-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 16px 0; }
+.org-toolbar > * { min-width: 0; }
+.org-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+.org-back { margin-bottom: 16px; }
+.org-pro-nav .org-brand { display: none; }
+.ag .g-li > span { min-width: 0; overflow-wrap: anywhere; }
+.org-pro-nav button { min-height: 48px; }
+.org-pro-nav .g-on { color: var(--ag-acc); }
+.org-stage { margin: 16px 0; color: var(--ag-muted, currentColor); font-size: 13px; }
+@media (min-width: 1000px) {
+  #agtab.org-pro-nav { position: fixed; inset: 0 auto 0 0; width: 216px; max-width: none; transform: none; height: 100dvh; border-radius: 0; border-right: 1px solid var(--ag-line); display: flex; flex-direction: column; justify-content: flex-start; padding: 24px 12px; background: var(--ag-bg); }
+  #agtab.org-pro-nav .org-brand { display: block; padding: 16px; font-weight: 800; }
+  #agtab.org-pro-nav button { flex: 0 0 auto; width: 100%; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 16px; }
+  body:has(.org-pro-nav) #app { margin-left: 216px; }
+  body:has(.org-pro-nav) .ag { max-width: 1000px; }
+}
+@media (max-width: 600px) {
+  .org-toolbar .g-btn { width: 100%; }
+  .org-tabs > button { flex: 1 1 auto; }
+  .adm-tools { flex-wrap: wrap; }
+  .adm-tools input { max-width: 100%; min-width: 0; }
+  .org-mobile-sort { display: flex; gap: 8px; align-items: center; margin: 12px 0; }
+  .adm-tbl { min-width: 0; width: 100%; }
+  .adm-tbl thead { display: none; }
+  .adm-tbl tr { display: block; border-bottom: 1px solid var(--ag-line); padding: 12px 0; }
+  .adm-tbl td { display: flex; gap: 12px; justify-content: space-between; border: 0; white-space: normal; overflow-wrap: anywhere; }
+  .adm-tbl td::before { content: attr(data-label); font-weight: 600; flex: 0 0 35%; }
+  .adm-drawer { width: 100%; max-width: 100%; }
+}
+
+@media(min-width:601px){.org-mobile-sort{display:none}}
+
+/* Navigation and filters stay discoverable without horizontal gestures. */
+.ag .g-tabs { display:flex; flex-wrap:wrap; gap:8px; height:auto; overflow:visible; margin:16px 0 24px; padding:0; border:0; }
+.ag .g-tabs > button { flex:1 1 140px; min-width:0; min-height:44px; height:auto; padding:12px 16px; white-space:normal; overflow-wrap:anywhere; line-height:1.35; border:1px solid var(--ag-line); border-radius:12px; background:var(--ag-card); color:var(--ag-mut); }
+.ag .g-tabs > button.g-on { background:var(--ag-acc); color:var(--ag-on); border-color:var(--ag-acc); }
+.ag .g-scrollx, .ag .g-filters { display:flex; flex-wrap:wrap; gap:8px; overflow:visible; margin:12px 0 16px; padding:0; max-width:100%; }
+.ag .g-chipbtn { flex:0 1 auto; min-width:0; max-width:100%; min-height:44px; height:auto; padding:10px 14px; white-space:normal; overflow-wrap:anywhere; line-height:1.4; }
+.ag .g-filter-field { display:flex; flex-direction:column; gap:8px; min-width:0; max-width:100%; font-size:13px; font-weight:600; color:var(--ag-mut); }
+.ag .g-filter-field select { width:100%; min-width:0; text-overflow:ellipsis; }
+.com-feed-title { margin:0 0 12px; }
+.com-feed-tools { display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px; margin:16px 0 24px; }
+.com-feed-tools .g-filter-field { flex:1 1 240px; }
+.com-feed-tools .g-btn { min-height:44px; }
+.org-tabs > button { min-height:44px; max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+.adm-side button { height:auto; padding-top:12px; padding-bottom:12px; white-space:normal; overflow-wrap:anywhere; }
+.ag :is(.g-tabs,.g-filters,.g-scrollx) button:focus-visible, .org-tabs button:focus-visible { outline:2px solid var(--ag-acc); outline-offset:3px; }
+@media(max-width:600px) {
+  .ag .g-tabs > button { flex-basis:calc(50% - 8px); }
+  .com-feed-tools .g-btn { width:100%; }
+  .adm-side { right:16px; max-width:360px; }
+  .wb-days .wb-day { flex:1 1 100px; }
+}
+
+.org-back{display:block}.ag [data-testid="theme-picker"] .g-chipbtn{padding:0 8px;white-space:nowrap;word-break:normal;font-size:13px;min-width:0}
+
+/* Free-training dialogs also expose every short option. */
+.chips { flex-wrap:wrap; overflow:visible; }
+.chips .chip { flex:0 1 auto; min-height:44px; max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+.library-filters { display:flex; flex-wrap:wrap; gap:16px; margin:16px 0 24px; }
+.library-filters label { flex:1 1 200px; min-width:0; display:flex; flex-direction:column; gap:8px; font-size:13px; font-weight:600; color:var(--label-2); }
+.library-filters select { width:100%; min-width:0; min-height:44px; }
+
+.org-mobile-more{display:none}
+@media(max-width:600px){.adm-tbl tr:not(.org-expanded) td:nth-child(n+4):not(.org-mobile-more){display:none}.adm-tbl td.org-mobile-more{display:flex;justify-content:flex-end}.adm-tbl td.org-mobile-more::before{display:none}.adm-tbl-wrap{min-width:0;overflow-x:hidden}}
+
+/* V4.3 · Treinos (redesenho): hero do treino ativo + seções claras, mobile first */
+.ag.tr-page .tr-hero{margin-top:12px;padding:20px 18px;display:grid;gap:8px}
+.ag.tr-page .tr-hero .g-activebadge{justify-self:start}
+.ag.tr-page .tr-title{margin:2px 0 0;font-size:24px;line-height:1.15}
+.ag.tr-page .tr-start{width:100%;margin-top:6px}
+.ag.tr-page .tr-days{display:grid;gap:8px;margin-top:6px}
+.ag.tr-page .tr-days .g-btn{min-height:56px}
+.ag.tr-page .tr-links{display:flex;flex-wrap:wrap;gap:16px;margin-top:2px}
+.ag.tr-page .tr-links .g-link,.ag.tr-page .tr-hero>.g-link{min-height:44px}
+.ag.tr-page .tr-sec{margin-top:22px}
+.ag.tr-page .tr-sec>h2{font-size:18px;margin:0 0 10px}

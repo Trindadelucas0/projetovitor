@@ -1,0 +1,73 @@
+{
+  "recipient": "lucasrodrigues4@live.com",
+  "at": "2026-10-15T23:18:53.659Z",
+  "results": [
+    {
+      "kind": "cadastro",
+      "accepted": true,
+      "provider_id": "01a141dc-5c68-79d2-82b0-84f12a0aa51e",
+      "last_event": "delivered"
+    },
+    {
+      "kind": "primeiro_acesso",
+      "accepted": true,
+      "provider_id": "01a141dc-6014-710a-bf27-5ce62aeacbdd",
+      "last_event": "delivered"
+    },
+    {
+      "kind": "recuperacao",
+      "accepted": true,
+      "provider_id": "01a141dc-63b5-73bc-8086-944fab53669a",
+      "last_event": "delivered"
+    },
+    {
+      "kind": "senha_alterada",
+      "accepted": true,
+      "provider_id": "01a141dc-6756-7f19-8cd0-fb188e4b9a91",
+      "last_event": "delivered"
+    },
+    {
+      "kind": "liberacao",
+      "accepted": true,
+      "provider_id": "01a141dc-6afd-78f7-a22e-6edffcef3f06",
+      "last_event": "delivered"
+    },
+    {
+      "kind": "recusa",
+      "accepted": true,
+      "provider_id": "01a141dc-6ea4-7d1f-8905-48adbbb53d93",
+      "last_event": "delivered"
+    },
+    {
+      "kind": "bloqueio",
+      "accepted": true,
+      "provider_id": "01a141dc-724f-7cab-aa05-035c190b36a2",
+      "last_event": "delivered"
+    },
+    {
+      "kind": "convite",
+      "accepted": true,
+      "provider_id": "01a141dc-760d-7228-90ff-46401426068d",
+      "last_event": "delivered"
+    },
+    {
+      "kind": "vinculo",
+      "accepted": true,
+      "provider_id": "01a141dc-79bb-7152-b630-a904992a2335",
+      "last_event": "delivered"
+    },
+    {
+      "kind": "treino",
+      "accepted": true,
+      "provider_id": "01a141dc-7d6d-74ca-a3d9-fc11e71d5584",
+      "last_event": "delivered"
+    },
+    {
+      "kind": "lgpd_export",
+      "accepted": true,
+      "provider_id": "01a141dc-8121-7a21-9472-bbe03996857e",
+      "last_event": "delivered"
+    }
+  ],
+  "checked_at": "2026-10-15T23:21:09.795Z"
+}

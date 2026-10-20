@@ -1,0 +1,27 @@
+# ATUALIZAR O ACADE (AVAGYM) NA VPS
+# ssh root@187.127.3.250
+#
+# ATENCAO: o app vive em /opt/avagym. O caminho /opt/acade NAO existe mais e
+# /opt/acade-deploy.sh esta quebrado (aponta para o diretorio antigo).
+# O repositorio da VPS fica em HEAD destacado, entao "git pull" falha: use fetch + checkout.
+
+cd /opt/avagym
+git fetch origin
+git checkout --detach origin/main
+
+cd app/api && npm ci --omit=dev && cd ../..
+cd app/frontend && npm ci && npm run build && cd ../..
+
+pm2 startOrRestart /opt/avagym-runtime/ecosystem.config.cjs --update-env
+pm2 save
+pm2 logs avagym-api --lines 20 --nostream
+pm2 logs avagym-web --lines 20 --nostream
+
+# Testar (o gateway web escuta na 4460 e a API na 8797):
+# curl -I http://127.0.0.1:4460/
+# curl http://127.0.0.1:4460/api/health
+# curl -I https://ornygym.avadesk.com.br/
+
+# Diagnostico do Asaas (somente leitura, nao imprime chave nem token):
+# cd /opt/avagym/app/api && node scripts/diagnostico-asaas.mjs
+# cd /opt/avagym/app/api && node scripts/diagnostico-asaas.mjs --sonda-tokenizacao

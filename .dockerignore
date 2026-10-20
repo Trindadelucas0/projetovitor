@@ -1,0 +1,12 @@
+
+
+# V5: contexto na raiz (se algum build usar context: .) nunca leva docs de teste nem artefatos
+docs/**/prints/
+docs/**/casos-de-teste/**/*.png
+docs/**/casos-de-teste/**/*.jpg
+docs/**/casos-de-teste/**/*.webm
+app/frontend/test-artifacts
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example

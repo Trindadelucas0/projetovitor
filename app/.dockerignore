@@ -1,0 +1,26 @@
+# V5: contexto do docker build (context: app/) sem dependências locais, segredos e artefatos de teste
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+frontend/dist
+frontend/test-artifacts
+frontend/e2e-results
+frontend/test-results
+frontend/playwright-report
+frontend/blob-report
+frontend/.cache
+frontend/e2e
+frontend/android
+frontend/ios
+api/uploads
+api/private
+api/data
+**/*.bak*
+**/*.log
+
+# V5: prints/evidências de teste em qualquer pasta do contexto
+**/prints/
+**/casos-de-teste/**/*.png
+**/casos-de-teste/**/*.jpg
+**/casos-de-teste/**/*.webm

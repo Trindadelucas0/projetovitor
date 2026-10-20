@@ -1,0 +1,21 @@
+.ds-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 18px; background: rgba(0,0,0,.82); backdrop-filter: blur(12px); }
+.ds-card { width: min(100%, 520px); max-height: min(760px, calc(100dvh - 36px)); overflow: auto; border: 1px solid rgba(255,255,255,.12); border-radius: 28px; padding: 26px; color: #fff; background: #101310; box-shadow: 0 30px 100px rgba(0,0,0,.65); }
+.ds-head { display: flex; gap: 16px; align-items: center; }
+.ds-icon { flex: 0 0 54px; width: 54px; height: 54px; display: grid; place-items: center; border-radius: 18px; color: #050605; background: #20f51b; font-size: 25px; font-weight: 900; }
+.ds-step { color: #20f51b; text-transform: uppercase; letter-spacing: .14em; font-size: 11px; font-weight: 800; }
+.ds-card h2 { margin: 5px 0 0; font: 850 25px/1.12 MontserratVariable, Montserrat, sans-serif; }
+.ds-copy { margin: 18px 0; color: #b4bbb5; line-height: 1.6; }
+.ds-list { display: grid; gap: 12px; margin: 18px 0; padding: 0; list-style: none; }
+.ds-list li { display: flex; gap: 12px; align-items: flex-start; color: #dce1dc; line-height: 1.45; }
+.ds-list b { flex: 0 0 27px; width: 27px; height: 27px; display: grid; place-items: center; border-radius: 50%; background: rgba(255,255,255,.08); color: #20f51b; font-size: 12px; }
+.ds-note { margin: 14px 0; padding: 12px 14px; border-radius: 14px; background: rgba(32,245,27,.08); color: #dce1dc; font-size: 13px; line-height: 1.5; }
+.ds-error { background: rgba(255,110,110,.1); color: #ffc5c5; }
+.ds-actions { display: grid; gap: 10px; margin-top: 22px; }
+.ds-btn { min-height: 48px; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: 0 18px; color: #fff; background: transparent; font-weight: 800; cursor: pointer; }
+.ds-btn.primary { border-color: #20f51b; color: #050605; background: #20f51b; }
+.ds-btn:disabled { opacity: .55; cursor: wait; }
+.ds-btn:focus-visible { outline: 3px solid rgba(32,245,27,.42); outline-offset: 3px; }
+.install-guide-steps { display:grid; gap:12px; margin:18px 0 22px; padding:0; list-style:none; }
+.install-guide-steps li { display:flex; gap:10px; align-items:flex-start; color:#dce1dc; line-height:1.45; }
+.install-guide-steps b { flex:0 0 26px; width:26px; height:26px; display:grid; place-items:center; border-radius:50%; color:#050605; background:#20f51b; font-size:12px; }
+@media (max-width: 520px) { .ds-backdrop { align-items: end; padding: 0; } .ds-card { width: 100%; max-height: 92dvh; border-radius: 26px 26px 0 0; padding: 24px 18px max(22px, env(safe-area-inset-bottom)); } }

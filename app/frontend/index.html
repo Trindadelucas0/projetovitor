@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ORNY</title>
+<meta name="description" content="Pare de treinar no improviso. Veja o treino do dia, registre séries e cargas e acompanhe seu histórico. Para alunos e personal trainers.">
+<meta name="theme-color" content="#000000">
+<link rel="canonical" href="https://ornygym.avadesk.com.br/">
+<!-- a landing é um chunk lazy atrás do bootstrap do /api/me: sem isto o navegador só
+     descobre a imagem do hero (o elemento de LCP) uns 2 RTTs depois -->
+<link rel="preload" as="image" href="/landing/hero-orny.webp" fetchpriority="high">
+<meta name="color-scheme" content="dark light">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ORNY">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png">
+<!-- o robô do Facebook não resolve caminho relativo em og:image: precisa ser absoluto -->
+<meta property="og:title" content="ORNY — pare de treinar no improviso">
+<meta property="og:description" content="Treino do dia, registro de séries e cargas e histórico no celular. Para alunos e personal trainers.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ornygym.avadesk.com.br/">
+<meta property="og:site_name" content="ORNY">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:image" content="https://ornygym.avadesk.com.br/brand/orny-share.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ORNY — pare de treinar no improviso">
+<meta name="twitter:description" content="Treino do dia, registro de séries e cargas e histórico no celular.">
+<meta name="twitter:image" content="https://ornygym.avadesk.com.br/brand/orny-share.png">
+<style>
+html,body{margin:0;background:#000;color:#fff}#orny-boot{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font:16px system-ui;padding:24px;box-sizing:border-box;text-align:center}#orny-boot img{width:112px;height:112px}#orny-boot button{background:#20f51b;color:#000;border:0;padding:14px 24px;border-radius:12px;font:inherit;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="root"><div id="orny-boot" role="status"><img src="/brand/orny-symbol.png" alt=""><strong>ORNY</strong><span id="orny-boot-message">Carregando…</span><button id="orny-boot-retry" hidden>Tentar novamente</button></div></div>
+<noscript>Ative o JavaScript para abrir a ORNY.</noscript>
+<script src="/orny-boot.js" defer></script>
+<script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
