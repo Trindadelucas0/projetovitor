@@ -52,3 +52,9 @@ textarea.wb-in{padding:8px 10px}.wb-in.err{border-color:#ff6b6b}
 .wb-dlg-bg{position:fixed;inset:0;background:#000a;display:grid;place-items:center;z-index:40;padding:16px}.wb-dlg{background:#14181d;border:1px solid #2a3038;border-radius:16px;padding:18px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:10px}.wb-dlg h3{margin:0}.wb-dlg p{margin:0;color:#c3cad1}
 
 .wb-advanced{grid-column:1/-1;width:100%}.wb-advanced>summary{cursor:pointer;min-height:44px;display:flex;align-items:center}.wb-advanced .wb-fields{margin-top:12px}
+
+/* Vídeo do personal no exercício: campo em destaque, não escondido em avançados. */
+.wb-video{gap:6px;margin-top:10px;padding:10px;border:1px solid #2a3038;border-radius:12px}
+.wb-video>span:first-child{font-size:12px;color:#9aa4ae}
+.wb-video .wb-f{margin-top:6px}
+.wb-bad{color:#ff8a8a}

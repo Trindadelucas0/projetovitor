@@ -24,12 +24,24 @@ export function ReportSheet({ ctx, onClose, onDone }) {
     <button className="g-btn" style={{ marginTop: 14 }} disabled={busy} onClick={send} data-testid="send-report">{busy ? 'Enviando…' : 'Enviar relato'}</button>
   </Sheet>
 }
-export function AskSheet({ ctx, onClose, onDone }) {
+// `videoSec`: segundo em que o aluno estava no vídeo do personal. Vai no texto da
+// mensagem, para o personal abrir no trecho certo; não existe campo novo no banco.
+const mmssLabel = s => `${Math.floor((s || 0) / 60)}:${String(Math.floor((s || 0) % 60)).padStart(2, '0')}`
+export function AskSheet({ ctx, onClose, onDone, videoSec = null }) {
+  const at = Number.isFinite(videoSec) && videoSec > 0 ? mmssLabel(videoSec) : null
   const [body, setBody] = useState(''), [busy, setBusy] = useState(false), [err, setErr] = useState('')
-  const send = async () => { setBusy(true); setErr(''); try { const r = await C.newThread({ body, ...ctx }); onDone && onDone(r) } catch (e) { setErr(e.message) } finally { setBusy(false) } }
+  const [withTime, setWithTime] = useState(!!at)
+  const send = async () => {
+    setBusy(true); setErr('')
+    const text = at && withTime ? `${body.trim()}\n\n(dúvida no vídeo, em ${at})` : body
+    try { const r = await C.newThread({ body: text, ...ctx }); onDone && onDone(r) } catch (e) { setErr(e.message) } finally { setBusy(false) }
+  }
   return <Sheet title="Tenho uma dúvida" onClose={onClose}>
-    {ctx?.exercise_name && <p className="g-mut g-sm">Sobre: <b>{ctx.exercise_name}</b>. Sua mensagem vai para o profissional responsável.</p>}
+    {ctx?.exercise_name && <p className="g-mut g-sm">Sobre: <b>{ctx.exercise_name}</b>. Sua mensagem vai para o seu personal.</p>}
     <Field label="Sua dúvida"><textarea className="g-in" value={body} onChange={e => setBody(e.target.value)} maxLength={2000} data-testid="ask-body" /></Field>
+    {at && <label className="g-row g-sm" style={{ gap: 8, minHeight: 44 }} data-testid="ask-video-sec">
+      <input type="checkbox" checked={withTime} onChange={e => setWithTime(e.target.checked)} />
+      <span>Avisar que a dúvida é no vídeo, em {at}</span></label>}
     {err && <p className="g-warn" style={{ marginTop: 10 }}>{err}</p>}
     <button className="g-btn" style={{ marginTop: 14 }} disabled={busy || body.trim().length < 2} onClick={send} data-testid="send-ask">{busy ? 'Enviando…' : 'Enviar dúvida'}</button>
   </Sheet>

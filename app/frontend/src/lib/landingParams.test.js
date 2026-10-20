@@ -2,17 +2,18 @@ import { describe, it, expect } from 'vitest'
 import { parseEntry, signupHref } from './landingParams.js'
 
 describe('landing — leitura da URL do anúncio', () => {
-  it('lê perfil e UTMs do search (visita de anúncio em "/")', () => {
-    const e = parseEntry('?perfil=profissional&utm_source=meta&utm_campaign=orny_personal&fbclid=ABC', '')
-    expect(e.perfil).toBe('profissional')
-    expect(e.utm).toEqual({ utm_source: 'meta', utm_campaign: 'orny_personal', fbclid: 'ABC' })
+  it('lê as UTMs do search (visita de anúncio em "/")', () => {
+    const e = parseEntry('?perfil=aluno&utm_source=meta&utm_campaign=orny_alunos&fbclid=ABC', '')
+    expect(e.perfil).toBe('aluno')
+    expect(e.utm).toEqual({ utm_source: 'meta', utm_campaign: 'orny_alunos', fbclid: 'ABC' })
   })
   it('lê também do hash, que vence o search (#/conheca?perfil=…)', () => {
-    expect(parseEntry('?perfil=aluno', '#/conheca?perfil=profissional').perfil).toBe('profissional')
-    expect(parseEntry('', '#/conheca?perfil=profissional').perfil).toBe('profissional')
+    expect(parseEntry('?perfil=admin', '#/conheca?perfil=aluno').perfil).toBe('aluno')
   })
-  it('perfil desconhecido ou ausente cai em aluno', () => {
+  it('perfil desconhecido, ausente ou de profissional cai em aluno', () => {
     expect(parseEntry('?perfil=admin', '').perfil).toBe('aluno')
+    expect(parseEntry('?perfil=profissional', '').perfil).toBe('aluno')
+    expect(parseEntry('', '#/conheca?perfil=profissional').perfil).toBe('aluno')
     expect(parseEntry('', '').perfil).toBe('aluno')
   })
   it('ignora parâmetro que não é de atribuição e corta valor gigante', () => {
@@ -21,7 +22,7 @@ describe('landing — leitura da URL do anúncio', () => {
     expect(e.utm.utm_source).toHaveLength(120)
   })
   it('só aceita id de plano com formato de id', () => {
-    expect(parseEntry('?plano=pro', '').plano).toBe('pro')
+    expect(parseEntry('?plano=individual', '').plano).toBe('individual')
     expect(parseEntry('?plano=<script>', '').plano).toBe('')
   })
 })
@@ -37,15 +38,15 @@ describe('landing — link do cadastro', () => {
     expect(q.get('perfil')).toBe('aluno')
     expect(q.get('utm_source')).toBe('meta')
   })
-  it('o seletor da página troca o perfil sem perder a atribuição', () => {
-    expect(signupHref(entry, { perfil: 'profissional' })).toContain('perfil=profissional')
+  it('um link antigo de personal continua levando ao cadastro de aluno', () => {
+    expect(signupHref(entry, { perfil: 'profissional' })).toContain('perfil=aluno')
     expect(signupHref(entry, { perfil: 'profissional' })).toContain('utm_source=meta')
   })
-  it('o CTA de um plano leva o plano escolhido', () => {
-    expect(signupHref(entry, { plano: 'pro' })).toContain('plano=pro')
+  it('o CTA do plano leva o plano escolhido', () => {
+    expect(signupHref(entry, { plano: 'individual' })).toContain('plano=individual')
   })
   it('quem já está logado vai para a assinatura, não para o cadastro', () => {
-    expect(signupHref(entry, { authed: true, plano: 'pro' })).toBe('#/assinatura?plano=pro')
+    expect(signupHref(entry, { authed: true, plano: 'individual' })).toBe('#/assinatura?plano=individual')
     expect(signupHref(entry, { authed: true })).toBe('#/assinatura')
   })
   it('nunca gera nada fora de "grátis": o cadastro exige plano pago', () => {

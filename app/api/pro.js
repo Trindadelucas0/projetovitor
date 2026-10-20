@@ -82,8 +82,24 @@ const PRO_SQL = `select pp.*, u.name, (select count(*) from coach_students cs wh
   (select count(*) from follows f where f.professional_id=pp.user_id) followers`
 
 
+// Plano único (20/10/2026): o app tem um personal, que é o administrador do ambiente.
+// Ele não compra plano de profissional, então não tem vaga nem limite de alunos ativos
+// a respeitar. A isenção exige as DUAS condições: estar marcado em app_settings
+// ('personal_user_id', gravado pela migration 069) E ter o papel 'admin'. Um segundo
+// profissional, quando o app abrir para vários personais, continua sujeito ao limite.
+export async function tenantPersonalId(tid) {
+  const r = await q(`select value #>> '{}' id from app_settings where tenant_id=$1 and key='personal_user_id'`, [tid])
+  return r.rows[0]?.id || null
+}
+export async function isTenantPersonal(tid, userId) {
+  if (!userId) return false
+  if (String(await tenantPersonalId(tid)) !== String(userId)) return false
+  return (await q(`select 1 from user_roles where user_id=$1 and tenant_id=$2 and role_id='admin'`, [userId, tid])).rowCount > 0
+}
+
 // verificações do vínculo (PRD 8.2), reaproveitadas pelo admin e pela aprovação de solicitações
 export async function linkFailures(tid, studentId, coachId, area) {
+  const exempt = await isTenantPersonal(tid, coachId)
   const s = (await q(`select u.status, ap.max_professionals, ap.active plan_active from users u left join user_access_plans x on x.user_id=u.id left join access_plans ap on ap.id=x.plan_id where u.id=$1 and u.tenant_id=$2`, [studentId, tid])).rows[0]
   const p = (await q(`select pp.*, (select count(*) from coach_students cs where cs.coach_id=pp.user_id and cs.status='ativo')::int active_links,
       (select count(*) from professional_qualifications q where q.user_id=pp.user_id and q.status='verificada' and ($2::text is null or q.area ilike $2 or q.kind ilike $2))::int verified
@@ -92,12 +108,12 @@ export async function linkFailures(tid, studentId, coachId, area) {
   const fail = []
   if (!s || s.status !== 'ativo') fail.push('A conta do aluno não está ativa')
   if (!p || p.state !== 'ativo') fail.push('O profissional não está ativo')
-  if (p) { const lim = await capacitySummary(coachId); if (lim.effective_limit != null && lim.used >= lim.effective_limit) fail.push('O profissional não tem vaga disponível') }
+  if (p && !exempt) { const lim = await capacitySummary(coachId); if (lim.effective_limit != null && lim.used >= lim.effective_limit) fail.push('O profissional não tem vaga disponível') }
   if (s && s.max_professionals == null) fail.push('O aluno não tem plano de acesso definido')
   else if (s && links >= s.max_professionals) fail.push(`O plano do aluno permite no máximo ${s.max_professionals} profissional(is)`)
   if (await isLinked(coachId, studentId)) fail.push('Já existe um vínculo ativo entre eles')
   // V3: limite comercial do plano do profissional (alunos ativos). A checagem definitiva é feita com trava em createLink.
-  if (p) { const e = await resolveEnt(coachId, 'profissional'); if (e && !e.active) fail.push(PLAN_INACTIVE); else if (e && e.limits.alunos_ativos != null && p.active_links >= +e.limits.alunos_ativos) fail.push(`${PLAN_LIMIT}: ${p.active_links} de ${e.limits.alunos_ativos} alunos ativos`) }
+  if (p && !exempt) { const e = await resolveEnt(coachId, 'profissional'); if (e && !e.active) fail.push(PLAN_INACTIVE); else if (e && e.limits.alunos_ativos != null && p.active_links >= +e.limits.alunos_ativos) fail.push(`${PLAN_LIMIT}: ${p.active_links} de ${e.limits.alunos_ativos} alunos ativos`) }
   return fail
 }
 export const PLAN_LIMIT = 'Limite do plano do profissional atingido', PLAN_INACTIVE = 'A assinatura do profissional não está ativa'
@@ -106,19 +122,31 @@ export const planCode = fail => fail.some(f => f.startsWith(PLAN_LIMIT)) ? 'LIMI
 export class PlanError extends Error { constructor(x) { super(x.error); Object.assign(this, x) } }
 export async function createLink(admin, studentId, coachId, area, origin = 'admin') {
   // V3: insert + limite do plano na MESMA transação, com trava na assinatura do profissional (concorrência)
+  const exempt = await isTenantPersonal(admin.tenant_id, coachId)   // personal do app: sem limite de alunos
   const c = await pool.connect(); let r
   try {
     await c.query('begin')
-    const lim = await checkLimitLocked(c, coachId, 'alunos_ativos')
-    if (lim) throw new PlanError(lim)
+    if (!exempt) { const lim = await checkLimitLocked(c, coachId, 'alunos_ativos'); if (lim) throw new PlanError(lim) }
     r = await c.query(`insert into coach_students(tenant_id,coach_id,student_id,created_by,area,origin) values($1,$2,$3,$4,$5,$6) returning id`, [admin.tenant_id, coachId, studentId, admin.id, area ? txt(area, 80) : null, origin])
     await c.query('commit')
   } catch (e) { await c.query('rollback'); throw e } finally { c.release() }
-  await refreshUsage(coachId, 'profissional')
-  await audit(admin.tenant_id, admin.id, 'vinculo.criado', 'link', r.rows[0].id, { student: studentId, coach: coachId })
-  await notify(studentId, 'vinculo', 'Novo profissional responsável', 'A administração vinculou um profissional ao seu acompanhamento.', '/acompanhamento')
-  await notify(coachId, 'vinculo', 'Novo aluno vinculado', '', '/pro?tab=alunos')
+  if (!exempt) await refreshUsage(coachId, 'profissional')
+  await audit(admin.tenant_id, admin.id, 'vinculo.criado', 'link', r.rows[0].id, { student: studentId, coach: coachId, origin })
+  // No cadastro o aluno acabou de entrar e já vê o personal na tela; avisar que "a
+  // administração vinculou alguém" seria confuso. O personal é avisado nos dois casos.
+  if (origin !== 'cadastro') await notify(studentId, 'vinculo', 'Novo profissional responsável', 'A administração vinculou um profissional ao seu acompanhamento.', '/acompanhamento')
+  await notify(coachId, 'vinculo', origin === 'cadastro' ? 'Novo aluno no app' : 'Novo aluno vinculado', '', '/admin/painel?tab=usuarios')
   return r.rows[0].id
+}
+// Cadastro público: o aluno novo já nasce vinculado ao personal do ambiente. Falhar aqui
+// não pode derrubar o cadastro — a conta já existe e o admin pode vincular na mão depois.
+export async function linkToTenantPersonal(tid, studentId) {
+  const personal = await tenantPersonalId(tid)
+  if (!personal || String(personal) === String(studentId)) return null
+  if (await isLinked(personal, studentId)) return null
+  const fail = await linkFailures(tid, studentId, personal, null)
+  if (fail.length) { console.error('[cadastro] vínculo automático recusado:', fail.join(' · ')); return null }
+  return createLink({ id: personal, tenant_id: tid }, studentId, personal, null, 'cadastro')
 }
 // Responsável padrão de ocorrência/conversa: o personal da ficha ativa (regra de um treino ativo) ou, sem ficha, o vínculo ativo MAIS RECENTE
 async function defaultResponsible(studentId) {
@@ -185,7 +213,7 @@ export function proRoutes({ json, readBody }) {
       if (['dor', 'desconforto'].includes(b.category) && o.exercise_id)
         await q(`insert into exercise_blocks(tenant_id,student_id,exercise_id,occurrence_id) values($1,$2,$3,$4)`, [u.tenant_id, u.id, o.exercise_id, o.id])
       await audit(u.tenant_id, u.id, 'ocorrencia.criada', 'occurrence', o.id, { category: o.category, exercise: o.exercise_id })
-      if (responsible) await notify(responsible, 'ocorrencia', `Nova ocorrência: ${o.category}`, `${u.name}${o.exercise_name ? ' · ' + o.exercise_name : ''}`, '/pro?tab=atendimentos')
+      if (responsible) await notify(responsible, 'ocorrencia', `Nova ocorrência: ${o.category}`, `${u.name}${o.exercise_name ? ' · ' + o.exercise_name : ''}`, '/admin/painel?tab=filas')
       else await notifyAdmins(u.tenant_id, 'ocorrencia', 'Ocorrência sem profissional responsável', `${u.name} relatou: ${o.category}`, '/admin/painel?tab=filas')
       json(res, 201, { occurrence: o, blocked: ['dor', 'desconforto'].includes(b.category) && !!o.exercise_id })
     },
@@ -200,7 +228,7 @@ export function proRoutes({ json, readBody }) {
       const t = (await q(`insert into threads(tenant_id,student_id,responsible_id,context_type,exercise_id,exercise_name,plan_id,due_at) values($1,$2,$3,$4,$5,$6,$7, now() + make_interval(hours => $8)) returning *`,
         [u.tenant_id, u.id, responsible, ctx, b.exercise_id ? txt(b.exercise_id, 80) : null, b.exercise_name ? txt(b.exercise_name, 120) : null, planId, +st.prazo_mensagem_horas || 48])).rows[0]
       await q('insert into messages(thread_id,author_id,body) values($1,$2,$3)', [t.id, u.id, body])
-      if (responsible) await notify(responsible, 'mensagem', 'Nova dúvida de aluno', `${u.name}${t.exercise_name ? ' · ' + t.exercise_name : ''}: ${body.slice(0, 80)}`, '/pro?tab=atendimentos')
+      if (responsible) await notify(responsible, 'mensagem', 'Nova dúvida de aluno', `${u.name}${t.exercise_name ? ' · ' + t.exercise_name : ''}: ${body.slice(0, 80)}`, '/admin/painel?tab=filas')
       else await notifyAdmins(u.tenant_id, 'mensagem', 'Dúvida sem profissional responsável', `${u.name}: ${body.slice(0, 80)}`, '/admin/painel?tab=filas')
       json(res, 201, { thread: t })
     },
@@ -226,7 +254,7 @@ export function proRoutes({ json, readBody }) {
         if (isPro) await q(`update threads set status='respondida', updated_at=now(), due_at=null where id=$1`, [t.id])
         else await q(`update threads set status='aguardando', updated_at=now(), due_at=now() + make_interval(hours => $2), overdue_flagged_at=null where id=$1`, [t.id, +st.prazo_mensagem_horas || 48])
       } else await q('update threads set updated_at=now() where id=$1', [t.id])   // encerrada: fica só no histórico
-      await notify(isPro ? t.student_id : (t.assigned_to || t.responsible_id), 'mensagem', isPro ? 'Seu profissional respondeu' : 'Nova mensagem do aluno', body.slice(0, 100), isPro ? '/acompanhamento' : '/pro?tab=atendimentos')
+      await notify(isPro ? t.student_id : (t.assigned_to || t.responsible_id), 'mensagem', isPro ? 'Seu profissional respondeu' : 'Nova mensagem do aluno', body.slice(0, 100), isPro ? '/acompanhamento' : '/admin/painel?tab=filas')
       await audit(u.tenant_id, u.id, 'mensagem.enviada', 'thread', t.id)
       json(res, 201, { ok: true })
     },
@@ -404,7 +432,7 @@ export function proRoutes({ json, readBody }) {
       const r = await q(`insert into change_proposals(tenant_id,occurrence_id,plan_id,author_id,decider_id,description,change,attempt) values($1,$2,$3,$4,$5,$6,$7,$8) returning id`,
         [u.tenant_id, o.id, plan?.id || null, u.id, decider, desc, b.change ? JSON.stringify(b.change) : null, o.rejections + 1])
       await audit(u.tenant_id, u.id, 'proposta.criada', 'proposal', r.rows[0].id, { occurrence: o.id })
-      if (decider !== u.id) await notify(decider, 'proposta', 'Proposta de alteração para avaliar', desc.slice(0, 100), '/pro?tab=atendimentos')
+      if (decider !== u.id) await notify(decider, 'proposta', 'Proposta de alteração para avaliar', desc.slice(0, 100), '/admin/painel?tab=filas')
       json(res, 201, { id: r.rows[0].id })
     },
     'POST /api/pro/proposals/decide': async (req, res) => {
@@ -430,7 +458,7 @@ export function proRoutes({ json, readBody }) {
         await c.query('commit')
       } catch (e) { await c.query('rollback'); throw e } finally { c.release() }
       await audit(u.tenant_id, u.id, b.accept ? 'proposta.aceita' : 'proposta.rejeitada', 'proposal', p.id, { reason })
-      await notify(p.author_id, 'proposta', b.accept ? 'Proposta aceita' : 'Proposta rejeitada', reason.slice(0, 120), '/pro?tab=atendimentos')
+      await notify(p.author_id, 'proposta', b.accept ? 'Proposta aceita' : 'Proposta rejeitada', reason.slice(0, 120), '/admin/painel?tab=filas')
       json(res, 200, { ok: true })
     },
 
@@ -492,24 +520,19 @@ export function proRoutes({ json, readBody }) {
     'POST /api/adm/users/create': async (req, res) => {
       const u = await guard('admin')(req, res, json); if (!u) return
       const b = await readBody(req), errors = {}
-      const name = txt(b.name, 120), email = String(b.email || '').trim().toLowerCase(), type = b.type
+      const name = txt(b.name, 120), email = String(b.email || '').trim().toLowerCase()
+      // Plano único (20/10/2026): o painel cria aluno. Quem atende é o próprio personal
+      // (o administrador), e não há mais conta de profissional para criar aqui.
+      const type = 'aluno'
       let password = String(b.password || ''), generated = false
       if (name.length < 2) errors.name = 'Informe o nome'
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 200) errors.email = 'E-mail inválido'
-      if (!['aluno', 'profissional'].includes(type)) errors.type = 'Escolha aluno ou profissional'
+      if (b.type && b.type !== 'aluno') errors.type = 'O app cria apenas contas de aluno.'
       if (!password) { password = genPassword(); generated = true } else if (password.length < 8) errors.password = 'A senha deve ter pelo menos 8 caracteres'
-      let plan = null, coach = null
-      if (type === 'aluno' && b.plan_id) { plan = (await q('select * from access_plans where id=$1 and active', [b.plan_id])).rows[0]; if (!plan) errors.plan_id = 'Plano inválido ou inativo' }
-      if (type === 'aluno' && b.coach_id) {
-        if (!plan) errors.coach_id = 'Para vincular, atribua um plano de acesso'
-        else if (!isUuid(b.coach_id) || !(coach = (await q(`select pp.* from professional_profiles pp join users x on x.id=pp.user_id where pp.user_id=$1 and x.tenant_id=$2`, [b.coach_id, u.tenant_id])).rows[0])) errors.coach_id = 'Profissional não encontrado'
-        else if (!txt(b.area, 80)) errors.area = 'Informe a área do vínculo'
-      }
-      const cap = b.capacity == null || b.capacity === '' ? 10 : +b.capacity
-      if (type === 'profissional') {
-        if (!Number.isInteger(cap) || cap < 0 || cap > 500) errors.capacity = 'Capacidade entre 0 e 500'
-        if (b.qualification && !txt(b.qualification.kind, 40)) errors.qualification = 'Informe o tipo (CREF/CREFITO)'
-      }
+      // O aluno criado pelo painel nasce com o plano de acesso padrão e vinculado ao
+      // personal do ambiente, do mesmo jeito que no cadastro público.
+      const plan = (await q(`select * from access_plans where id='personal_unico' and active`)).rows[0]
+        || (await q(`select * from access_plans where active order by max_professionals, id limit 1`)).rows[0]
       if (Object.keys(errors).length) return json(res, 400, { error: Object.values(errors)[0], errors })
       if ((await q('select 1 from users where lower(email)=$1', [email])).rowCount) return json(res, 409, { error: 'Este e-mail já tem conta. Peça para a pessoa entrar e informar o código dela.', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } })
       const c = await pool.connect(); let id
@@ -517,28 +540,17 @@ export function proRoutes({ json, readBody }) {
         await c.query('begin')
         id = (await c.query(`insert into users(tenant_id,name,email,password_hash,status) values($1,$2,$3,$4,'ativo') returning id`, [u.tenant_id, name, email, await bcrypt.hash(password, 12)])).rows[0].id
         await c.query('insert into user_roles values($1,$2,$3)', [id, u.tenant_id, type])
-        if (type === 'aluno' && plan) {
+        if (plan) {
           await c.query('insert into user_access_plans(user_id,plan_id,assigned_by) values($1,$2,$3)', [id, plan.id, u.id])
           await c.query('insert into access_plan_history(plan_id,user_id,action,actor_id) values($1,$2,$3,$4)', [plan.id, id, 'atribuido', u.id])
-        }
-        if (type === 'profissional') {
-          const area = txt(b.area, 80)
-          await c.query(`insert into professional_profiles(user_id,tenant_id,display_name,specialties,capacity,state,can_publish) values($1,$2,$3,$4,$5,'ativo',$6)`, [id, u.tenant_id, name, area ? [area] : [], cap, !!b.can_publish])
-          if (b.qualification) {
-            const ver = !!b.qualification.verified
-            await c.query(`insert into professional_qualifications(user_id,kind,number,area,status,verified_by,verified_at) values($1,$2,$3,$4,$5,$6,$7)`,
-              [id, txt(b.qualification.kind, 40), txt(b.qualification.number, 40) || null, txt(b.qualification.area, 80) || area || null, ver ? 'verificada' : 'pendente', ver ? u.id : null, ver ? new Date() : null])
-          }
         }
         await c.query('commit')
       } catch (e) { await c.query('rollback'); c.release(); if (e.code === '23505') return json(res, 409, { error: 'Este e-mail já tem conta. Peça para a pessoa entrar e informar o código dela.', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } }); throw e }
       c.release()
-      await audit(u.tenant_id, u.id, 'usuario.criado_admin', 'user', id, { type, plan: plan?.id || null, verified: !!b.qualification?.verified })
+      await audit(u.tenant_id, u.id, 'usuario.criado_admin', 'user', id, { type, plan: plan?.id || null })
       let link = null
-      if (coach) {
-        const fail = await linkFailures(u.tenant_id, id, coach.user_id, b.area)
-        link = fail.length ? { ok: false, error: fail[0], reasons: fail } : { ok: true, id: await createLink(u, id, coach.user_id, b.area) }
-      }
+      try { const linkId = await linkToTenantPersonal(u.tenant_id, id); link = linkId ? { ok: true, id: linkId } : null }
+      catch (e) { link = { ok: false, error: e.message } }
       json(res, 201, { id, email, type, temp_password: generated ? password : undefined, link })
     },
     'POST /api/adm/users/same-person': async (req, res) => {
@@ -619,8 +631,8 @@ export function proRoutes({ json, readBody }) {
       await q('update professional_profiles set state=$2, capacity=$3, can_publish=$4, updated_at=now() where user_id=$1', [p.user_id, state, cap, pub])
       await audit(u.tenant_id, u.id, 'profissional.atualizado', 'user', p.user_id, { state, capacity: cap, can_publish: pub, reason: txt(b.reason, 300) || null })
       // V4.4 U1: o profissional é avisado quando a administração autoriza ou suspende a publicação (auditoria acima)
-      if (pub !== p.can_publish) await notify(p.user_id, 'profissional', pub ? 'Publicação na comunidade autorizada' : 'Publicação na comunidade suspensa', pub ? 'Você já pode publicar na comunidade.' : (txt(b.reason, 200) || 'A administração suspendeu suas publicações na comunidade.'), '/pro').catch(() => {})
-      if (state !== p.state) await notify(p.user_id, 'profissional', 'Situação do seu perfil: ' + state.replace('_', ' '), txt(b.reason, 200), '/pro')
+      if (pub !== p.can_publish) await notify(p.user_id, 'profissional', pub ? 'Publicação na comunidade autorizada' : 'Publicação na comunidade suspensa', pub ? 'Você já pode publicar na comunidade.' : (txt(b.reason, 200) || 'A administração suspendeu suas publicações na comunidade.'), '/admin/painel?tab=perfil').catch(() => {})
+      if (state !== p.state) await notify(p.user_id, 'profissional', 'Situação do seu perfil: ' + state.replace('_', ' '), txt(b.reason, 200), '/admin/painel?tab=perfil')
       // suspensão não transfere nada automaticamente: devolve a lista para o admin decidir
       let pending = null
       if (state === 'suspenso') pending = (await q(`select (select count(*) from coach_students where coach_id=$1 and status='ativo')::int links,
@@ -636,7 +648,7 @@ export function proRoutes({ json, readBody }) {
       const r = await q(`update professional_qualifications set status=$2, verified_by=$3, verified_at=now(), note=$4 where id=$1 returning user_id`, [+b.id, b.status, u.id, txt(b.note, 300) || null])
       if (!r.rowCount) return json(res, 404, { error: 'Habilitação não encontrada', code: 'NOT_FOUND' })
       await audit(u.tenant_id, u.id, 'habilitacao.' + b.status, 'qualification', b.id)
-      await notify(r.rows[0].user_id, 'habilitacao', 'Habilitação ' + b.status, txt(b.note, 200), '/pro')
+      await notify(r.rows[0].user_id, 'habilitacao', 'Habilitação ' + b.status, txt(b.note, 200), '/admin/painel?tab=perfil')
       json(res, 200, { ok: true })
     },
     'GET /api/adm/links': async (req, res) => {
@@ -669,7 +681,7 @@ export function proRoutes({ json, readBody }) {
       await audit(u.tenant_id, u.id, 'vinculo.encerrado', 'link', l.id, { reason, archived_plans: a.rowCount })
       await refreshUsage(l.coach_id, 'profissional')   // V3: libera a vaga e recalcula OVER_LIMIT
       await notify(l.student_id, 'vinculo', 'Um acompanhamento foi encerrado', reason, '/acompanhamento')
-      await notify(l.coach_id, 'vinculo', 'Vínculo encerrado', reason, '/pro')
+      await notify(l.coach_id, 'vinculo', 'Vínculo encerrado', reason, '/admin/painel?tab=perfil')
       json(res, 200, { ok: true, archived_plans: a.rowCount })
     },
     'GET /api/adm/queue': async (req, res) => {
@@ -699,7 +711,7 @@ export function proRoutes({ json, readBody }) {
       const r = await q(`update ${table} set assigned_to=$2, due_at=now() + make_interval(hours => $3), overdue_flagged_at=null ${extra} where id=$1 and tenant_id=$4 returning id, student_id`, [b.id, b.professional_id, hours || 24, u.tenant_id])
       if (!r.rowCount) return json(res, 404, { error: 'Item não encontrado', code: 'NOT_FOUND' })
       await audit(u.tenant_id, u.id, 'designacao', b.type === 'thread' ? 'thread' : 'occurrence', b.id, { professional: b.professional_id, review_reason: txt(b.review_reason, 500) || null })
-      await notify(b.professional_id, 'designacao', 'Você foi designado(a) para um atendimento', '', '/pro?tab=atendimentos')
+      await notify(b.professional_id, 'designacao', 'Você foi designado(a) para um atendimento', '', '/admin/painel?tab=filas')
       json(res, 200, { ok: true })
     },
     'POST /api/adm/close-occurrence': async (req, res) => {

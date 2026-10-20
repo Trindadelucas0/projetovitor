@@ -292,7 +292,7 @@ export function portalRoutes({ json, readBody }) {
       if (!OPEN.includes(r.status)) return json(res, 409, { error: 'Solicitação já finalizada' })
       if (r.type === 'vinculo') return json(res, 410, { code: 'FLOW_REMOVED', error: 'O pedido de vínculo pela administração foi substituído pelos convites: use AVAGYM PRO › Convites (o aluno aceita).' })
       const hist = (st, note) => q('insert into pro_request_history(request_id,actor_id,status,note) values($1,$2,$3,$4)', [r.id, u.id, st, note])
-      const tell = (t, body) => notify(r.professional_id, 'solicitacao', t, body, '/pro?tab=capacidade')
+      const tell = (t, body) => notify(r.professional_id, 'solicitacao', t, body, '/admin/painel?tab=usuarios')
       if (b.action === 'analisar') { await q(`update pro_requests set status='em_analise',updated_at=now() where id=$1`, [r.id]); await hist('em_analise', null); await audit(u.tenant_id, u.id, 'solicitacao.em_analise', 'pro_request', r.id); return json(res, 200, { ok: true, status: 'em_analise' }) }
       if (b.action === 'info') {
         if (reason.length < 5) return json(res, 400, { error: 'Diga qual informação é necessária' })
@@ -338,7 +338,7 @@ export function portalRoutes({ json, readBody }) {
       await q('update professional_profiles set capacity=$2, updated_at=now() where user_id=$1', [b.user_id, cap])
       const active = +(await q(`select count(*) from coach_students where coach_id=$1 and status='ativo'`, [b.user_id])).rows[0].count
       await audit(u.tenant_id, u.id, 'capacidade.alterada', 'professional', b.user_id, { before: before.capacity, after: cap, reason })
-      await notify(b.user_id, 'capacidade', 'Sua capacidade foi alterada', `${before.capacity} → ${cap}`, '/pro?tab=capacidade')
+      await notify(b.user_id, 'capacidade', 'Sua capacidade foi alterada', `${before.capacity} → ${cap}`, '/admin/painel?tab=usuarios')
       json(res, 200, { ok: true, before: before.capacity, after: cap, over_capacity: active > cap })
     },
     'GET /api/adm/templates': async (req, res) => {

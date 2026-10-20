@@ -115,8 +115,10 @@ export function authRoutes({ json, readBody, bridge, clearCookies }) {
     'POST /api/auth/register': async (req, res) => {
       const b = await readBody(req)
       const name = String(b.name || '').trim(), email = String(b.email || '').trim().toLowerCase(), password = String(b.password || '')
-      // V3: "Quero treinar" (aluno) ou "Sou profissional" (aluno + profissional na MESMA identidade, verificação pendente)
-      const intent = b.intent === 'profissional' ? 'profissional' : 'aluno'
+      // Plano único (20/10/2026): o cadastro público cria SOMENTE aluno. Quem atende é o
+      // administrador do ambiente (o personal), criado por dentro. Um 'intent' antigo
+      // vindo de app em cache é ignorado de propósito: não cria papel de profissional.
+      const intent = 'aluno'
       const errors = {}
       if (name.length < 2) errors.name = 'Informe seu nome'
       if (!EMAIL_RE.test(email)) errors.email = 'E-mail inválido'
@@ -153,13 +155,10 @@ export function authRoutes({ json, readBody, bridge, clearCookies }) {
         catch (e) { if (e.code === '23505') return null; throw e }   // corrida: o índice único decide
         await q(`insert into user_roles values($1,$2,'aluno')`, [u.rows[0].id, t.rows[0].id])
         if (ct) await saveContact(u.rows[0].id, t.rows[0].id, ct.data, u.rows[0].id, 'cadastro.contato')
-        if (intent === 'profissional') {
-          await q(`insert into user_roles values($1,$2,'profissional') on conflict do nothing`, [u.rows[0].id, t.rows[0].id])
-          await q(`insert into professional_profiles(user_id,tenant_id,display_name) values($1,$2,$3) on conflict do nothing`, [u.rows[0].id, t.rows[0].id, name.slice(0, 80)])
-          await q(`update users set active_context='profissional' where id=$1`, [u.rows[0].id])
-        }
+        // Plano de acesso do aluno: pré-condição do vínculo com o personal (linkFailures).
+        await q(`insert into user_access_plans(user_id,plan_id) values($1,'personal_unico') on conflict (user_id) do nothing`, [u.rows[0].id])
         // V3 (decisão Lucas 15/10): SaaS aberto — conta nasce ativa, sem aprovação do admin (admin ainda pode bloquear)
-        await acceptAtSignup(u.rows[0].id, { professional: intent === 'profissional', health: typeof b.health_consent === 'boolean' ? b.health_consent : null }, req)
+        await acceptAtSignup(u.rows[0].id, { professional: false, health: typeof b.health_consent === 'boolean' ? b.health_consent : null }, req)
         if (terms) await acceptTerms(u.rows[0].id, terms.version, req)
         if (byCode) { const a = await attachByProCode(u.rows[0].id, t.rows[0].id, b.pro_code); if (a?.apply) await a.apply() }
         await autoUnlockForTests(u.rows[0].id, email)   // só em teste local (E2E_AUTO_UNLOCK_DOMAIN)
@@ -167,13 +166,16 @@ export function authRoutes({ json, readBody, bridge, clearCookies }) {
         return u
       })
       if (!u) return json(res, 409, { error: 'Este e-mail já tem conta. Quer entrar ou recuperar a senha?', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } })
+      // O aluno novo já nasce vinculado ao personal do ambiente. Falha aqui não desfaz o
+      // cadastro: a conta existe e o personal pode vincular pelo painel.
+      try { await (await import('./pro.js')).linkToTenantPersonal(t.rows[0].id, u.rows[0].id) }
+      catch (e) { console.error('vinculo automatico no cadastro', e.message) }
       // Cupom do link ou digitado: o servidor aplica depois de criar a conta. Falha nao desfaz o cadastro.
       let couponResult = null
       if (b.coupon) {
         try {
           const account = await loadUser(u.rows[0].id)
-          const audience = b.coupon_audience === 'profissional' ? 'profissional' : 'aluno'
-          couponResult = await (await import('./billing/coupons.js')).redeemTrial(account, b.coupon, { audience })
+          couponResult = await (await import('./billing/coupons.js')).redeemTrial(account, b.coupon, { audience: 'aluno' })
         } catch (e) { console.error('cupom cadastro', e.message); couponResult = { status: 500, error: 'A conta foi criada, mas não foi possível aplicar o cupom agora.', code: 'COUPON_APPLY_FAILED' } }
       }
       await login(res, u.rows[0].id, { coupon_result: couponResult })

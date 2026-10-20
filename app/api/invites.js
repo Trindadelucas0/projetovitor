@@ -137,7 +137,7 @@ export function inviteRoutes({ json, readBody }) {
       } catch (e) { await c.query('rollback').catch(() => {}); throw e } finally { c.release() }
       await refreshUsage(out.professional_id, 'profissional')
       await audit(u.tenant_id, u.id, 'vinculo.criado_por_convite', 'link', out.link_id, { coach: out.professional_id, invite: out.invite })
-      await notify(out.professional_id, 'vinculo', 'Convite aceito', `${u.name} aceitou seu convite.`, '/pro?tab=alunos')
+      await notify(out.professional_id, 'vinculo', 'Convite aceito', `${u.name} aceitou seu convite.`, '/admin/painel?tab=usuarios')
       json(res, 201, { ok: true, link_id: out.link_id })
     },
     'POST /api/invites/decline': async (req, res) => {
@@ -145,7 +145,7 @@ export function inviteRoutes({ json, readBody }) {
       const b = await readBody(req)
       const r = await q(`update pro_invites set status='recusado' where code=$1 and student_id=$2 and status='pendente' returning professional_id`, [normCode(b.code), u.id])
       if (!r.rowCount) return json(res, 404, { error: 'Convite pendente não encontrado' })
-      await notify(r.rows[0].professional_id, 'convite', 'Convite recusado', '', '/pro?tab=convites')
+      await notify(r.rows[0].professional_id, 'convite', 'Convite recusado', '', '/admin/painel?tab=vinculos&secao=convites')
       json(res, 200, { ok: true })
     }
   }

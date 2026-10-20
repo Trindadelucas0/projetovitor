@@ -77,8 +77,18 @@ export async function nextSessionOf(u) {
     if (p) {
       const days = (p.days || []).filter(d => d.exercises?.length)
       if (days.length) {
-        const n = (await q(`select count(*)::int n from sessions s where s.user_id=$1 and s.pro_plan_id=$2 and s.tenant_id=$3 and s.status='done' and s.voided_at is null`, [u.id, p.id, u.tenant_id])).rows[0].n
-        const d = days[n % days.length]; name = `${p.title} · ${d.name || 'Dia ' + ((n % days.length) + 1)}`; items = d.exercises
+        // O personal pode marcar o dia da semana de cada treino. Se um deles é o de
+        // hoje (fuso do produto), é esse que o Inicio abre; nenhum marcado para hoje
+        // mantem a sequencia por sessoes concluidas, como antes.
+        const dow = +(await q(`select extract(dow from (now() at time zone ${TZ}))::int d`)).rows[0].d
+        const today = days.find(d => d.weekday != null && +d.weekday === dow)
+        let d, label
+        if (today) { d = today; label = d.name || 'Hoje' }
+        else {
+          const n = (await q(`select count(*)::int n from sessions s where s.user_id=$1 and s.pro_plan_id=$2 and s.tenant_id=$3 and s.status='done' and s.voided_at is null`, [u.id, p.id, u.tenant_id])).rows[0].n
+          d = days[n % days.length]; label = d.name || 'Dia ' + ((n % days.length) + 1)
+        }
+        name = `${p.title} · ${label}`; items = d.exercises
         to = `/treinar?plan=${p.id}&day=${p.days.indexOf(d)}`
       } else { name = p.title; items = p.exercises || []; to = `/treinar?plan=${p.id}` }
       source = 'ficha'

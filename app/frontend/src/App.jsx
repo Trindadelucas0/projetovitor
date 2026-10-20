@@ -30,7 +30,7 @@ import ShareCard from './views/guided/ShareCard.jsx'
 import Settings from './views/Settings.jsx'
 const MuscleMap = lazy(() => import('./views/MuscleMap.jsx'))
 // treino guiado (AVAGYM)
-import GuidedTabBar, { isProAccount, isAdminAccount } from './views/guided/TabBar.jsx'
+import GuidedTabBar, { isAdminAccount } from './views/guided/TabBar.jsx'
 import Onboarding from './views/guided/Onboarding.jsx'
 import Today from './views/guided/Today.jsx'
 import { Recommendations, Library as ProgramLibrary, ProgramDetail } from './views/guided/Programs.jsx'
@@ -51,8 +51,9 @@ import Acompanhamento, { Conversa } from './views/app/Acompanhamento.jsx'
 import Avisos from './views/app/Avisos.jsx'
 import AdminApp from './views/admin/AdminApp.jsx'
 import { LegalGate, LegalPage } from './views/app/Legal.jsx'
-import ProPortal from './views/pro/Portal.jsx'
-import MyPrograms from './views/pro/MyPrograms.jsx'
+/* Plano unico: o portal do profissional (views/pro/Portal.jsx, views/pro/MyPrograms.jsx)
+   e a assinatura PRO (views/billing/ProSubscription.jsx) saem das rotas. Os arquivos
+   continuam no projeto para quando o app abrir para varios personais. */
 import { GroupPage } from './views/app/Grupos.jsx'
 import { ChallengePage, ChallengeWizard } from './views/app/Desafios.jsx'
 import Builder from './views/builder/WorkoutBuilder.jsx'
@@ -67,7 +68,6 @@ import { TourHost } from './components/Tour.jsx'
 import ThemeToggle from './components/ThemeToggle.jsx'
 import Plans from './views/v3/Plans.jsx'
 import { PublicPlans, Subscription } from './views/billing/Billing.jsx'   // V5 cobranca
-import ProSubscription from './views/billing/ProSubscription.jsx'   // Monetizacao F8b
 import { NavigationAccess } from './components/NavigationAccess.jsx'
 import AcceptInvite from './views/v3/AcceptInvite.jsx'
 import ProfileNotice from './components/ProfileNotice.jsx'
@@ -135,33 +135,15 @@ function Shell() {
               <Route path="/conversa/:id" element={<Gate title="Conversa"><Conversa /></Gate>} />
               <Route path="/avisos" element={<Avisos />} />
               <Route path="/perfil" element={<Profile />} /><Route path="/perfil/social" element={<SocialProfile />} /><Route path="/u/:id" element={<SocialPublic />} />
-              <Route path="/planos" element={<Plans />} /><Route path="/assinatura" element={<Subscription />} /><Route path="/pro/assinatura" element={<ProSubscription />} />
+              <Route path="/planos" element={<Plans />} /><Route path="/assinatura" element={<Subscription />} /><Route path="/pro/assinatura" element={<Navigate to="/assinatura" replace />} />
               <Route path="/convite/:code" element={<AcceptInvite />} />
               <Route path="/settings" element={<Settings />} />{/* admin: Configuracoes (antes caia no "*" e ia para o painel) */}
 <Route path="*" element={<Navigate to="/admin/painel" replace />} />
             </Routes>
-          ) : isProAccount(user) ? (
-            <Routes>
-              <Route path="/pro" element={<Gate title="ORNY" aud="profissional"><ProPortal /></Gate>} />
-              <Route path="/pro/programas" element={<Gate title="ORNY" aud="profissional"><MyPrograms /></Gate>} />
-              <Route path="/pro/treino" element={<Gate title="ORNY" aud="profissional"><Builder /></Gate>} />
-              <Route path="/library" element={<Library />} />
-              <Route path="/comunidade" element={<Gate title="Comunidade"><Comunidade /></Gate>} />
-              <Route path="/grupo/:id" element={<Gate title="Comunidade"><GroupPage /></Gate>} />
-              <Route path="/desafio/:id" element={<Gate title="Comunidade"><ChallengePage /></Gate>} />
-              <Route path="/desafios/criar" element={<Gate title="Comunidade"><ChallengeWizard /></Gate>} />
-              <Route path="/post/:id" element={<Gate title="Comunidade"><PostPage /></Gate>} />
-              <Route path="/profissional/:id" element={<Gate title="Comunidade"><ProfessionalPage /></Gate>} />
-              <Route path="/conversa/:id" element={<Gate title="Conversa"><Conversa /></Gate>} />
-              <Route path="/avisos" element={<Avisos />} />
-              <Route path="/perfil" element={<Profile />} /><Route path="/perfil/social" element={<SocialProfile />} /><Route path="/u/:id" element={<SocialPublic />} />
-              <Route path="/planos" element={<Plans />} /><Route path="/assinatura" element={<Subscription />} /><Route path="/pro/assinatura" element={<ProSubscription />} />
-              <Route path="/convite/:code" element={<AcceptInvite />} />
-              <Route path="/settings" element={<Settings />} />{/* personal: Configuracoes (antes caia no "*" e ia para /pro) */}
-<Route path="/admin/*" element={<Navigate to="/pro" replace />} />{/* QA AD-40/43: personal sem admin -> Inicio do PRO */}
-              <Route path="*" element={<Navigate to="/pro" replace />} />
-            </Routes>
           ) : (
+            /* Plano unico (20/10/2026): o app e do aluno e o painel do personal e o admin.
+               Nao existe mais shell de profissional; conta legada com esse papel entra como
+               aluno e as rotas /pro* levam ao treino. */
             <Routes>
               <Route path="/pro/treino" element={user?.admin ? <Builder /> : <Navigate to="/hoje" replace />} />
               <Route path="/hoje" element={<Gate title="Início"><Today /></Gate>} />
@@ -176,8 +158,9 @@ function Shell() {
               <Route path="/post/:id" element={<Gate title="Comunidade"><PostPage /></Gate>} />
               <Route path="/profissional/:id" element={<Gate title="Comunidade"><ProfessionalPage /></Gate>} />
               <Route path="/ranking" element={<ScopeGate title="Ranking"><Gate title="Ranking"><Ranking /></Gate></ScopeGate>} />
-              <Route path="/pro" element={user?.pro || user?.admin ? <Gate title="ORNY" aud="profissional"><ProPortal /></Gate> : <Navigate to="/hoje" replace />} />
-              <Route path="/pro/programas" element={<Gate title="ORNY" aud="profissional"><MyPrograms /></Gate>} />
+              <Route path="/pro" element={<Navigate to={user?.admin ? '/admin/painel?tab=usuarios' : '/hoje'} replace />} />
+              <Route path="/pro/programas" element={<Navigate to={user?.admin ? '/admin/painel?tab=modelos' : '/hoje'} replace />} />
+              <Route path="/pro/assinatura" element={<Navigate to="/assinatura" replace />} />
               <Route path="/admin/painel" element={user?.admin ? <AdminApp /> : <Navigate to="/hoje" replace state={{ noOnboarding: true }} />} />{/* QA AD-40/43: sem permissao -> Inicio, sem cair no questionario */}
               <Route path="/onboarding" element={<Gate title="Treinos"><Onboarding /></Gate>} />
               <Route path="/recomendados" element={<ScopeGate title="Recomendados"><Gate title="Recomendados"><Recommendations /></Gate></ScopeGate>} />
@@ -191,7 +174,7 @@ function Shell() {
               <Route path="/estatisticas" element={<Gate title="Estatísticas"><Estatisticas /></Gate>} />
               <Route path="/perfil" element={<Profile />} /><Route path="/perfil/social" element={<SocialProfile />} /><Route path="/u/:id" element={<SocialPublic />} />
               <Route path="/perfil/equipamentos" element={<ScopeGate title="Equipamentos"><MyEquipment /></ScopeGate>} />
-              <Route path="/planos" element={<Plans />} /><Route path="/assinatura" element={<Subscription />} /><Route path="/pro/assinatura" element={<ProSubscription />} />
+              <Route path="/planos" element={<Plans />} /><Route path="/assinatura" element={<Subscription />} /><Route path="/pro/assinatura" element={<Navigate to="/assinatura" replace />} />
               <Route path="/convite/:code" element={<AcceptInvite />} />
               <Route path="/admin/programas" element={user ? <AdminPrograms /> : <Navigate to="/hoje" replace />} />
               {/* V4: sem montagem de treino nem treino livre. Rotas antigas levam às rotinas antigas (só consulta);
@@ -202,7 +185,7 @@ function Shell() {
               <Route path="/workout" element={<Gate title="Treinos">{S.active ? <Workout /> : <Navigate to="/treinos" replace />}</Gate>} />
               <Route path="/stats" element={<Gate title="Estatísticas"><Stats /></Gate>} />
               <Route path="/history" element={<Gate title="Histórico"><History /></Gate>} />
-              <Route path="/library" element={(isProAccount(user) || isAdminAccount(user)) ? <ScopeGate title="Biblioteca"><Library /></ScopeGate> : <Navigate to="/treinos" replace />} />
+              <Route path="/library" element={isAdminAccount(user) ? <ScopeGate title="Biblioteca"><Library /></ScopeGate> : <Navigate to="/treinos" replace />} />
               <Route path="/muscles" element={<ScopeGate title="Músculos"><Gate title="Músculos trabalhados"><Suspense fallback={null}><MuscleMap /></Suspense></Gate></ScopeGate>} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={<Navigate to={user?.admin ? '/admin/painel' : '/hoje'} replace />} />

@@ -6,15 +6,32 @@ import { C, P, GOALS } from '../../lib/care.js'
 import { api } from '../../lib/api.js'
 import { mediaOf } from '../../lib/guided.js'
 import { groupsOf, parseReps, SIDE_PT, TECH_PT } from '../../lib/workout.js'
+import { parseVideo, videoProblem, VIDEO_LABEL } from '../../lib/video.js'
 import './builder.css'
 import { useUnsavedGuard } from '../../lib/dialog.js'
 
 const LEVEL_PT = { beginner: 'Iniciante', intermediate: 'Intermediário', advanced: 'Avançado' }
-const blankDay = i => ({ name: 'Treino ' + String.fromCharCode(65 + i), description: '', exercises: [] })
+// Dia da semana da ficha: 0 = domingo … 6 = sábado, como o schema da API espera.
+// "Livre" (null) continua valendo — o aluno escolhe quando fazer.
+const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+const WD_SHORT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+const blankDay = i => ({ name: 'Treino ' + String.fromCharCode(65 + i), description: '', weekday: null, exercises: [] })
 const newEx = x => ({ exercise_id: x.id, name: x.name, media: x.media, sets: 3, reps: '10-12', load_kg: '', duration_sec: '', rest_sec: 60, tempo: '', rpe: '', rir: '', per_set: [], side: 'bilateral', technique: 'normal', instructions: '', notes: '', video_url: '', group: null })
 const fromSaved = e => ({ ...newEx({ id: e.exercise_id, name: e.name, media: e.media }), ...e, reps: e.reps || (e.reps_min || e.reps_max ? (e.reps_min && e.reps_max && e.reps_min !== e.reps_max ? `${e.reps_min}-${e.reps_max}` : String(e.reps_max || e.reps_min)) : ''),
   load_kg: e.load_kg ?? '', duration_sec: e.duration_sec ?? '', tempo: e.tempo || '', rpe: e.rpe ?? '', rir: e.rir ?? '', instructions: e.instructions || e.notes || '', per_set: e.per_set || [] })
-const clean = days => days.map(d => ({ ...d, exercises: d.exercises.map(e => { const { media, ...r } = e; return r }) }))
+const clean = days => days.map(d => ({ ...d, weekday: d.weekday === '' || d.weekday == null ? null : +d.weekday, exercises: d.exercises.map(e => { const { media, ...r } = e; return r }) }))
+// Dois dias no mesmo dia da semana deixariam o "treino de hoje" ambíguo; a API recusa
+// e a tela avisa antes de tentar enviar.
+const weekdayClash = days => {
+  const seen = new Map()
+  for (const d of days) {
+    if (d.weekday == null || d.weekday === '') continue
+    const k = +d.weekday
+    if (seen.has(k)) return `${WEEKDAYS[k]} está em dois treinos (${seen.get(k)} e ${d.name}). Deixe um deles como Livre.`
+    seen.set(k, d.name)
+  }
+  return null
+}
 
 export default function WorkoutBuilder() {
   const nav = useNavigate(), [sp] = useSearchParams(), user = useStore(s => s.user), isAdmin = !!user?.admin
@@ -28,11 +45,11 @@ export default function WorkoutBuilder() {
   useEffect(() => {
     (isAdmin ? C.users('ativo', '').then(r => r.users.filter(u => u.roles.includes('aluno'))) : P.students('todos').then(r => r.students)).then(setStudents).catch(() => {})
     ;(isAdmin ? P.admTemplates() : P.templates()).then(r => setTemplates(r.templates.filter(t => t.status !== 'arquivado'))).catch(() => {})
-    const load = p => setW({ title: p.title || '', specialty: p.specialty || '', goal: p.goal || '', description: p.description || '', days: (p.days?.length ? p.days : [{ ...blankDay(0), exercises: p.exercises || [] }]).map(d => ({ ...d, description: d.description || '', exercises: (d.exercises || []).map(fromSaved) })) })
+    const load = p => setW({ title: p.title || '', specialty: p.specialty || '', goal: p.goal || '', description: p.description || '', days: (p.days?.length ? p.days : [{ ...blankDay(0), exercises: p.exercises || [] }]).map(d => ({ ...d, description: d.description || '', weekday: d.weekday == null ? null : +d.weekday, exercises: (d.exercises || []).map(fromSaved) })) })
     if (meta.planId) (isAdmin ? api('/api/adm/plan?id=' + meta.planId) : P.get(meta.planId)).then(r => { const p = r.plan || r.prescription || r; load(p); setMeta(m => ({ ...m, student: p.student_id || m.student })) }).catch(e => setMsg({ bad: true, t: e.message }))
   }, []) // eslint-disable-line
   useEffect(() => { if (meta.templateId && templates.length && !meta.planId && !w.title) { const t = templates.find(x => x.id === meta.templateId); if (t) useTemplate(t) } }, [templates]) // eslint-disable-line
-  const useTemplate = t => setW({ title: t.title, specialty: t.specialty || '', goal: t.goal || '', description: t.description || '', days: (t.days || []).map(d => ({ ...d, description: d.description || '', exercises: d.exercises.map(fromSaved) })) })
+  const useTemplate = t => setW({ title: t.title, specialty: t.specialty || '', goal: t.goal || '', description: t.description || '', days: (t.days || []).map(d => ({ ...d, description: d.description || '', weekday: d.weekday == null ? null : +d.weekday, exercises: d.exercises.map(fromSaved) })) })
   const D = w.days[day] || w.days[0]
   const setD = fn => setW(x => ({ ...x, days: x.days.map((d, i) => i === day ? fn(d) : d) }))
   const setEx = (i, patch) => setD(d => ({ ...d, exercises: d.exercises.map((e, k) => k === i ? { ...e, ...patch } : e) }))
@@ -67,11 +84,12 @@ export default function WorkoutBuilder() {
   // salvar
   const body = () => ({ title: w.title, specialty: w.specialty, goal: w.goal, description: w.description, days: clean(w.days) })
   const fail = e => setMsg({ bad: true, t: e.problems ? 'Não foi salvo: ' + e.problems.join(' · ') : 'Não foi salvo: ' + e.message })
-  const saveTemplate = async () => { setBusy('tpl'); setMsg(null); try {
+  const saveTemplate = async () => { const wd = weekdayClash(w.days); if (wd) return setMsg({ bad: true, t: wd }); setBusy('tpl'); setMsg(null); try {
     const r = isAdmin ? await P.saveTemplate({ id: meta.templateScope === 'global' ? meta.templateId || undefined : undefined, ...body() }) : await api('/api/pro/templates', { method: 'POST', body: JSON.stringify({ id: meta.templateScope === 'pessoal' ? meta.templateId || undefined : undefined, ...body() }) })
     setMeta(m => ({ ...m, templateId: r.id, templateScope: isAdmin ? 'global' : 'pessoal' })); markSaved(); setMsg({ t: isAdmin ? 'Modelo salvo: disponível para todos os profissionais' : 'Modelo pessoal salvo' }) } catch (e) { fail(e) } finally { setBusy('') } }
   const send = async () => {
     if (!meta.student) return setMsg({ bad: true, t: 'Escolha o aluno que vai receber o treino' })
+    const wd = weekdayClash(w.days); if (wd) return setMsg({ bad: true, t: wd })
     setBusy('send'); setMsg(null)
     try {
       if (isAdmin) { const r = await C.admSavePlan({ id: meta.planId || undefined, student_id: meta.student, template_id: meta.templateId || undefined, status: 'ativo', ...body() }); setMeta(m => ({ ...m, planId: r.id })) }
@@ -88,8 +106,9 @@ export default function WorkoutBuilder() {
   useEffect(() => { if (snap === null && (!meta.planId || w.title)) setSnap(JSON.stringify(w)) }, [w]) // eslint-disable-line
   const leave = useUnsavedGuard(snap !== null && JSON.stringify(w) !== snap)
   const markSaved = () => setSnap(JSON.stringify(w))
-  const back = () => leave(() => nav(isAdmin ? '/admin/painel?tab=modelos' : '/pro'))
+  const back = () => leave(() => nav('/admin/painel?tab=usuarios'))
   const total = w.days.reduce((a, d) => a + d.exercises.length, 0)
+  const clash = weekdayClash(w.days)
   return <div className="wb" data-testid="builder">
     <header className="wb-top">
       <button className="wb-btn ghost" onClick={back} aria-label="Voltar">←</button>
@@ -105,10 +124,19 @@ export default function WorkoutBuilder() {
       <label className="wb-f wb-full"><span>Como fazer o treino (orientação geral para o aluno)</span><textarea className="wb-in" rows={2} value={w.description} onChange={e => setW({ ...w, description: e.target.value })} placeholder="Aquecimento, ordem, intervalo, cuidados…" data-testid="wb-desc" /></label>
     </section>
     <nav className="wb-days" role="tablist" aria-label="Dias do treino">
-      {w.days.map((d, i) => <button key={i} role="tab" aria-selected={i === day} className={'wb-day' + (i === day ? ' on' : '')} onClick={() => { setDay(i); setSel(new Set()) }} data-testid={'wb-day-' + i}>{d.name}<small>{d.exercises.length}</small></button>)}
+      {w.days.map((d, i) => <button key={i} role="tab" aria-selected={i === day} className={'wb-day' + (i === day ? ' on' : '')} onClick={() => { setDay(i); setSel(new Set()) }} data-testid={'wb-day-' + i}>{d.name}{d.weekday != null && d.weekday !== '' ? ' · ' + WD_SHORT[+d.weekday] : ''}<small>{d.exercises.length}</small></button>)}
       <button className="wb-day add" onClick={addDay} data-testid="wb-day-add">+ Dia</button>
       <span className="wb-sp" /><button className="wb-btn ghost" onClick={renameDay}>Renomear</button><button className="wb-btn ghost danger" onClick={removeDay}>Remover dia</button>
     </nav>
+    <div className="wb-bar">
+      <label className="wb-f"><span>Dia da semana de {D.name}</span>
+        <select className="wb-in" value={D.weekday ?? ''} onChange={e => setD(d => ({ ...d, weekday: e.target.value === '' ? null : +e.target.value }))} data-testid="wb-weekday">
+          <option value="">Livre — o aluno escolhe o dia</option>
+          {WEEKDAYS.map((l, i) => <option key={i} value={i}>{l}</option>)}
+        </select></label>
+      <span className="wb-xs">Marcando o dia, o app abre este treino no Início do aluno nesse dia da semana.</span>
+    </div>
+    {clash && <p className="wb-msg bad" role="alert" data-testid="wb-weekday-clash">{clash}</p>}
     <div className="wb-cols">
       <Library open={libOpen} setOpen={setLibOpen} onAdd={addSelected} dayName={D.name} />
       <main className="wb-main">
@@ -162,6 +190,28 @@ function Library({ open, setOpen, onAdd, dayName }) {
   </aside>
 }
 
+// O vídeo do personal no exercício. Dois caminhos: colar o link (YouTube é o que toca
+// dentro do app, com velocidade) ou escolher um vídeo já enviado em Exercícios e vídeos.
+// A tela diz o que cada tipo permite, em vez de prometer controle que o Instagram não dá.
+function VideoField({ e, i, set, media }) {
+  const url = e.video_url || ''
+  const v = parseVideo(url), problem = videoProblem(url)
+  const fromLib = (media || []).some(x => x.url === url)
+  return <div className="wb-f wb-full wb-video" data-testid={`wb-video-${i}`}>
+    <span>Meu vídeo deste exercício (opcional)</span>
+    <input className={'wb-in' + (problem ? ' err' : '')} value={url} onChange={ev => set({ video_url: ev.target.value })}
+      placeholder="Cole o link do YouTube (ex.: https://youtu.be/…)" data-testid={`wb-video-url-${i}`} />
+    {problem && <small className="wb-xs wb-bad" role="alert" data-testid={`wb-video-err-${i}`}>{problem}</small>}
+    {!problem && v && <small className="wb-xs" data-testid={`wb-video-ok-${i}`}>{VIDEO_LABEL[v.kind]}</small>}
+    {!url && <small className="wb-xs">Sem vídeo, o aluno vê a imagem padrão do exercício.</small>}
+    {(media || []).length > 0 && <label className="wb-f"><span className="wb-xs">Ou escolha um vídeo já enviado</span>
+      <select className="wb-in" value={fromLib ? url : ''} onChange={ev => set({ video_url: ev.target.value })} data-testid={`wb-video-lib-${i}`}>
+        <option value="">Nenhum</option>{media.map(x => <option key={x.id} value={x.url}>{x.caption || 'Vídeo ' + x.id}</option>)}
+      </select></label>}
+    {url && <button type="button" className="wb-link" onClick={() => set({ video_url: '' })} data-testid={`wb-video-clear-${i}`}>Remover o vídeo deste exercício</button>}
+  </div>
+}
+
 function ExCard({ e, i, g, n, sel, toggle, set, move, ungroup, remove, onDragStart, onDrop }) {
   const [open, setOpen] = useState(i === 0 || !e.reps), [media, setMedia] = useState(null), m = mediaOf(e.media)
   useEffect(() => { if (open && !media) C.exMedia(e.exercise_id).then(r => setMedia(r.media.filter(x => x.kind === 'video'))).catch(() => setMedia([])) }, [open]) // eslint-disable-line
@@ -190,9 +240,9 @@ function ExCard({ e, i, g, n, sel, toggle, set, move, ungroup, remove, onDragSta
         {F('RIR (reps em reserva)', 'rir', { type: 'number', min: 0, max: 10 })}
         <label className="wb-f"><span>Lado</span><select className="wb-in" value={e.side} onChange={v => set({ side: v.target.value })}>{Object.entries(SIDE_PT).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
         <label className="wb-f"><span>Técnica</span><select className="wb-in" value={e.technique} onChange={v => set({ technique: v.target.value })} data-testid={`wb-tech-${i}`}>{Object.entries(TECH_PT).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
-        <label className="wb-f"><span>Vídeo de referência</span><select className="wb-in" value={e.video_url || ''} onChange={v => set({ video_url: v.target.value })}><option value="">Mídia padrão do exercício</option>{(media || []).map(x => <option key={x.id} value={x.url}>{x.caption || 'Vídeo ' + x.id}</option>)}</select></label>
         </div></details>
       </div>
+      <VideoField e={e} i={i} set={set} media={media} />
       <label className="wb-chk"><input type="checkbox" checked={perOn} onChange={v => set({ per_set: v.target.checked ? Array.from({ length: e.sets }, () => ({ reps: e.reps, load_kg: e.load_kg })) : [] })} data-testid={`wb-per-${i}`} /> Variar repetições e carga por série (ex.: 12/10/8)</label>
       {perOn && <table className="wb-per"><thead><tr><th>Série</th><th>Repetições</th><th>Carga (kg)</th></tr></thead><tbody>
         {Array.from({ length: Math.max(1, Math.min(10, +e.sets || 1)) }, (_, k) => <tr key={k}><td>{k + 1}</td>

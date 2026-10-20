@@ -35,9 +35,34 @@ export function normDays(days) {
     exercises: (Array.isArray(d.exercises) ? d.exercises : []).slice(0, 40).map(normExercise)
   }))
 }
+export const WEEKDAYS_PT = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+// Vídeo do personal no exercício: YouTube (player dentro do app, com velocidade e
+// posição), arquivo enviado para o próprio servidor, ou outro endereço https, que abre
+// fora do app. Reconhecer o tipo aqui mantém uma regra só para a tela e para a API.
+// Espelha frontend/src/lib/video.js — as duas pontas precisam concordar sobre o que é
+// um vídeo válido, senão a tela aceita e a API recusa (ou pior, o contrário).
+const YT_HOST_RE = /^https:\/\/(?:www\.|m\.)?(?:youtube\.com|youtube-nocookie\.com|youtu\.be)\//
+const YT_VIDEO_RE = /^https:\/\/(?:www\.|m\.)?(?:youtu\.be\/[\w-]{11}|(?:youtube\.com|youtube-nocookie\.com)\/(?:watch\?(?:[^#]*&)?v=[\w-]{11}|(?:shorts|embed|live|v)\/[\w-]{11}))/
+export function videoKind(url) {
+  const u = String(url || '').trim()
+  if (!u) return null
+  if (/^\/api\/media\?f=[\w.-]+$/.test(u)) return 'arquivo'
+  if (YT_VIDEO_RE.test(u)) return 'youtube'
+  // Canal, playlist ou busca do YouTube não é vídeo: recusar em vez de tratar como externo.
+  if (YT_HOST_RE.test(u)) return null
+  if (/^https:\/\/[^\s]{4,500}$/.test(u)) return 'externo'
+  return null
+}
 // erros de forma (sem banco)
 export function shapeProblems(days) {
   const p = []
+  // Um dia da semana não pode ter dois treinos: o app precisa saber qual é o de hoje.
+  const byWeekday = new Map()
+  days.forEach(d => {
+    if (d.weekday == null) return
+    if (byWeekday.has(d.weekday)) p.push(`${WEEKDAYS_PT[d.weekday]} está em dois treinos (${byWeekday.get(d.weekday)} e ${d.name}). Deixe um deles como Livre.`)
+    else byWeekday.set(d.weekday, d.name)
+  })
   days.forEach(d => {
     d.exercises.forEach(e => {
       const n = `${d.name}: ${e.name || e.exercise_id}`
@@ -53,7 +78,7 @@ export function shapeProblems(days) {
       if (e.rir != null && !(e.rir >= 0 && e.rir <= 10)) p.push(`${n} — RIR entre 0 e 10`)
       if (e.per_set.length > e.sets) p.push(`${n} — variação por série maior que o número de séries`)
       e.per_set.forEach((x, i) => { if (x.reps != null && parseReps(x.reps).invalid) p.push(`${n} — série ${i + 1}: repetições inválidas`); if (Number.isNaN(x.load_kg) || (x.load_kg != null && !(x.load_kg >= 0 && x.load_kg <= 1000))) p.push(`${n} — série ${i + 1}: carga inválida`) })
-      if (e.video_url && !/^(https:\/\/|\/api\/media\?)/.test(e.video_url)) p.push(`${n} — link de vídeo precisa ser https`)
+      if (e.video_url && !videoKind(e.video_url)) p.push(`${n} — vídeo: cole o endereço de um vídeo do YouTube ou escolha um vídeo já enviado`)
       ;['load_kg', 'duration_sec', 'rpe', 'rir'].forEach(k => { if (Number.isNaN(e[k])) p.push(`${n} — valor inválido em ${k}`) })
     })
     // bi-set/tri-set: exercícios do mesmo grupo ficam juntos; 2 ou 3 por grupo

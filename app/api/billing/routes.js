@@ -4,8 +4,7 @@ import { clientIp } from '../clientip.js'   // BUG-044
 import crypto from 'node:crypto'
 import { q } from '../db/pool.js'
 import { requireAuth, requireRole, audit } from '../auth.js'
-import { resolve, refreshUsage, capacitySummary } from '../entitlements.js'
-import { accessOf } from '../access.js'
+import { resolve, refreshUsage } from '../entitlements.js'
 import { getProvider, getProviderByName, providerName } from './providers/index.js'
 import { SIM_CARDS } from './providers/simulado.js'
 import * as core from './core.js'
@@ -37,8 +36,10 @@ export function providerInfo() {
 }
 const pubPlan = p => ({ id: p.id, audience: p.audience, product: p.product, name: p.name, description: p.description, price_cents: p.price_cents, currency: p.currency,
   billing_interval: p.billing_interval, trial_days: p.trial_days, benefits: (p.benefits || []).filter(x => x.state !== 'indisponivel'), limits: p.limits || {}, features: p.features || {}, is_free: p.is_free })
-// Catalogo: gratuitos, Individual e os dois planos Personal.
-export const CATALOG = ['aluno_free', 'profissional_free', 'individual', 'pro', 'pro_ilimitado']
+// Catalogo do app do personal: um plano pago de aluno. aluno_free continua listado aqui
+// porque e o estado interno de "conta sem plano ainda" (FREE_PLAN em entitlements.js);
+// ele esta inativo no banco, entao nao aparece nas consultas publicas.
+export const CATALOG = ['aluno_free', 'individual']
 const CATALOG_SQL = CATALOG.map(x => "'" + x + "'").join(',')
 const PLANS_SQL = `select p.*, v.limits, v.features, v.version from plans p left join lateral (select limits, features, version from plan_versions where plan_id=p.id order by version desc limit 1) v on true`
 
@@ -101,18 +102,11 @@ export function billingRoutes({ json, readBody }) {
       const info = providerInfo()
       json(res, 200, { plans: r.rows.map(p => ({ ...pubPlan(p), purchasable: !p.is_free && !!p.sellable && p.price_cents != null })).map(p => ({ ...p, price_label: p.is_free ? 'Gratuito' : p.price_cents == null ? 'Preço a definir' : null })), test_mode: !!info.test, hosted_checkout: !!info.hosted_checkout, payment_types: info.payment_types }, { 'Cache-Control': 'public, max-age=60' })
     },
-    // Monetizacao F8b: tela dedicada do personal (plano, alunos permitidos, vagas usadas, proximo vencimento).
-    // Fica em /api/billing/* (sempre liberado) para o personal gerir a assinatura mesmo com o teste vencido.
+    // Aposentada com o plano unico (20/10/2026): nao ha mais assinatura de profissional
+    // para vender. A rota continua respondendo para nao quebrar app antigo em cache.
     'GET /api/billing/pro-summary': async (req, res) => {
       const u = await auth(req, res); if (!u) return
-      if (!u.roles.includes('profissional')) return json(res, 403, { error: 'Somente para contas de profissional.', code: 'PERMISSION_DENIED' })
-      const sub = await subView(u, 'profissional')
-      const cap = await capacitySummary(u.id)
-      const acc = (await accessOf(u)).audiences.profissional || { has: false, sources: [] }
-      const trial = acc.sources.find(s => s.kind === 'teste') || null
-      const next = sub && !sub.is_free ? (sub.status === 'trial' ? sub.trial_ends_at : sub.cancel_at_period_end ? null : sub.current_period_end) : null
-      json(res, 200, { subscription: sub, capacity: cap, commercial_status: acc.commercial_status, has_access: acc.has,
-        trial: trial ? { plan_name: trial.plan_name, until: trial.until } : null, next_due: next, ends_at: sub?.cancel_at_period_end ? sub.current_period_end : null })
+      json(res, 410, { error: 'O app tem um plano único de aluno; não existe assinatura de profissional.', code: 'GONE' })
     },
     'GET /api/billing/config': async (req, res) => {
       if (!await auth(req, res)) return

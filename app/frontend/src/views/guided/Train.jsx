@@ -8,6 +8,8 @@ import { OpenSessionScreen, TimeFix } from './SessionRecovery.jsx'
 import { Spin } from './Programs.jsx'
 import { C } from '../../lib/care.js'
 import { ReportSheet, AskSheet } from '../app/Acompanhamento.jsx'
+import ExercisePlayer from '../../components/ExercisePlayer.jsx'
+import { parseVideo } from '../../lib/video.js'
 import './guided.css'
 import { ask, notify } from '../../lib/dialog.js'
 
@@ -27,6 +29,8 @@ export default function Train() {
   const [err, setErr] = useState(''), [, tick] = useState(0), [how, setHow] = useState(false), [bad, setBad] = useState({})
   const syncTm = useRef(null)
   const [blocks, setBlocks] = useState(new Set()), [sheet, setSheet] = useState(null), [flash, setFlash] = useState('')
+  // segundo do vídeo em que o aluno está: vai junto da dúvida, para o personal saber o trecho
+  const [videoSec, setVideoSec] = useState(0)
   useEffect(() => { C.blocks().then(r => setBlocks(new Set(r.blocks.map(b => b.exercise_id)))).catch(() => {}) }, [])
 
   // início autorizado no servidor (offline: segue no aparelho e o servidor valida na sincronização)
@@ -53,7 +57,7 @@ export default function Train() {
     if (sp.get('plan')) { C.plan(sp.get('plan')).then(({ plan }) => {
       const day = +(sp.get('day') || 0), exs = planExercises(plan, day), dd = plan.days?.[Math.min(day, (plan.days?.length || 1) - 1)]
       const n = newSession({ active: { id: null, title: plan.title + ' · ' + plan.owner_name }, workout: { id: null, name: plan.title + (dd?.name && plan.days.length > 1 ? ' · ' + dd.name : ''), exercises: exs.map(e => ({ ...e, suggestion: { weight: e.weight, reps: e.reps } })) } })
-      n.exercises = n.exercises.map((e, i) => { const o = exs[i]; return { ...e, timed: o.timed, rest_sec: o.rest_sec ?? 60, group: o.group ?? null, per_set: o.per_set || [], tempo: o.tempo || '', rpe: o.rpe ?? null, rir: o.rir ?? null, side: o.side || 'bilateral', technique: o.technique || 'normal', notes: o.notes || '', reps_label: o.reps || '', load_kg: o.load_kg ?? null } })
+      n.exercises = n.exercises.map((e, i) => { const o = exs[i]; return { ...e, timed: o.timed, rest_sec: o.rest_sec ?? 60, group: o.group ?? null, per_set: o.per_set || [], tempo: o.tempo || '', rpe: o.rpe ?? null, rir: o.rir ?? null, side: o.side || 'bilateral', technique: o.technique || 'normal', notes: o.notes || '', reps_label: o.reps || '', load_kg: o.load_kg ?? null, video_url: o.video_url || null } })
       n.plan_desc = plan.description || plan.notes || ''; n.day_desc = dd?.description || ''
       n.plan_id = plan.id; setDraft(n) }).catch(e => setErr(e.message || 'Plano indisponível')); return }
     G.today(sp.get('w')).then(t => {
@@ -139,6 +143,7 @@ export default function Train() {
   const allDoneEx = ex.done.length >= ex.sets
   const totalSets = s.exercises.reduce((a, e) => a + e.sets, 0), doneSets = s.exercises.reduce((a, e) => a + e.done.length, 0)
   const m = mediaOf(ex.media)
+  const video = parseVideo(ex.video_url)
   const elapsed = elapsedOf(s)
   const setRunning = s.cur_start && !s.rest ? Math.max(0, ((s.paused_at ? new Date(s.paused_at).getTime() : Date.now()) - s.cur_start) / 1000) : null
   const isLastEx = s.exIdx >= s.exercises.length - 1
@@ -185,12 +190,16 @@ export default function Train() {
     </div>
 
     <div className="g-row"><h1 style={{ fontSize: 24, margin: 0 }} data-testid="ex-name">{ex.name}</h1><span className="g-sp" /><button className="g-link" onClick={() => setHow(h => !h)}>{how ? 'Fechar' : 'Como fazer'}</button></div>
-    {m && !bad[ex.exercise_id] ? <div className="g-media" onClick={() => setHow(h => !h)}>
+    {/* Vídeo do personal, quando a ficha tem um para este exercício: entra no lugar da
+        figura, com pausa, ±10 s e velocidade. Sem vídeo, segue a imagem de sempre. */}
+    {video ? <ExercisePlayer key={ex.exercise_id} url={ex.video_url} title={ex.name} onTime={setVideoSec} />
+      : m && !bad[ex.exercise_id] ? <div className="g-media" onClick={() => setHow(h => !h)}>
       <img key={ex.exercise_id} src={m.gif || m.img} alt={ex.name} data-testid="ex-media"
         onError={e => { if (m.img && e.currentTarget.src !== new URL(m.img, location.href).href) e.currentTarget.src = m.img; else setBad(b => ({ ...b, [ex.exercise_id]: 1 })) }} />
     </div> : <div className="g-media g-x g-noimg" data-testid="ex-media-placeholder">
       <Icon name="stretch" /><span className="g-xs g-mut">Sem vídeo para este exercício — siga as instruções abaixo</span>
     </div>}
+    {video && <button className="g-btn g-ghost g-sm" style={{ marginTop: 4 }} onClick={() => setSheet('ask')} data-testid="ask-video"><Icon name="chat" /> Tenho uma dúvida neste vídeo</button>}
     {how && <ExtraMedia id={ex.exercise_id} />}
     {(how || !m || bad[ex.exercise_id]) && <p className="g-mut g-sm" style={{ marginTop: 6 }}>{ex.instructions || 'Faça o movimento devagar e com controle. Pare se sentir dor.'}</p>}
     {ex.cautions?.length > 0 && <p className="g-warn" style={{ marginTop: 6 }}>Atenção: faça com cuidado se sente {ex.cautions.map(c => RESTR_PT[c.code]?.toLowerCase()).join(', ')}. Pare se doer.</p>}
@@ -238,7 +247,8 @@ export default function Train() {
       <button className="g-btn g-ghost g-sm" onClick={() => setSheet('ask')} data-testid="ask"><Icon name="chat" /> Tenho uma dúvida</button>
       <button className="g-btn g-ghost g-sm" onClick={() => setSheet('report')} data-testid="report" style={{ borderColor: "var(--ag-warn, #f5a524)" }}><Icon name="flag" /> Relatar dor ou problema</button>
     </div>
-    {sheet === 'ask' && <AskSheet ctx={{ exercise_id: ex.exercise_id, exercise_name: ex.name, plan_id: s.plan_id, context_type: 'exercicio' }} onClose={() => setSheet(null)} onDone={() => { setSheet(null); setFlash('Dúvida enviada ao profissional responsável.') }} />}
+    {sheet === 'ask' && <AskSheet ctx={{ exercise_id: ex.exercise_id, exercise_name: ex.name, plan_id: s.plan_id, context_type: 'exercicio' }}
+      videoSec={video?.canControl ? videoSec : null} onClose={() => setSheet(null)} onDone={() => { setSheet(null); setFlash('Dúvida enviada ao seu personal.') }} />}
     {sheet === 'report' && <ReportSheet ctx={{ exercise_id: ex.exercise_id, exercise_name: ex.name, plan_id: s.plan_id, session_client_id: s.client_id }} onClose={() => setSheet(null)}
       onDone={r => { setSheet(null); if (r.blocked) setBlocks(b => new Set([...b, ex.exercise_id])); setFlash(r.blocked ? 'Relato enviado. O exercício foi pausado até a orientação profissional.' : 'Relato enviado ao profissional responsável.'); update(x => endRest(x)) }} />}
     {s.paused_at && <div className="g-rest" data-testid="paused"><span className="g-eyebrow">Treino pausado</span><div className="g-clock">{clock(elapsed)}</div><p className="g-mut g-sm">O cronômetro está parado. O tempo pausado não conta.</p>

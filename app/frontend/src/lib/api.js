@@ -25,6 +25,8 @@ export async function authLogin(email, password) {
   return r.user
 }
 // aceite no cadastro: Termos+Privacidade (obrigatorio), 18+ (obrigatorio), consentimento de saude (opcional, separado)
-export async function authRegister(name, email, password, terms_version, intent, pro_code, extra = {}) {
-  return api('/api/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password, accept_terms: extra.accept ?? !!terms_version, birth_date: extra.birth_date || undefined, ...(typeof extra.health === 'boolean' ? { health_consent: extra.health } : {}), terms_version, intent: intent || 'aluno', plan_id: extra.plan_id || undefined, ...(extra.contact ? { contact: extra.contact } : {}), ...(pro_code ? { pro_code } : {}), ...(extra.coupon ? { coupon: extra.coupon, coupon_audience: intent || 'aluno' } : {}) }) })
+// Plano único: o cadastro público cria somente aluno. O servidor ignora qualquer outro
+// perfil; o parâmetro saiu da assinatura para não sugerir que existe escolha.
+export async function authRegister(name, email, password, terms_version, extra = {}) {
+  return api('/api/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password, accept_terms: extra.accept ?? !!terms_version, birth_date: extra.birth_date || undefined, ...(typeof extra.health === 'boolean' ? { health_consent: extra.health } : {}), terms_version, plan_id: extra.plan_id || undefined, ...(extra.contact ? { contact: extra.contact } : {}), ...(extra.coupon ? { coupon: extra.coupon } : {}) }) })
 }

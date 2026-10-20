@@ -215,6 +215,6 @@ export async function attachByProCode(uid, tenantId, code) {
   return { pro_id: pro.id, apply: async () => {
     await q(`update users set account_type='personal_client', managed_by=$2 where id=$1`, [uid, pro.id])
     await q(`insert into coach_students(tenant_id,coach_id,student_id,status,origin,created_by) values($1,$2,$3,'ativo','codigo',$3)`, [tenantId, pro.id, uid])
-    await notify(pro.id, 'vinculo', 'Novo aluno pelo seu código', 'Um aluno se cadastrou com o seu código.', '/pro?tab=alunos').catch(() => {})
+    await notify(pro.id, 'vinculo', 'Novo aluno pelo seu código', 'Um aluno se cadastrou com o seu código.', '/admin/painel?tab=usuarios').catch(() => {})
   } }
 }

@@ -37,38 +37,19 @@ const AUDIENCE = {
       ['target', 'Programas por objetivo, nível e local', 'Catálogo de programas guiados para escolher um caminho.'],
     ],
   },
-  profissional: {
-    tab: 'Sou personal',
-    kicker: 'Área profissional para personal trainers',
-    h1: ['Da ficha ao acompanhamento.', 'No mesmo sistema.'],
-    lead: 'A ficha não precisa ficar no WhatsApp. Crie treinos, acompanhe sessões recentes e responda seus alunos no mesmo lugar.',
-    bullets: ['Alunos organizados', 'Fichas completas', 'Sessões e mensagens'],
-    image: '/landing/profissional-orny.webp',
-    alt: 'Personal trainer acompanhando o treino de uma aluna',
-    panelTitle: 'Prescrever é só uma parte do trabalho.',
-    panelCopy: 'Quando a ficha fica espalhada entre planilha e conversa, acompanhar o aluno fica mais difícil. A ORNY reúne alunos, fichas, sessões, mensagens e pendências do atendimento.',
-    proof: [
-      ['users', 'Alunos vinculados e vagas', 'Painel com seus alunos, vagas usadas e pendências.'],
-      ['pencil', 'Fichas completas', 'Exercícios, séries, repetições, cargas e orientações.'],
-      ['magnifier', 'Biblioteca de exercícios', 'Busque o exercício na hora de montar a ficha.'],
-      ['history', 'Sessões recentes do aluno', 'Veja o que ele realmente executou e quando.'],
-      ['chat', 'Mensagens dentro do sistema', 'A conversa do atendimento fica junto do treino.'],
-      ['clipboard', 'Ocorrências e propostas', 'Orientações, pendências e propostas de alteração da ficha.'],
-    ],
-  },
 }
 
-const NAV = [['beneficios', 'Para quem é'], ['recursos', 'O que faz'], ['como-funciona', 'Como funciona'], ['planos', 'Planos'], ['duvidas', 'Dúvidas']]
+const NAV = [['beneficios', 'Para quem é'], ['recursos', 'O que faz'], ['como-funciona', 'Como funciona'], ['planos', 'Plano'], ['duvidas', 'Dúvidas']]
 
 const STEPS = [
-  ['01', 'Escolha o seu perfil', 'Aluno ou personal: a experiência e os planos mudam conforme a sua rotina.'],
-  ['02', 'Crie a conta e escolha o plano', 'Seus dados, o plano do catálogo e a revisão antes de confirmar.'],
+  ['01', 'Crie a sua conta', 'Seus dados de acesso, data de nascimento e contato.'],
+  ['02', 'Contrate a assinatura', 'Um plano só, com o valor na tela e a revisão antes de confirmar.'],
   ['03', 'Confirme o pagamento e comece', 'O acesso é liberado assim que o pagamento é confirmado. Cancele quando quiser.'],
 ]
 
 const FAQ_LANDING = [
   ['Preciso instalar alguma coisa?', 'Não. A ORNY funciona no navegador do celular ou do computador. Adicionar à tela inicial é opcional e pode ser feito depois do cadastro.'],
-  ['Aluno e personal usam o mesmo sistema?', 'Sim. Cada perfil recebe navegação, recursos e planos adequados à sua rotina, dentro do mesmo sistema.'],
+  ['Quem monta o meu treino?', 'O seu personal. Ele monta a ficha com os exercícios, as séries, as cargas, os dias da semana e os vídeos de execução, e ela aparece no seu app.'],
   ['Como funcionam as notificações?', 'Você escolhe se quer ativar. A ORNY explica antes de pedir a permissão do aparelho, e isso nunca bloqueia o seu acesso.'],
 ]
 
@@ -88,9 +69,11 @@ export default function Landing() {
   const heroRef = useRef(null)
   const user = useStore(s => s.user)
   const entry = useMemo(() => parseEntry(window.location.search, window.location.hash), [])
-  const [aud, setAud] = useState(entry.perfil)
   const [plans, setPlans] = useState(null)
   const [error, setError] = useState('')
+  // Plano único: a landing fala com uma pessoa só, o aluno. Não há mais área de personal
+  // para visitante conhecer nem seletor de perfil.
+  const aud = 'aluno'
   const sel = AUDIENCE[aud]
   const href = plano => signupHref(entry, { perfil: aud, plano, authed: !!user })
 
@@ -151,9 +134,7 @@ export default function Landing() {
         </ul>
         <div className="lp-actions" data-hero>
           <a href={href()} className="lp-btn lp-btn-primary lp-btn-lg" data-testid="landing-cta-primary">Criar minha conta<Icon name="chevronRight" /></a>
-          <button type="button" className="lp-btn lp-btn-ghost lp-btn-lg" onClick={() => { setAud(aud === 'aluno' ? 'profissional' : 'aluno'); goTo('beneficios') }}>
-            {aud === 'aluno' ? 'Sou personal' : 'Quero treinar'}
-          </button>
+          <button type="button" className="lp-btn lp-btn-ghost lp-btn-lg" onClick={() => goTo('planos')}>Ver o plano</button>
         </div>
         <p className="lp-trust" data-hero>
           <span>Funciona no navegador</span><span>Instalação opcional</span><span>Acesso liberado após a confirmação do pagamento</span><span>Cancele quando quiser</span>
@@ -164,12 +145,8 @@ export default function Landing() {
     <section id="beneficios" className="lp-section">
       <div className="lp-shell">
         <div data-reveal className="lp-head">
-          <span className="lp-kicker">Uma ORNY para cada rotina</span>
-          <h2>Escolha o seu lado</h2>
-        </div>
-        <div className="lp-switch" role="tablist" aria-label="Escolha o seu perfil">
-          {Object.entries(AUDIENCE).map(([key, item]) =>
-            <button key={key} type="button" role="tab" aria-selected={aud === key} className={aud === key ? 'on' : ''} onClick={() => setAud(key)} data-testid={'landing-aud-' + key}>{item.tab}</button>)}
+          <span className="lp-kicker">Para quem treina com personal</span>
+          <h2>O seu treino, no seu celular</h2>
         </div>
         <div data-reveal className="lp-panel">
           <div className="lp-panel-copy">
@@ -187,7 +164,7 @@ export default function Landing() {
       <div className="lp-shell">
         <div data-reveal className="lp-head">
           <span className="lp-kicker">O que a ORNY faz hoje</span>
-          <h2>{aud === 'aluno' ? 'Do treino do dia ao histórico' : 'Do cadastro do aluno à sessão registrada'}</h2>
+          <h2>Do treino do dia ao histórico</h2>
           <p className="lp-copy">Tudo abaixo já existe no sistema. Nenhuma promessa de resultado.</p>
         </div>
         <div className="lp-grid">
@@ -209,7 +186,7 @@ export default function Landing() {
         <div>
           <div data-reveal className="lp-head lp-head-left">
             <span className="lp-kicker">Simples desde o primeiro acesso</span>
-            <h2>Escolha. Cadastre. Comece.</h2>
+            <h2>Cadastre. Assine. Comece.</h2>
           </div>
           <div className="lp-steps">
             <span className="lp-steps-rail" aria-hidden="true"><i data-progress-line /></span>
@@ -273,7 +250,7 @@ export default function Landing() {
     <section className="lp-final">
       <div data-reveal className="lp-shell lp-final-box">
         <span className="lp-kicker">Seu próximo passo</span>
-        <h2>{aud === 'aluno' ? 'Pare de treinar no improviso.' : 'Da ficha ao acompanhamento.'}</h2>
+        <h2>Pare de treinar no improviso.</h2>
         <p className="lp-copy">Crie a sua conta e comece a usar a ORNY hoje.</p>
         <div className="lp-actions">
           <a href={href()} className="lp-btn lp-btn-primary lp-btn-lg">Criar minha conta<Icon name="chevronRight" /></a>
@@ -315,7 +292,7 @@ export default function Landing() {
     </footer>
 
     <div className="lp-mobile-cta">
-      <a href={href()} className="lp-btn lp-btn-primary">{aud === 'aluno' ? 'Criar conta e treinar' : 'Criar conta de personal'}</a>
+      <a href={href()} className="lp-btn lp-btn-primary">Criar conta e treinar</a>
     </div>
   </main>
 }

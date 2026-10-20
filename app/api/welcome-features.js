@@ -1,11 +1,9 @@
 // Só enumera atalhos que o plano e o contexto podem oferecer. Não autoriza APIs.
 export function welcomeResources(audience, features, scoped = false, verified = false) {
-  if (audience === 'profissional') return [
-    '/pro', '/pro?tab=atendimentos', '/pro/assinatura',
-    ...(features.convidar_alunos ? ['/pro?tab=alunos'] : []),
-    ...(features.construtor_treino && verified ? ['/pro/treino'] : []),
-    ...(features.fichas_publicas && verified ? ['/pro/programas'] : [])
-  ]
+  // Plano único: não existe mais assinatura de profissional para dar boas-vindas. O
+  // personal é o administrador e entra direto no painel. Mantido por compatibilidade
+  // com registros antigos de boas-vindas que gravaram a audiência 'profissional'.
+  if (audience === 'profissional') return ['/admin/painel?tab=usuarios', '/admin/painel?tab=filas', '/pro/treino']
   return ['/hoje', '/comunidade',
     ...(features.programas_guiados && !scoped ? ['/programas'] : []),
     ...(features.progresso ? ['/estatisticas', ...(!scoped ? ['/progresso'] : [])] : []),

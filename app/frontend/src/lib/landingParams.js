@@ -9,7 +9,9 @@
 // signupHref monta "#/cadastro?..." no formato que Login.jsx ja sabe ler
 // (new URLSearchParams(location.hash.split('?')[1])).
 
-const PERFIS = ['aluno', 'profissional']
+// Plano unico: o cadastro publico e so de aluno. Um anuncio antigo com
+// ?perfil=profissional continua funcionando, mas cai no cadastro de aluno.
+const PERFIS = ['aluno']
 const UTM = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid']
 const PLAN_RE = /^[a-z0-9_]{2,32}$/   // o plano real e validado no servidor (api/auth.js)
 const KEY = 'orny_entry'

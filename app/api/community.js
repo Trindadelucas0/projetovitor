@@ -49,8 +49,16 @@ async function commentBlock(u) {
   return !p || p.state !== 'ativo' ? 'Seu perfil profissional ainda não está ativo para comentar.' : null
 }
 const COMMENT_LIMIT_HOUR = 30
+// Plano único (20/10/2026): o personal do app é o administrador. O que ele publica sai
+// com o nome e a foto do perfil dele, não como "Equipe ORNY" — o aluno precisa saber
+// que é o seu personal falando. Outro administrador (suporte) continua institucional.
+const PERSONAL_SQL = `(select s.value #>> '{}' from app_settings s where s.tenant_id=p.tenant_id and s.key='personal_user_id')`
 const FEED_SQL = `select p.id,p.title,p.body,p.category,p.image_url,p.status,p.created_at,p.edited_at,p.publish_at,p.official,p.author_id,p.scope_pro_id,(select coalesce(sp.display_name,su.name) from users su left join professional_profiles sp on sp.user_id=su.id where su.id=p.scope_pro_id) scope_name,
-  case when p.official then 'Equipe ORNY' else coalesce(pp.display_name,a.name) end author_name, case when p.official then null else coalesce((select '/api/media/pub?k=' || ua.key_128 from user_avatar ua where ua.user_id=a.id), pp.photo_url) end author_photo, has_admin.is_admin author_admin,
+  case when p.author_id::text = ${PERSONAL_SQL} then coalesce(pp.display_name,a.name)
+       when p.official then 'Equipe ORNY'
+       else coalesce(pp.display_name,a.name) end author_name,
+  case when p.official and p.author_id::text <> coalesce(${PERSONAL_SQL},'') then null
+       else coalesce((select '/api/media/pub?k=' || ua.key_128 from user_avatar ua where ua.user_id=a.id), pp.photo_url) end author_photo, has_admin.is_admin author_admin,
   coalesce((select array_agg(distinct coalesce(q.area,q.kind)) from professional_qualifications q where q.user_id=p.author_id and q.status='verificada'),'{}') verified,
   (select count(*) from post_likes l where l.post_id=p.id)::int likes, exists(select 1 from post_likes l where l.post_id=p.id and l.user_id=$2) liked,
   (select count(*) from post_comments c where c.post_id=p.id and c.status='visivel')::int comments
@@ -91,8 +99,12 @@ export function communityRoutes({ json, readBody }) {
       if (!(await authorVisible(u, p.author_id, p.scope_pro_id))) return json(res, 404, { error: 'Esta publicação não está mais disponível.', code: 'NOT_FOUND' })
       const c = await q(`select c.id,c.parent_id,c.status,c.created_at,c.edited_at,c.author_id,
           case when c.status='visivel' or $3 then c.body end body,
-          case when exists(select 1 from user_roles ar where ar.user_id=a.id and ar.role_id='admin') then 'Equipe ORNY' else coalesce(sp.display_name,pp.display_name,a.name) end author_name, sp.handle author_handle,
-          case when exists(select 1 from user_roles ar where ar.user_id=a.id and ar.role_id='admin') then null else coalesce((select '/api/media/pub?k=' || ua.key_128 from user_avatar ua where ua.user_id=a.id), pp.photo_url) end author_photo,
+          case when a.id::text = (select s.value #>> '{}' from app_settings s where s.tenant_id=a.tenant_id and s.key='personal_user_id') then coalesce(pp.display_name,a.name)
+               when exists(select 1 from user_roles ar where ar.user_id=a.id and ar.role_id='admin') then 'Equipe ORNY'
+               else coalesce(sp.display_name,pp.display_name,a.name) end author_name, sp.handle author_handle,
+          case when exists(select 1 from user_roles ar where ar.user_id=a.id and ar.role_id='admin')
+                    and a.id::text <> coalesce((select s.value #>> '{}' from app_settings s where s.tenant_id=a.tenant_id and s.key='personal_user_id'),'') then null
+               else coalesce((select '/api/media/pub?k=' || ua.key_128 from user_avatar ua where ua.user_id=a.id), pp.photo_url) end author_photo,
           exists(select 1 from user_roles r where r.user_id=a.id and r.role_id='profissional') author_pro,
           exists(select 1 from user_roles r where r.user_id=a.id and r.role_id='admin') author_official, (c.author_id=$2) mine,
           (select count(*) from comment_likes l where l.comment_id=c.id)::int likes, exists(select 1 from comment_likes l where l.comment_id=c.id and l.user_id=$2) liked
@@ -102,7 +114,7 @@ export function communityRoutes({ json, readBody }) {
     },
     'POST /api/posts': async (req, res) => {
       const u = await requireAuth(req, res, json); if (!u) return
-      if (!(await canPublish(u))) return json(res, 403, { error: 'Somente profissionais ativos e sem restrição de moderação podem publicar.', code: 'PERMISSION_DENIED' })
+      if (!(await canPublish(u))) return json(res, 403, { error: 'Somente o personal pode criar publicações na comunidade. Você pode comentar e publicar o card do seu treino.', code: 'PERMISSION_DENIED' })
       const b = await readBody(req)
       const title = txt(b.title, 140), body = txt(b.body, 5000), status = b.status === 'rascunho' ? 'rascunho' : 'publicado'
       if (title.length < 3 || body.length < 3) return json(res, 400, { error: 'Informe título e conteúdo', code: 'INVALID_INPUT' })
@@ -279,7 +291,7 @@ export function communityRoutes({ json, readBody }) {
         if (r.target_type === 'post') await q('update posts set status=$2, moderation_reason=$3 where id=$1', [t.id, st, reason])
         else await q('update post_comments set status=$2 where id=$1', [t.id, st])
       }
-      if (t && b.decision === 'restringir') { await q('update professional_profiles set publication_suspended_at=now(), publication_suspended_by=$2, publication_suspension_reason=$3 where user_id=$1', [t.author_id, u.id, txt(b.note || b.reason, 300) || 'Restrição aplicada após moderação']); await notify(t.author_id, 'profissional', 'Publicação na comunidade suspensa', 'A administração restringiu suas publicações após uma moderação.', '/pro').catch(() => {}) }
+      if (t && b.decision === 'restringir') { await q('update professional_profiles set publication_suspended_at=now(), publication_suspended_by=$2, publication_suspension_reason=$3 where user_id=$1', [t.author_id, u.id, txt(b.note || b.reason, 300) || 'Restrição aplicada após moderação']); await notify(t.author_id, 'profissional', 'Publicação na comunidade suspensa', 'A administração restringiu suas publicações após uma moderação.', '/admin/painel?tab=perfil').catch(() => {}) }
       if (t && ['correcao', 'ocultar', 'remover', 'restringir'].includes(b.decision)) await notify(t.author_id, 'moderacao', 'Moderação da comunidade: ' + b.decision, reason, '/comunidade')
       await q(`update content_reports set status='resolvida', decision=$2, decided_by=$3, decision_reason=$4, decided_at=now() where id=$1`, [r.id, b.decision, u.id, reason])
       await audit(u.tenant_id, u.id, 'moderacao.' + b.decision, r.target_type, r.target_id, { report: r.id, reason })

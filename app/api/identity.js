@@ -152,7 +152,7 @@ export function identityRoutes({ json, readBody }) {
       if (b.status === 'verificado') await q(`insert into professional_qualifications(user_id,kind,number,area,status,verified_by,verified_at,note)
           select $1,$2,$3,$4,'verificada',$5,now(),'via verificação V3' where not exists (select 1 from professional_qualifications where user_id=$1 and kind=$2 and number=$3)`, [v.user_id, v.council, v.registry_number, v.specialties[0] || null, u.id])
       await audit(u.tenant_id, u.id, 'verificacao.' + b.status, 'verification', v.id)
-      await notify(v.user_id, 'habilitacao', b.status === 'verificado' ? 'Cadastro profissional verificado' : 'Correção solicitada no cadastro profissional', note, '/pro?tab=verificacao')
+      await notify(v.user_id, 'habilitacao', b.status === 'verificado' ? 'Cadastro profissional verificado' : 'Correção solicitada no cadastro profissional', note, '/admin/painel?tab=perfil')
       json(res, 200, { ok: true })
     }
   }

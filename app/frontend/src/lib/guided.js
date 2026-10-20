@@ -74,6 +74,7 @@ export function newSession(today) {
     exercises: w.exercises.map(e => ({
       exercise_id: e.exercise_id, name: e.name, media: e.media, sets: e.sets || 3, reps_min: e.reps_min, reps_max: e.reps_max,
       duration_sec: e.duration_sec, rest_sec: e.rest_sec || 60, instructions: e.instructions, cautions: e.cautions || [],
+      video_url: e.video_url || null,   // vídeo do personal neste exercício (fica na sessão, inclusive offline)
       timed: !e.reps_min && !e.reps_max, weight: e.suggestion?.weight ?? null, reps: e.suggestion?.reps ?? (e.reps_min || e.reps_max || e.duration_sec || 10),
       note: e.suggestion?.note || null, last: e.last, done: []
     }))
