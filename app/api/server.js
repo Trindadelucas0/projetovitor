@@ -20,6 +20,7 @@ import { tapagoRoutes } from './tapago.js';
 import { posturalRoutes } from './postural.js';
 import { posturalProRoutes } from './postural-pro.js';
 import { posturalAdminRoutes } from './postural-adm.js';
+import { startPosturalRecurrence } from './postural-job.js';
 import { lgpdRoutes, termsStatus } from './lgpd.js';
 import { legalRoutes } from './legal.js';
 import { exerciseMediaRoutes } from './exmedia.js';
@@ -555,4 +556,5 @@ server.listen(PORT, process.env.HOST || '0.0.0.0', () => console.log(`gym-api on
 startMailer();
 startAuditPurge();   // V5: retencao da auditoria (app_settings auditoria_retencao_dias; padrao AUDIT_RETENTION_DAYS ou 180)
 setBillingPush(sendPush);   // V5: eventos de cobranca tambem saem por push
+startPosturalRecurrence();   // Avaliação Postural: recorrência mensal idempotente e retenção da mídia (POSTURAL_RECURRENCE=off desliga)
 startBillingJob();          // V5: renovacao, retentativa, carencia, suspensao e reconciliacao (BILLING_TICK=off desliga)   // V4.2: fila de e-mail (só envia com SMTP configurado)

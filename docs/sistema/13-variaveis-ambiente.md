@@ -63,3 +63,20 @@ Arquivo `app/api/.env` (nunca no git). Variáveis lidas pelo código:
 | VAPID_PUBLIC_KEY | server.js |
 | VAPID_SUBJECT | server.js |
 
+
+## Avaliação Postural (mídia privada e recorrência)
+
+| Variável | Onde é lida | Para que serve |
+|---|---|---|
+| STORAGE_DRIVER | storage/index.js | `local` (padrão, dev e testes) ou `r2` |
+| R2_ACCOUNT_ID | storage/r2.js | monta o endpoint `https://<id>.r2.cloudflarestorage.com` |
+| R2_BUCKET | storage/r2.js | bucket único e privado; a área entra como prefixo da chave |
+| R2_ACCESS_KEY_ID | storage/r2.js | token Object Read & Write restrito ao bucket |
+| R2_SECRET_ACCESS_KEY | storage/r2.js | idem — nunca versionar |
+| R2_MEDIA_URL_TTL | postural-media.js | segundos de validade da URL temporária de vídeo (padrão 120) |
+| POSTURAL_RECURRENCE | postural-job.js | `off` desliga a geração automática e a varredura de retenção |
+
+O bucket deve ficar **sem domínio personalizado e sem URL pública de desenvolvimento**: os bytes só saem
+por rota autorizada da API ou por URL temporária emitida depois da checagem de permissão. Para o envio
+direto de vídeo pelo celular, o bucket precisa de uma política de CORS restrita à origem do app, com
+`AllowedMethods: ["PUT"]` e `AllowedHeaders: ["content-type"]`.

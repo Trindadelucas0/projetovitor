@@ -25,6 +25,9 @@ import AdmBilling from '../billing/AdmBilling.jsx'
 import AdmMonetizacao from '../billing/AdmMonetizacao.jsx'   // Monetizacao F7   // V5 cobranca: planos, precos, cupons, parceiros, assinaturas
 import { AdmEmpresa } from '../app/Legal.jsx'
 import TapagoAdmin from './TapagoAdmin.jsx'
+import FilaAvaliacoes from '../postural/FilaAvaliacoes.jsx'   // V5-AP: operação
+import ProtocolEditor from '../postural/ProtocolEditor.jsx'   // V5-AP: governança
+import IndicadoresAvaliacao from '../postural/IndicadoresAvaliacao.jsx'
 
 // ---------- utilitários ----------
 const csvEsc = v => { const s = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s }
@@ -239,6 +242,7 @@ const NAV = [
  ['Visão geral', [['dashboard','Visão geral','chart']]],
  ['Meus alunos', [['usuarios','Alunos','person'],['vinculos','Convites','users'],['filas','Dúvidas e atendimentos','bell']]],
  ['Treinos', [['modelos','Modelos de ficha','pencil'],['exercicios','Exercícios e vídeos','dumbbell'],['programas','Programas','clipboard']]],
+ ['Avaliação postural', [['avaliacao','Fila e análise','clipboard'],['avaliacao-adm','Protocolos e indicadores','list']]],
  ['Comunidade', [['publicacoes','Publicações e moderação','chat'],['tapago','Campanha #TáPago','sparkles']]],
  ['Assinaturas', [['cobranca','Cobrança, preços e cupons','sparkles'],['assinaturas','Assinaturas','sparkles'],['monetizacao','Monetização','shield']]],
  ['Sistema', [['perfil','Meu perfil de personal','person'],['empresa','Dados da empresa','list'],['lgpd','Privacidade e termos','lock'],['auditoria','Logs e auditoria','list'],['config','Configurações','gear']]]]
@@ -305,7 +309,7 @@ export default function AdminApp() {
   const [sp, setSp] = useSearchParams(), nav = useNavigate(), [open, setOpen] = useState(false)
   const old=Object.hasOwn(OLD_TABS,sp.get('tab')) ? OLD_TABS[sp.get('tab')] : null
   const tab=old?.[0] || (Object.hasOwn(TITLE,sp.get('tab')) ? sp.get('tab') : 'dashboard')
-  const defaults={usuarios:'contas',vinculos:'vinculos',publicacoes:'publicacoes',lgpd:'lgpd'}
+  const defaults={usuarios:'contas',vinculos:'vinculos',publicacoes:'publicacoes',lgpd:'lgpd','avaliacao-adm':'protocolos'}
   const sub=old?.[1] || sp.get('secao') || defaults[tab]
   const go=value=>{const [t,section]=value.split(':');setSp({tab:t,...(section?{secao:section}:{})});setOpen(false)}
   const setSub=section=>go(tab+':'+section)
@@ -327,6 +331,10 @@ export default function AdminApp() {
       {tab === 'cobranca' && <AdmBilling />}
       {tab === 'monetizacao' && <AdmMonetizacao />}
       {tab === 'tapago' && <TapagoAdmin />}
+      {/* V5-AP: duas áreas distintas. Operação usa /api/pro/*, governança usa /api/adm/* — quando o app
+          reabrir para vários personais, a operação sai daqui sem mexer no servidor. */}
+      {tab === 'avaliacao' && <FilaAvaliacoes />}
+      {tab === 'avaliacao-adm' && <><SubTabs items={[['protocolos','Protocolos e versões'],['indicadores','Indicadores, termo e retenção']]} current={sub} onChange={setSub}/>{sub==='indicadores'?<IndicadoresAvaliacao/>:<ProtocolEditor/>}</>}
       {tab === 'assinaturas' && <AdmSubscriptions />}
       {tab === 'publicacoes' && <><SubTabs items={[['publicacoes','Publicações e comentários'],['oficial','Conteúdo oficial'],['moderacao','Moderação']]} current={sub} onChange={setSub}/>{sub==='moderacao'?<ExtraSection name="moderacao"/>:sub==='oficial'?<ConteudoOficial DataTable={DataTable} Drawer={Drawer}/>:<Publicacoes DataTable={DataTable} Drawer={Drawer}/>}</>}
 

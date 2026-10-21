@@ -87,3 +87,24 @@
 @media (prefers-reduced-motion: reduce) {
   .ap-wizard, .ap-cap-prev, .ap-lb { transition: none !important; animation: none !important; }
 }
+
+/* áreas do profissional e da administração */
+.ap-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin: 12px 0; }
+.ap-filtros { flex-wrap: wrap; gap: 10px; align-items: center; }
+.ap-filtros .g-in { flex: 1 1 200px; }
+.ap-rev { display: grid; gap: 12px; }
+.ap-rev-nav { align-items: center; gap: 10px; flex-wrap: wrap; }
+.ap-rev-media { display: grid; gap: 8px; justify-items: start; }
+.ap-rev-media .ap-cap-prev { padding: 0; cursor: zoom-in; width: 100%; }
+.ap-rev-foot { gap: 14px; flex-wrap: wrap; margin-top: 8px; }
+.ap-rev-dev { display: grid; gap: 10px; }
+.ap-dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; }
+.ap-dl dt { font-weight: 600; font-size: .85rem; }
+.ap-dl dd { margin: 0; font-size: .85rem; color: var(--ag-mut); }
+.ap-solicitar { display: grid; gap: 10px; }
+.ap-proto { display: grid; gap: 10px; }
+.ap-proto-vers { flex-wrap: wrap; gap: 8px; }
+.ap-editor { display: grid; gap: 10px; border-top: 1px solid var(--ag-line); margin-top: 12px; padding-top: 12px; }
+.ap-ed-flags { display: grid; gap: 8px; }
+.ap-ed-row { align-items: center; }
+.ap-ed-name { background: none; border: 0; color: inherit; text-align: left; cursor: pointer; padding: 0; flex: 1; }

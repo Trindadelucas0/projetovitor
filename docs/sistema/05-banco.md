@@ -208,3 +208,33 @@ PostgreSQL 16. Migrations em `app/api/db/migrations` (47 arquivos), aplicadas em
 | workout_templates | 16 |
 | workouts | 10 |
 
+
+## Avaliação Postural — migration 072
+
+| Tabela | Papel |
+|---|---|
+| posture_protocols | catálogo; `tenant_id` nulo = protocolo oficial do sistema (somente leitura) |
+| posture_protocol_versions | versões; publicar congela (`locked_at`). Índice parcial garante um rascunho por protocolo |
+| posture_steps | etapas, com FK na **versão** (nunca no protocolo): é o que torna versão publicada imutável |
+| posture_assessments | um ciclo; `protocol_version_id` é pinado no pedido e nunca atualizado |
+| posture_captures | uma captura viva por etapa; `media_key` nunca sai para o cliente |
+| posture_recurrences | recorrência mensal, trimestral ou personalizada (1 a 12 meses) |
+| posture_events | trilha append-only do ciclo |
+
+Aditivo em tabelas existentes: `threads` ganhou `context_type='avaliacao'` + `assessment_id` e
+`assessment_step_id` (dúvida por etapa reusa o atendimento); `legal_acceptances` ganhou os documentos
+`avaliacao_postural` e `avaliacao_postural_divulgacao`; `app_settings` recebeu
+`avaliacao_postural_retencao_dias` (730) por tenant.
+
+Chaves importantes:
+- `posture_assessments_ciclo_uq (student_id, protocol_id, cycle_ym) where cycle_ym is not null` → o job da
+  recorrência pode rodar várias vezes no mês e insere uma vez só.
+- `posture_assessments_aberta_uq (student_id) where status in (abertos)` → nunca duas avaliações abertas
+  para o mesmo aluno, venham da recorrência ou de pedido manual.
+- `posture_captures_slot_uq (assessment_id, step_id) where status in ('reservada','enviada','dispensada')` →
+  uma captura viva por etapa; a recaptura marca a anterior como `substituida` e preserva o histórico.
+- `posture_steps_pos_uq (version_id, position)` → a reordenação é feita em duas fases (as posições passam
+  por uma faixa livre acima de 300) porque o índice é único e não pode ser diferido.
+
+Retenção: a mídia é apagada do armazenamento e `media_key` é zerada; a linha permanece. Volta em
+`db/down/072_down.sql`.

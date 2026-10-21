@@ -844,3 +844,59 @@ Total: **370** rotas. Públicas (sem login): `GET/HEAD /api/health`, `GET /api/c
 |---|---|---|
 | GET | /api/verification/document | identity.js |
 
+
+### /api/avaliacao-postural (aluno)
+| Método | Caminho | Arquivo |
+|---|---|---|
+| GET | /api/avaliacao-postural | postural.js |
+| GET | /api/avaliacao-postural/item | postural.js |
+| GET | /api/avaliacao-postural/media | postural.js |
+| GET | /api/avaliacao-postural/etapa-midia | postural.js |
+| GET | /api/avaliacao-postural/devolutiva | postural.js |
+| POST | /api/avaliacao-postural/start | postural.js |
+| POST | /api/avaliacao-postural/consent | postural.js |
+| POST | /api/avaliacao-postural/dados | postural.js |
+| POST | /api/avaliacao-postural/captura/init | postural.js |
+| POST | /api/avaliacao-postural/captura/upload | postural.js |
+| POST | /api/avaliacao-postural/captura/confirm | postural.js |
+| POST | /api/avaliacao-postural/captura/skip | postural.js |
+| POST | /api/avaliacao-postural/captura/remove | postural.js |
+| POST | /api/avaliacao-postural/submit | postural.js |
+| POST | /api/avaliacao-postural/duvida | postural.js |
+
+### /api/pro/avaliacao (profissional)
+| Método | Caminho | Arquivo |
+|---|---|---|
+| GET | /api/pro/avaliacoes | postural-pro.js |
+| GET | /api/pro/avaliacao | postural-pro.js |
+| GET | /api/pro/avaliacao/media | postural-pro.js |
+| GET | /api/pro/avaliacao/recorrencias | postural-pro.js |
+| POST | /api/pro/avaliacoes/solicitar | postural-pro.js |
+| POST | /api/pro/avaliacao/etapa | postural-pro.js |
+| POST | /api/pro/avaliacao/devolutiva | postural-pro.js |
+| POST | /api/pro/avaliacao/publicar | postural-pro.js |
+| POST | /api/pro/avaliacao/recaptura | postural-pro.js |
+| POST | /api/pro/avaliacao/cancelar | postural-pro.js |
+| POST | /api/pro/avaliacao/recorrencia | postural-pro.js |
+
+### /api/adm/avaliacao (administração)
+| Método | Caminho | Arquivo |
+|---|---|---|
+| GET/POST | /api/adm/avaliacao/protocolos | postural-adm.js |
+| POST | /api/adm/avaliacao/protocolos/duplicar | postural-adm.js |
+| POST | /api/adm/avaliacao/versoes | postural-adm.js |
+| POST | /api/adm/avaliacao/versoes/publicar | postural-adm.js |
+| POST | /api/adm/avaliacao/versoes/orientacoes | postural-adm.js |
+| GET/POST | /api/adm/avaliacao/etapas | postural-adm.js |
+| POST | /api/adm/avaliacao/etapas/ordem | postural-adm.js |
+| POST | /api/adm/avaliacao/etapas/remover | postural-adm.js |
+| GET/POST | /api/adm/avaliacao/etapas/midia | postural-adm.js |
+| POST | /api/adm/avaliacao/etapas/midia/remover | postural-adm.js |
+| GET/POST | /api/adm/avaliacao/termos | postural-adm.js |
+| GET | /api/adm/avaliacao/metricas | postural-adm.js |
+| GET | /api/adm/avaliacao/auditoria | postural-adm.js |
+| GET/POST | /api/adm/avaliacao/retencao | postural-adm.js |
+
+Observação de contrato: a tabela de rotas do `server.js` casa **método + caminho exato**, sem parâmetro de
+caminho. Por isso todo identificador do módulo viaja em query string (`?id=`) ou no corpo — não existe
+`/api/avaliacao-postural/:id`.

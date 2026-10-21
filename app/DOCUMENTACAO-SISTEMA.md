@@ -1,7 +1,88 @@
 # ORNY — Documentação do sistema
 
-Fonte oficial de comportamento. Versão frontend: 2.0.1; API: 2.0.1. Atualização: 21/10/2026 — fichas individuais, Progresso e Comunidade somente com publicações.
+Fonte oficial de comportamento. Versão frontend: 2.0.1; API: 2.0.1. Atualização: 21/10/2026 — Avaliação Postural, fichas individuais, Progresso e Comunidade somente com publicações.
 O inventário em `docs/INVENTARIO-FUNCIONAL.md` preserva o levantamento histórico e seus limites de validação; este documento consolida os fluxos atualizados.
+
+## Avaliação Postural — 21/10/2026
+
+Nova área **Avaliação Postural**: o personal solicita, o aluno registra fotos e vídeos guiados no celular, o
+personal analisa etapa a etapa e publica uma devolutiva. Cada ciclo fica guardado, e a recorrência mensal
+gera avaliações independentes para comparar períodos. **O sistema não produz diagnóstico postural:** ele
+coleta, organiza e devolve o texto escrito pelo profissional.
+
+O protocolo semente tem **18 etapas (15 fotografias e 3 vídeos)** e vem em duas versões oficiais —
+masculino e feminino. As etapas são **dados configuráveis no banco**: o aplicativo lê a quantidade e o
+conteúdo da versão do protocolo, nunca de constante no código.
+
+**Privacidade.** As imagens são dados de saúde e exigem um consentimento específico, separado dos termos
+gerais; a autorização para divulgação em redes sociais é um segundo aceite, independente e opcional. Os
+arquivos ficam em área privada, saem apenas por rota autorizada (que reconfere titularidade e vínculo a
+cada leitura) e nunca aparecem no Feed, na Comunidade ou em notificações. Todo acesso do profissional à
+mídia é registrado.
+
+**Imutabilidade.** Publicar uma versão nova do protocolo não altera avaliação em andamento: a avaliação
+fica presa à versão em que começou. Editar versão publicada é recusado; o caminho é criar uma versão nova,
+que nasce com as etapas copiadas. O protocolo oficial é somente leitura — para alterá-lo, duplique para a
+sua organização.
+
+**Confirmação do servidor.** Nenhum arquivo é tratado como enviado sem o servidor confirmar: na foto, o
+`sha256` é recalculado e comparado; no vídeo enviado direto ao R2, o servidor confere existência, tamanho
+real e tipo real do objeto antes de aceitar. Arquivo recusado continua visível no aparelho, com o motivo e
+a opção de tentar de novo — nada é descartado em silêncio.
+
+### Como usar
+
+1. **Personal:** abra **Painel → Avaliação postural → Fila e análise** e use **Nova solicitação**. Escolha
+   o aluno, o protocolo (precisa ter versão publicada), o prazo e, se quiser, marque **Repetir
+   automaticamente** para gerar a avaliação a cada mês.
+2. **Aluno:** o cartão aparece no **Início** e no **Acompanhamento**. Ele passa por boas-vindas, preparação
+   do ambiente, dados complementares e o termo de privacidade, e então registra uma etapa por tela.
+3. Em cada etapa o aluno vê as instruções numeradas, os cuidados e — quando o protocolo tiver mídia — a
+   foto de referência e o vídeo de exemplo. Pode **tirar dúvida** (abre conversa no atendimento) ou
+   **informar que não consegue fazer** o movimento, com justificativa.
+4. O aluno pode sair e voltar: ao reabrir, cai na primeira etapa pendente. O arquivo escolhido e ainda não
+   enviado fica guardado no aparelho.
+5. Na **revisão final** o aluno confere o total de registros, escreve uma observação opcional e envia. O
+   envio é recusado se faltar etapa obrigatória.
+6. **Personal:** abra a avaliação na fila e avalie cada captura como **adequada**, **solicitar recaptura**
+   (com o motivo que o aluno vai ler) ou **não avaliável**. As observações internas só aparecem ao aluno
+   depois da publicação.
+7. Escreva o resumo e as recomendações e use **Publicar devolutiva**. A publicação é bloqueada enquanto
+   houver captura sem parecer ou enquanto o resumo estiver vazio. Para devolver etapas ao aluno, use
+   **Devolver para recaptura**.
+8. **Administração:** em **Painel → Avaliação postural → Protocolos e indicadores** ficam o catálogo, o
+   editor de etapas, o termo do módulo, os indicadores (incluindo o consumo de armazenamento) e a política
+   de retenção.
+
+Onde olhar no código:
+
+- `api/db/migrations/072_avaliacao_postural.sql` e `api/db/down/072_down.sql`
+- `api/db/postural-protocol.js` (as 18 etapas, semente idempotente por `content_hash`)
+- `api/postural.js` (aluno), `api/postural-pro.js` (profissional), `api/postural-adm.js` (administração)
+- `api/postural-media.js` (conferência do arquivo, proxy com `Range`, URL temporária)
+- `api/postural-job.js` (recorrência mensal e varredura de retenção)
+- `api/storage/r2.js` (driver Cloudflare R2, assinatura SigV4)
+- `frontend/src/views/postural/` e `frontend/src/lib/postural.js`
+- `frontend/src/components/{WizardShell,CaptureUploader,MediaLightbox,HealthConsentGate}.jsx`
+
+### Ambiente, implantação e rollback
+
+- `STORAGE_DRIVER=local` é o padrão (desenvolvimento e testes não dependem de rede). Para o R2, preencha
+  `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` e mantenha o bucket privado, sem
+  domínio personalizado e sem URL pública de desenvolvimento. Detalhes em `docs/sistema/13-variaveis-ambiente.md`.
+- O plano gratuito do R2 oferece 10 GB-mês. Com vídeo limitado a 25 MB, uma avaliação ocupa cerca de 82 MB:
+  o painel de indicadores mostra o consumo e avisa a partir de 80%.
+- `POSTURAL_RECURRENCE=off` desliga a geração automática e a varredura de retenção.
+- Rollback lógico: `api/db/down/072_down.sql` devolve `threads` e `legal_acceptances` aos CHECK anteriores e
+  remove as sete tabelas do módulo. Fazer `pg_dump` validado antes, como em qualquer migration.
+
+Validação local: 95 testes automatizados do módulo aprovados contra banco de teste recriado do zero (10 de
+storage, 12 de conferência de mídia, 10 do job de recorrência e retenção, 23 de integração do aluno, 21 do
+profissional e 19 da administração), mais 356 testes do frontend e build de produção concluído. **Não
+homologado:** o módulo não foi aberto em navegador nem exercitado em aparelho real, não há cenários
+Playwright próprios, e o driver R2 não foi exercitado contra o bucket real (falta o token; o smoke manual é
+`api/scripts/r2-smoke.mjs`). A comparação visual lado a lado entre períodos ainda não foi implementada: o
+histórico lista os ciclos e a análise do profissional já mostra a mesma etapa do ciclo anterior.
 
 ## Comunidade somente com publicações — 21/10/2026
 

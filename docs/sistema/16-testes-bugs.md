@@ -40,3 +40,24 @@ Registro atual:
 | [BUG-029](bugs/BUG-029.md) | 2026-10-16 | academ.avadesk.com.br fora do ar (TLS unexpected eof) | quem usa o endereço antigo | encerrado: domínio abandonado (decisão do Lucas) |
 | [BUG-030](bugs/BUG-030.md) | 2026-10-16 | /api/admin/programs devolve 404 | admin | esperado (documentado) |
 
+
+## Avaliação Postural
+
+Banco de teste recriado do zero antes de rodar (`pwsh db/test-db-reset.ps1`), API de teste em 8799 com
+`DB_NAME=avagym_test`, `ORIGIN=http://127.0.0.1:4449` e `STORAGE_DRIVER=local`.
+
+| Suíte | Cobre |
+|---|---|
+| `test/postural-storage.test.mjs` | política de chave (aceita mp4/webm, recusa travessia), driver local, assinatura SigV4 das URLs pré-assinadas |
+| `test/postural-media.test.mjs` | conferência do arquivo antes de gravar, proxy com `Range`, cabeçalhos privados |
+| `test/postural-job.test.mjs` | recorrência idempotente (3 ticks = 1 avaliação), adiamento com ciclo aberto, retenção |
+| `test/postural.integration.mjs` | fluxo do aluno e os negativos: aluno A vs aluno B (404, não 403), token errado, mp4 declarado como jpeg, etapa de outra versão, envio incompleto, exclusão LGPD |
+| `test/postural-pro.integration.mjs` | solicitar, analisar, recaptura, devolutiva, recorrência, profissional não designado, vínculo encerrado |
+| `test/postural-adm.integration.mjs` | protocolo oficial somente leitura, um rascunho por protocolo, reordenação, **versão nova não muda avaliação em andamento**, termo versionado, retenção |
+
+Não coberto: cenários Playwright próprios do módulo, uso em aparelho real e o driver R2 contra o bucket
+(smoke manual em `api/scripts/r2-smoke.mjs`, que exige token no `.env`).
+
+Duas suítes antigas falham por motivo anterior ao módulo: `test/smoke.mjs` (o `fetch` do node não envia
+header `Origin` e o guard de CSRF recusa escrita sem `Origin` nem `Bearer`) e `test/tapago.integration.mjs`
+(402 do gate comercial, hoje deny-by-default, cuja fixture não cria assinatura paga).

@@ -26,6 +26,54 @@ export const AP = {
   stepMediaUrl: (stepId, kind) => API_BASE + '/api/avaliacao-postural/etapa-midia?step_id=' + encodeURIComponent(stepId) + '&kind=' + kind
 }
 
+// Operação do profissional. Namespace separado do administrativo de propósito: são duas áreas, com
+// permissões próprias no servidor. Quando o app reabrir para vários personais, estas telas saem do
+// painel administrativo sem que nada aqui mude.
+export const APV = {
+  fila: (p = {}) => api('/api/pro/avaliacoes?' + new URLSearchParams({ ...(p.status ? { status: p.status } : {}), ...(p.q ? { q: p.q } : {}), page: p.page || 0 })),
+  item: id => api('/api/pro/avaliacao?id=' + encodeURIComponent(id)),
+  solicitar: b => post('/api/pro/avaliacoes/solicitar', b),
+  etapa: b => post('/api/pro/avaliacao/etapa', b),
+  devolutiva: b => post('/api/pro/avaliacao/devolutiva', b),
+  publicar: id => post('/api/pro/avaliacao/publicar', { id }),
+  recaptura: id => post('/api/pro/avaliacao/recaptura', { id }),
+  cancelar: (id, reason) => post('/api/pro/avaliacao/cancelar', { id, reason }),
+  recorrencia: b => post('/api/pro/avaliacao/recorrencia', b),
+  recorrencias: () => api('/api/pro/avaliacao/recorrencias'),
+  mediaUrl: captureId => API_BASE + '/api/pro/avaliacao/media?id=' + encodeURIComponent(captureId)
+}
+
+// Governança: catálogo, versões, etapas, termo, indicadores, auditoria e retenção.
+export const APA = {
+  protocolos: () => api('/api/adm/avaliacao/protocolos'),
+  salvarProtocolo: b => post('/api/adm/avaliacao/protocolos', b),
+  duplicar: b => post('/api/adm/avaliacao/protocolos/duplicar', b),
+  novaVersao: protocol_id => post('/api/adm/avaliacao/versoes', { protocol_id }),
+  publicarVersao: (id, confirm_review) => post('/api/adm/avaliacao/versoes/publicar', { id, confirm_review }),
+  orientacoes: b => post('/api/adm/avaliacao/versoes/orientacoes', b),
+  etapas: versionId => api('/api/adm/avaliacao/etapas?version_id=' + encodeURIComponent(versionId)),
+  salvarEtapa: b => post('/api/adm/avaliacao/etapas', b),
+  ordenar: (version_id, order) => post('/api/adm/avaliacao/etapas/ordem', { version_id, order }),
+  removerEtapa: id => post('/api/adm/avaliacao/etapas/remover', { id }),
+  removerMidia: (id, kind) => post('/api/adm/avaliacao/etapas/midia/remover', { id, kind }),
+  stepMediaUrl: (stepId, kind) => API_BASE + '/api/adm/avaliacao/etapas/midia?step_id=' + encodeURIComponent(stepId) + '&kind=' + kind,
+  termos: () => api('/api/adm/avaliacao/termos'),
+  salvarTermo: b => post('/api/adm/avaliacao/termos', b),
+  metricas: () => api('/api/adm/avaliacao/metricas'),
+  auditoria: id => api('/api/adm/avaliacao/auditoria?id=' + encodeURIComponent(id)),
+  retencao: () => api('/api/adm/avaliacao/retencao'),
+  salvarRetencao: retencao_dias => post('/api/adm/avaliacao/retencao', { retencao_dias })
+}
+
+// envio da mídia demonstrativa do protocolo (corpo bruto, como uploadExMedia em lib/care.js)
+export async function uploadStepMedia(stepId, kind, file) {
+  const r = await fetch(API_BASE + '/api/adm/avaliacao/etapas/midia?step_id=' + encodeURIComponent(stepId) + '&kind=' + kind,
+    { method: 'POST', credentials: 'include', headers: { 'Content-Type': file.type || 'application/octet-stream' }, body: file })
+  const d = await r.json().catch(() => ({}))
+  if (!r.ok) throw Object.assign(new Error(d.error || 'Falha no envio'), { status: r.status, code: d.code })
+  return d
+}
+
 export const LIMITS = { foto: 8 * 1024 * 1024, video: 25 * 1024 * 1024 }
 export const ACCEPT = { foto: 'image/jpeg,image/png,image/webp', video: 'video/mp4,video/webm' }
 

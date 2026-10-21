@@ -18,14 +18,22 @@ self.addEventListener('push', e => {
     icon: 'icon-512.png',
     badge: 'icon-180.png',
     tag: data.tag || 'avagym',
-    renotify: true
+    renotify: true,
+    // V5-AP: o destino viaja no payload. Antes o clique só focava a janela, então um aviso de
+    // "devolutiva publicada" ou "nova avaliação" não levava a pessoa até a tela.
+    data: { url: data.url || data.link || null }
   }))
 })
 self.addEventListener('notificationclick', e => {
   e.notification.close()
+  // o app usa HashRouter: o caminho interno entra depois do #
+  const link = e.notification.data && e.notification.data.url
+  const target = link ? new URL('./#' + (String(link).startsWith('/') ? link : '/' + link), self.registration.scope).href : null
   e.waitUntil(self.clients.matchAll({ type: 'window' }).then(clients => {
     const c = clients.find(c => 'focus' in c)
-    return c ? c.focus() : self.clients.openWindow('./')
+    if (!c) return self.clients.openWindow(target || './')
+    if (target && 'navigate' in c) return c.navigate(target).then(w => (w || c).focus()).catch(() => c.focus())
+    return c.focus()
   }))
 })
 
