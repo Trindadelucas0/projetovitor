@@ -142,9 +142,61 @@ cd F:\projetovitor\projetovitor\app\api
 npm run create-admin -- --email novo.admin@exemplo.local --name "Nome" --generate
 ```
 
-O script recusa um e-mail que já exista — ele cria conta, não troca senha. Para trocar a senha de uma conta que já existe, use a recuperação de senha pela tela de login ou defina um novo hash bcrypt pelo banco, registrando o motivo. Em qualquer caminho, a senha nova não deve ser escrita em documentação, script versionado ou commit.
+O script recusa um e-mail que já exista — ele cria conta, não troca senha.
+
+Para trocar a senha de uma conta **que já existe**, a recuperação pela tela (`Esqueci minha senha`) envia o link por e-mail através do provedor configurado em `.env`. No ambiente local isso só funciona se o endereço da conta for uma caixa real que você receba: as contas de domínio `.local` ou de domínio sem caixa ativa não recebem nada, e a tela responde a mesma mensagem genérica de sucesso em todos os casos. Nesses casos, grave um novo hash bcrypt direto no banco local:
+
+```powershell
+cd F:\projetovitor\projetovitor\app\api
+$env:NOVA_SENHA = (Read-Host 'Nova senha (10+ caracteres)')
+node -e "import('./env.js').then(async()=>{const b=(await import('bcryptjs')).default;const{pool}=await import('./db/pool.js');const email='CONTA@EXEMPLO.LOCAL';const senha=process.env.NOVA_SENHA||'';if(senha.length<10)throw new Error('defina NOVA_SENHA com 10+ caracteres');const r=await pool.query('update users set password_hash=$2, token_version=coalesce(token_version,0)+1, must_change_password=false where lower(email)=lower($1) returning email,token_version',[email,await b.hash(senha,12)]);console.log(r.rowCount?('senha trocada: '+r.rows[0].email+' (token_version '+r.rows[0].token_version+')'):'conta nao encontrada');await pool.end()})"
+Remove-Item Env:NOVA_SENHA
+```
+
+Passe a senha pela variável `NOVA_SENHA` do terminal em vez de escrevê-la no comando, para não deixá-la no histórico. Em qualquer caminho, a senha nova não deve ser escrita em documentação, script versionado ou commit.
+
+Duas armadilhas ao mexer nessas rotinas pelo banco: a troca de senha precisa somar `token_version+1` para derrubar as sessões antigas, como faz `POST /api/auth/reset`; e, no Postgres, **um comando que falha dentro de uma transação aborta a transação inteira** — um `insert` acessório que dê erro faz o `commit` seguinte virar rollback e a senha não muda, sem nenhum aviso. Isole o que é acessório em `savepoint` e confira o `rowCount` do `update` antes de confiar no resultado.
+
+O lugar desta cópia para guardar credencial local é `CREDENCIAIS-LOCAL.txt` na raiz do repositório, já coberto pelo `.gitignore` (linha 24). Ele nunca deve ser versionado nem copiado para a VPS.
 
 **Divergência conhecida nesta cópia:** o `ADMIN_EMAIL` do `.env` não é o e-mail da conta `admin` que está no banco. Isso não impede o login pela tela, mas as rotinas que leem `ADMIN_EMAIL` — `api/scripts/iniciar-base-local.mjs`, por exemplo — não encontram a conta e param. Alinhe o `.env` ao banco antes de usar essas rotinas.
+
+## 9. Aluno de teste pedindo pagamento
+
+Conta de aluno recém-criada **não** tem assinatura nenhuma, e o `monetizationGate` em `api/access.js` nega por padrão: as áreas internas respondem `402` com `code: ACCESS_REQUIRED` e a tela manda para Planos e pagamento. Isso é regra de produto, não defeito — `monetizationOn()` devolve `true` fixo, e `ownSources()` só considera acesso vigente quando existe assinatura não gratuita, dentro do período, **com uma cobrança `paga`, de valor maior que zero, com `paid_at` preenchido e `provider <> 'simulado'`**. O simulador nunca vale como pagamento, de propósito.
+
+Então, para usar um aluno de teste localmente sem passar por checkout, o caminho não é mexer na regra: é criar o mesmo dado de teste que os testes de integração do projeto já criam. A fixture oficial é a função `paidAccess` em `api/test/postural.integration.mjs`, que insere a assinatura ativa e a cobrança paga com `provider = 'fixture'`:
+
+```sql
+-- assinatura ativa para o publico 'aluno' no plano individual
+insert into subscriptions(tenant_id, user_id, audience, plan_id, plan_version_id, status, payment_type,
+                          started_at, current_period_start, current_period_end)
+values ($tenant, $user, 'aluno', 'individual', $plan_version, 'ativa', 'card',
+        now(), now(), now() + interval '365 days')
+on conflict (user_id, audience) where status <> 'cancelada'
+do update set status='ativa', current_period_end = now() + interval '365 days';
+
+-- cobranca paga: provider <> 'simulado' e paid_at preenchido, que e o que ownSources() exige
+insert into billing_charges(tenant_id, subscription_id, user_id, provider, kind, payment_type,
+                            amount_cents, status, paid_at, period_start, period_end, idempotency_key)
+values ($tenant, $subscription, $user, 'fixture', 'primeira', 'card',
+        3990, 'paga', now(), now(), now() + interval '365 days', $chave_unica);
+```
+
+Confira o resultado pela própria API, que é onde a regra mora:
+
+```powershell
+# depois de logar como o aluno e guardar o cookie
+# GET /api/access/me deve trazer has: true e commercial_status: "ativa"
+```
+
+Antes da fixture, `GET /api/access/me` responde `has: false` e `commercial_status: "sem_assinatura"`, e `GET /api/guided/today` responde `402`. Depois, `has: true`, `commercial_status: "ativa"` e `200` nas rotas internas.
+
+Três limites que valem registrar:
+
+- Isto é **dado de teste do banco local**, com `provider = 'fixture'` justamente para não se confundir com pagamento real. Não reproduza em produção e não use `provider` de gateway de verdade para simular pagamento.
+- A regra de produto continua intacta: cada aluno paga a própria assinatura, e isenção de personal não libera o aluno. A fixture não altera código nem configuração — só cria a linha de assinatura e de cobrança daquela conta.
+- O **personal interno** é caso diferente: ele já tem acesso sem pagar, por `isInternalPersonal` (origem `personal_interno` em `accessOf`), e por isso a conta do personal principal não cai no `402`. Isso não se estende aos alunos dele.
 
 ## Verificações locais (opcional, depois de ligar)
 

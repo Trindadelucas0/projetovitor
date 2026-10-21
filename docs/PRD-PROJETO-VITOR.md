@@ -23,11 +23,11 @@ O produto pretendido é o aplicativo de um personal e seus alunos, sem marketpla
 
 | Jornada | O que foi encontrado | Critério para considerar pronta |
 |---|---|---|
-| Cadastro e assinatura | Cadastro de aluno, plano único e provedor InfinitePay têm implementação local; o banco local de uso ainda registra R$ 12,90 para `individual`, pois a migration 068 está pendente. Primeira cobrança real não foi confirmada ponta a ponta | Catálogo e preço de R$ 39,90 conciliados no ambiente alvo; cadastro, pagamento confirmado e liberação testados na mesma conta, sem acesso enquanto pendente |
+| Cadastro e assinatura | Cadastro de aluno, plano único e provedor InfinitePay têm implementação local. O catálogo do banco local já está conciliado: `individual` a **3990 centavos**, ativo e vendável, com `pro`, `pro_ilimitado` e `profissional_free` fora de venda. Primeira cobrança real não foi confirmada ponta a ponta | Cadastro, pagamento confirmado e liberação testados na mesma conta, sem acesso enquanto a cobrança estiver pendente |
 | Personal e fichas | Vínculo, construtor, agenda e vídeo estão no código; publicação completa pela interface não foi homologada | Personal publica ficha; aluno certo a recebe; ficha anterior permanece no histórico |
 | Execução e progresso | Telas e testes isolados existem; faltam cenários completos de navegador e aparelho | Treino concluído gera histórico e métricas coerentes, inclusive sem base anterior |
 | Comunidade e avaliação postural | Módulos locais existem; avaliação ainda não foi exercitada em aparelho real nem com armazenamento R2 real | Permissões, envio, revisão e devolutiva confirmados em ambiente configurado |
-| Base de uso e produção | Após limpeza local autorizada, a documentação oficial registra apenas o admin/personal principal e zero alunos; o banco ainda tem migrations pendentes. Publicação desta versão na VPS não foi confirmada | Esquema reconciliado com backup e jornada real verificada depois da publicação |
+| Base de uso e produção | Esquema do banco local **reconciliado**: as 72 migrations do repositório constam aplicadas, sem pendência, e as colunas de métrica (`sessions.origin`, `sessions.time_corrected_at`) existem. Restam duas falhas de configuração apontadas pelo verificador (ver §11). Publicação desta versão na VPS não foi confirmada | As duas falhas do verificador zeradas e jornada real verificada depois da publicação |
 
 **Identidade:** “Projeto Vitor” é o nome deste PRD. Interface, manifesto, documentos legais, domínio e identificadores internos ainda contêm a marca anterior. A troca visual e legal será uma entrega própria; este documento não a apresenta como concluída.
 
@@ -744,7 +744,7 @@ Para o R2: bucket **privado**, sem domínio personalizado e sem URL pública de 
 
 - `npm run migrate` (`api/db/migrate.js`) é idempotente — rodar duas vezes não duplica registro.
 - Toda migration tem `down` correspondente em `api/db/down/`.
-- `071_remover_grupos_desafios_ranking.sql` é **destrutiva**: apagar dados de grupos/desafios/ranking e suas concessões só com backup confirmado. Antes dela, `api/scripts/remover-midias-desafios.mjs` lista em modo seguro e, com confirmação explícita, remove os arquivos.
+- `071_remover_grupos_desafios_ranking.sql` é **destrutiva**: apaga dados de grupos/desafios/ranking e suas concessões. **Já aplicada no banco local**, após backup validado e com a prévia da rotina de mídias acusando zero arquivos. Em qualquer outro ambiente (VPS incluída), aplicar só com backup confirmado e rodando antes `api/scripts/remover-midias-desafios.mjs`, que lista em modo seguro e só remove arquivos com confirmação explícita.
 - Rollback do módulo postural: `072_down.sql` devolve `threads` e `legal_acceptances` aos CHECK anteriores e remove as sete tabelas. `pg_dump` validado antes, como em qualquer migration.
 - `068_down.sql` religa Individual a R$ 12,90 e os planos de personal; `069_down.sql` remove `personal_user_id`. Campanhas reescritas pela 068 **não** voltam ao plano antigo automaticamente — conferir cupons depois de uma volta.
 
@@ -783,9 +783,19 @@ Os itens abaixo são evidências históricas registradas nesta cópia, não nova
 - Cenários de navegador do cadastro em 4 etapas, do player de vídeo e da dúvida no exercício.
 - Publicação de ficha pelo personal ponta a ponta pela interface.
 - Primeira cobrança real de R$ 39,90 ponta a ponta na InfinitePay (prova operacional externa, não coberta por simulação).
-- Migration 071 preparada e **ainda não aplicada** em banco.
-- Publicação da 2.0.0/2.0.1 na VPS pendente.
-- No banco local de uso faltam `sessions.origin` e `sessions.time_corrected_at`: o histórico tem migrations recentes aplicadas sem todas as intermediárias. **Reconciliar o histórico e aplicar as migrations pertinentes, com backup, antes de disponibilizar o painel nesse ambiente.**
+- Publicação da 2.0.0/2.0.1 na VPS pendente: o esquema reconciliado abaixo vale para o banco local, **não** para a VPS, que precisa da mesma conferência com backup próprio.
+- **Duas falhas abertas de configuração do banco local**, apontadas pelo verificador (ver abaixo): o personal principal não tem papel `admin` e um aluno está sem plano de acesso.
+
+**Esquema do banco local — conferência de 21/10/2026**
+
+Conferência somente leitura no banco `avagym` (`localhost`), mais `npm run verificar:plano-unico`:
+
+- As **72 migrations** do repositório constam em `schema_migrations`; **nenhuma pendente**. A 071 (destrutiva) **já foi aplicada**: as tabelas de Grupos, Desafios, Ranking, prêmios e troféus não existem mais, e a prévia da rotina de mídias havia encontrado zero arquivos.
+- `sessions.origin` e `sessions.time_corrected_at` **existem** — a lacuna de esquema que bloqueava o painel de gestão está resolvida.
+- Catálogo conciliado: `individual` a 3990 centavos, ativo e vendável; `pro`, `pro_ilimitado` e `profissional_free` inativos e fora de venda; `aluno_free` preservado e com versão de plano.
+- `personal_user_id` definido e `personal_unico` ativo. `monetizacao_ativa=false` neste banco.
+- Duas linhas órfãs em `schema_migrations` (`034_resend_transactional.sql` e `068_dados_legais_ornygym.sql`) correspondem a arquivos renumerados no repositório. São inofensivas — o conteúdo atual consta aplicado sob os nomes novos —, mas não devem ser interpretadas como migrations existentes.
+- **17 de 19 conferências aprovadas.** As duas falhas: (1) o personal principal não tem papel `admin`, então a isenção de vaga e de limite de alunos **não** se aplica a ele (RN-P3 exige `personal_user_id` **e** papel `admin`); (2) um aluno está sem plano de acesso, pré-condição do vínculo. Ambas são configuração de dados do ambiente local, não defeito de código.
 - Na suíte isolada da API, uma asserção antiga e independente de recursos de boas-vindas continua falhando. No arquivo E2E completo, 4 cenários falham em fluxos de acesso/compartilhamento alheios ao recorte das últimas entregas.
 
 ---
@@ -804,9 +814,9 @@ Os itens abaixo são evidências históricas registradas nesta cópia, não nova
 
 | Risco | Impacto | Mitigação existente |
 |---|---|---|
-| Banco de uso com histórico de migrations incompleto | Painel e métricas sem esquema | API responde 503 com aviso em vez de métrica incompleta; reconciliação exigida antes de liberar |
-| Migration 071 destrutiva | Perda irreversível de dados de grupos/desafios | Exige backup confirmado; script de mídia roda em modo seguro antes |
-| Dependência de um único personal principal | Ambiente sem admin não vincula alunos | Cadastro continua funcionando; conferidor acusa a falta |
+| Histórico de migrations incompleto em outro ambiente | Painel e métricas sem esquema | API responde 503 com aviso em vez de métrica incompleta; banco local já reconciliado e conferido, VPS ainda não |
+| Migration 071 destrutiva | Perda irreversível de dados de grupos/desafios | Exige backup confirmado; script de mídia roda em modo seguro antes. Já aplicada no banco local; pendente na VPS |
+| Dependência de um único personal principal | Ambiente sem admin não vincula alunos; sem papel `admin` o principal perde a isenção de limite | Cadastro continua funcionando; `verificar:plano-unico` acusa a falta — hoje acusa exatamente isso no banco local |
 | Cobrança real nunca exercitada ponta a ponta | Primeira assinatura pode falhar em produção | Provedor `simulado` nos testes, reconciliação e diagnóstico no job; prova operacional pendente |
 | Mídia de saúde em nuvem | Exposição de dado sensível | Bucket privado, rota autorizada com reconferência, registro de acesso, retenção automática, 25 MB por vídeo |
 | Teto do plano gratuito do R2 (10 GB-mês) | Avaliações bloqueadas por armazenamento | Indicador de consumo com aviso a partir de 80% |

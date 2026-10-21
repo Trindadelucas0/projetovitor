@@ -1,6 +1,6 @@
 # Projeto Vitor — execução local
 
-Esta cópia trabalha no Windows em `F:\projetovitor\projetovitor`. Os comandos abaixo iniciam apenas o ambiente local; não publicam na VPS nem executam migrations.
+Esta cópia trabalha no Windows em `F:\projetovitor\projetovitor`. Os comandos abaixo iniciam apenas o ambiente local; não publicam na VPS nem executam migrations. Para o passo a passo detalhado, com conferência, contas de acesso e solução de problemas, veja [como ligar o sistema](../../docs/COMO-LIGAR-O-SISTEMA.md).
 
 ## Requisitos
 
