@@ -9,6 +9,7 @@ import { resolve as resolveEnt, checkLimitLocked, refreshUsage, capacitySummary 
 import bcrypt from 'bcryptjs'
 import crypto from 'node:crypto'
 import { likeTerm, likeEsc, pageNum } from './sqlsafe.js'
+import { applyWeekdaySchedule } from './workout-schema.js'
 const genPassword = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; let p; do { p = Array.from({ length: 14 }, () => A[crypto.randomInt(A.length)]).join('') } while (!/\d/.test(p) || !/[a-z]/.test(p) || !/[A-Z]/.test(p)); return p }
 
 const qs = req => new URL(req.url, 'http://x').searchParams
@@ -189,6 +190,31 @@ export function proRoutes({ json, readBody }) {
       p.exercises = (p.exercises || []).map(enrich)
       p.days = (p.days || []).map(d => ({ ...d, exercises: (d.exercises || []).map(enrich) }))
       json(res, 200, { plan: p })
+    },
+    'POST /api/plan/schedule': async (req, res) => {
+      const u = await requireAuth(req, res, json); if (!u) return
+      const b = await readBody(req)
+      if (!isUuid(b.plan_id)) return json(res, 400, { error: 'Ficha inválida', code: 'INVALID_INPUT' })
+      const db = await pool.connect()
+      let p, changed, before, after
+      try {
+        await db.query('begin')
+        // Ownership e tenant são conferidos na própria consulta bloqueada: conhecer
+        // o ID de outra ficha nunca autoriza visualizar nem alterar a agenda dela.
+        p = (await db.query(`select id,owner_id,student_id,title,days from pro_plans
+          where id=$1 and student_id=$2 and tenant_id=$3 and status='ativo' for update`, [b.plan_id, u.id, u.tenant_id])).rows[0]
+        if (!p) { await db.query('rollback'); return json(res, 404, { error: 'Ficha ativa não encontrada', code: 'NOT_FOUND' }) }
+        changed = applyWeekdaySchedule(p.days || [], b.days)
+        if (changed.error) { await db.query('rollback'); return json(res, 400, { error: changed.error, code: 'INVALID_SCHEDULE' }) }
+        before = (p.days || []).map((d, day_index) => ({ day_index, name: d.name, weekday: d.weekday ?? null }))
+        after = changed.days.map((d, day_index) => ({ day_index, name: d.name, weekday: d.weekday ?? null }))
+        await db.query('update pro_plans set days=$2,version=version+1,updated_at=now() where id=$1', [p.id, JSON.stringify(changed.days)])
+        await db.query('insert into pro_plan_history(plan_id,actor_id,action,before,after) values($1,$2,$3,$4,$5)', [p.id, u.id, 'agenda_alterada_pelo_aluno', JSON.stringify(before), JSON.stringify(after)])
+        await db.query('commit')
+      } catch (e) { await db.query('rollback').catch(() => {}); throw e } finally { db.release() }
+      await audit(u.tenant_id, u.id, 'treino.agenda_aluno', 'pro_plan', p.id, { before, after })
+      await notify(p.owner_id, 'plano', 'Agenda de treino alterada pelo aluno', p.title, '/admin/painel?tab=usuarios').catch(() => {})
+      json(res, 200, { ok: true, days: changed.days })
     },
     'GET /api/blocks': async (req, res) => {
       const u = await requireAuth(req, res, json); if (!u) return

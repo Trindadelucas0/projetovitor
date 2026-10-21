@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { calendarWeeks, saoPauloDay } from '../stats-calendar.js'
+import { changePct } from '../stats.js'
 import { welcomeResources } from '../welcome-features.js'
 test('fuso usa o dia anterior antes da meia-noite de São Paulo', () => {
   assert.equal(saoPauloDay(new Date('2026-10-19T01:30:00Z')), '2026-10-18')
@@ -13,6 +14,11 @@ test('semanas vazias e bordas parciais entram no denominador', () => {
 test('tudo cobre desde o primeiro treino; vazio mostra semana atual', () => {
   assert.equal(calendarWeeks([],0,'2026-09-28','2026-10-17').length,3)
   assert.deepEqual(calendarWeeks([],0,null,'2026-10-17'),[{wk:'2026-10-12',n:0,vol:0,secs:0}])
+})
+test('comparação percentual não inventa variação sem base anterior', () => {
+  assert.equal(changePct(12, 10), 20)
+  assert.equal(changePct(8, 10), -20)
+  assert.equal(changePct(3, 0), null)
 })
 test('agradecimento respeita plano, verificação e aluno de personal', () => {
   const features={programas_guiados:true,progresso:true,ranking:true,construtor_treino:true,fichas_publicas:true,convidar_alunos:true}

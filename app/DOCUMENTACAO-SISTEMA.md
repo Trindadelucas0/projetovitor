@@ -1,7 +1,191 @@
 # ORNY — Documentação do sistema
 
-Fonte oficial de comportamento. Versão frontend: 1.9.1; API: 1.9.0. Atualização: 20/10/2026 — guia visual interativo de instalação na landing.
+Fonte oficial de comportamento. Versão frontend: 2.0.1; API: 2.0.1. Atualização: 21/10/2026 — Progresso e Estatísticas com comparações objetivas.
 O inventário em `docs/INVENTARIO-FUNCIONAL.md` preserva o levantamento histórico e seus limites de validação; este documento consolida os fluxos atualizados.
+
+## Progresso e Estatísticas detalhadas — versão 2.0.1 (21/10/2026)
+
+**Progresso** é o resumo da situação atual. A primeira seção mostra a meta semanal, quantos treinos faltam e os totais de treino, tempo e volume da semana comparados à semana anterior. Destaques de 30 dias aparecem somente quando há base real: recorde superado, evolução positiva de 1RM estimado ou grupo muscular com séries efetivas. A tela mantém #TáPago, acesso às Estatísticas, Corpo 3D quando permitido, três treinos recentes e troféus; registros antigos saem do resumo e continuam disponíveis nas rotas históricas.
+
+**Estatísticas detalhadas** mantém os períodos de 7, 30, 90, 180 e 365 dias ou todo o histórico. Para períodos fechados, compara treinos, volume, tempo e dias ativos com o intervalo imediatamente anterior de igual tamanho. Sem valor anterior, mostra **Sem base anterior** e não fabrica percentual; **Tudo** não possui comparação. O gráfico principal alterna Frequência, Volume e Tempo. Força por exercício apresenta melhor, primeira e última marca do recorte e a variação percentual. Distribuição muscular e consistência permanecem, com a explicação dos cálculos recolhida sob demanda.
+
+As comparações usam exclusivamente sessões válidas para métricas: concluídas, não anuladas, não legadas e sem correção manual de tempo. 1RM continua sendo uma estimativa pela fórmula de Epley em séries de 1 a 12 repetições; a interface informa que não se trata de teste de força máxima. Aluno com escopo do personal continua sem distribuição muscular e Corpo 3D. Erro de consulta mantém **Tentar novamente**.
+
+Contrato: `GET /api/guided/stats?dias=` acrescenta `comparison.previous` e `comparison.change_pct`; para `dias=0`, `comparison` é `null`. Os demais campos permanecem compatíveis. Onde olhar no código: cálculo em `api/stats.js`; resumo em `frontend/src/views/guided/Progress.jsx`; análise em `frontend/src/views/guided/Estatisticas.jsx`; apresentação responsiva em `frontend/src/views/guided/lote7.css`.
+
+Validação local: build de produção aprovado; 322 testes unitários do frontend aprovados; oito cenários Playwright aprovados em 320, 390, 768 e 1280 pixels, nos temas claro e escuro, cobrindo diretamente Progresso e Estatísticas. O teste unitário novo do comparativo passou; uma asserção antiga e independente de recursos de boas-vindas continua falhando na suíte isolada da API. No arquivo E2E completo, 13 cenários passaram e quatro falharam em fluxos de acesso/compartilhamento alheios ao redesenho; o recorte visual desta entrega passou integralmente. Nenhum deploy ou alteração no banco de produção foi realizado.
+
+## App do personal — plano único e painel 2.0.0 (21/10/2026)
+
+O ORNY passou a ser o app de **um personal e seus alunos**. O aluno treina no app; quem
+atende é o administrador do ambiente, chamado aqui de **personal**. Não existe mais uma
+terceira área para profissional entrar.
+
+### Plano único
+
+Há **um** plano à venda: `individual`, nome **ORNY**, **R$ 39,90 por mês**, audiência
+aluno, cobrado no app pelo provedor ativo (InfinitePay: cartão ou Pix). O bloqueio
+comercial não mudou: só assinatura paga e confirmada libera treinos, progresso e
+comunidade; o checkout e a gestão da conta continuam abertos sem pagamento.
+
+Os planos `pro` (Personal 15), `pro_ilimitado` (Personal Ilimitado) e `profissional_free`
+ficaram `active=false, sellable=false`. Nada foi apagado: versões, assinaturas e cobranças
+anteriores permanecem consultáveis. O plano `aluno_free` **continua existindo**, inativo e
+nunca vendável, porque é o estado interno de "conta sem plano ainda" (`FREE_PLAN` em
+`api/entitlements.js`); removê-lo quebra a criação de conta. Cupons e campanhas que
+apontavam para planos de profissional passaram a valer para o plano único.
+
+`GET /api/billing/pro-summary` responde **HTTP 410 `GONE`**: não há assinatura de
+profissional para gerir.
+
+### Cadastro só de aluno
+
+O cadastro público tem **4 etapas** (Acesso, Seus dados, Assinatura, Confirmação). Saiu a
+escolha "Quero treinar / Sou profissional" e saiu o campo de código do personal — com um
+personal só, ele não tem uso. O servidor ignora qualquer `intent` enviado por app antigo
+em cache e **nunca** cria o papel `profissional` pelo cadastro. Um anúncio antigo com
+`?perfil=profissional` cai no cadastro de aluno.
+
+A landing pública fala com uma pessoa só: o seletor de perfil e a página de benefícios do
+profissional saíram.
+
+### O aluno já nasce vinculado ao personal
+
+A migration `069_personal_do_tenant.sql` grava em `app_settings` a chave
+`personal_user_id` (o administrador mais antigo do ambiente), cria o perfil profissional
+dele com `state='ativo'` e o plano de acesso `personal_unico` (um personal responsável).
+
+No cadastro público e no cadastro pelo painel, o aluno recebe o plano de acesso e é
+vinculado ao personal automaticamente. Falha no vínculo **não** desfaz o cadastro: a conta
+existe e o personal pode vincular em Convites.
+
+O personal é isento de vaga e de limite de alunos ativos. A isenção exige as **duas**
+condições — estar marcado em `personal_user_id` **e** ter o papel `admin`. Um segundo
+profissional, no dia em que o app abrir para vários personais, continua sujeito ao limite.
+
+### Painel do personal
+
+A central administrativa virou o painel do personal, com cinco grupos: **Meus alunos**
+(Alunos, Convites, Dúvidas e atendimentos), **Treinos** (Modelos de ficha, Exercícios e
+vídeos, Programas), **Comunidade** (Publicações e moderação, Grupos e desafios, Ranking,
+Campanha #TáPago), **Assinaturas** (Cobrança, Assinaturas, Monetização) e **Sistema** (Meu
+perfil de personal, Dados da empresa, Privacidade e termos, Logs, Configurações).
+
+Saíram do menu as telas de marketplace — Profissionais e verificação, Limites de
+acompanhamento e Solicitações de vagas. Os componentes continuam no projeto, e as abas
+antigas redirecionam para Alunos em vez de abrir tela vazia.
+
+**Meu perfil de personal** edita nome de exibição, foto, apresentação, especialidades,
+modalidades e registro profissional, reusando `GET /api/pro/dashboard` e
+`POST /api/pro/profile`. O registro fica guardado como **informado**; o app não consulta o
+conselho e não exibe selo de conferido sem conferência.
+
+O que o personal publica na Comunidade sai com **o nome e a foto do perfil dele**, não como
+"Equipe ORNY". Outro administrador continua institucional. Só o personal cria publicações;
+o aluno comenta e pode publicar o card #TáPago do próprio treino.
+
+Em **Novo aluno**, o painel cria apenas conta de aluno. Criar a conta não libera o acesso:
+o aluno contrata a assinatura.
+
+### Dia da semana na ficha
+
+Cada dia da ficha aceita um dia da semana (Domingo a Sábado) ou **Livre**. Dois treinos no
+mesmo dia da semana são recusados na tela e no servidor, com os nomes dos dois no aviso —
+sem isso o "treino de hoje" ficaria ambíguo. Fichas antigas ficam com todos os dias Livre;
+nenhum registro é reescrito.
+
+No Início do aluno, quando um dia está marcado para hoje (fuso America/Sao_Paulo), é esse
+treino que aparece. Sem nada marcado para hoje, continua a sequência por sessões
+concluídas, como antes.
+
+O aluno também pode abrir **Treinos → Organizar semana** e trocar os dias da própria ficha.
+Essa ação altera somente a agenda: exercícios, séries, cargas, vídeos e orientações do
+personal permanecem intactos. A API exige que a ficha esteja ativa, pertença ao aluno e ao
+mesmo ambiente; a alteração entra no histórico e avisa o personal. Um mesmo dia da semana
+não pode receber dois treinos. Mesmo com agenda definida, o aluno pode abrir qualquer
+Treino A/B manualmente; uma sessão já em andamento precisa ser concluída antes da troca.
+
+### Vídeo do personal no exercício
+
+Cada exercício da ficha aceita **um vídeo do personal** (`video_url`). Três tipos, com
+capacidades diferentes, ditas na tela:
+
+- **YouTube** (recomendado, vídeo não listado): toca dentro do app, com pausa, −10 s/+10 s,
+  barra de posição e velocidade 0,5× / 0,75× / 1×.
+- **Arquivo enviado** em Exercícios e vídeos (`/api/media?f=…`, vídeo até 60 MB): mesmo
+  controle, no próprio servidor.
+- **Outro endereço https** (ex.: Instagram): abre **fora** do app, sem controle de
+  velocidade. A tela avisa; não há player falso.
+
+Link de canal, playlist ou busca do YouTube é recusado — não é um vídeo. A regra é a mesma
+na tela (`frontend/src/lib/video.js`) e no servidor (`api/workout-schema.js · videoKind`).
+Exercício sem vídeo continua mostrando a imagem padrão. Vídeo removido ou privado no
+YouTube aparece como indisponível, com a imagem como alternativa; o app não recupera isso
+sozinho.
+
+### Dúvida no exercício
+
+Junto do vídeo há **Tenho uma dúvida neste vídeo**, que abre a mesma folha de dúvida já
+existente com o exercício preenchido e oferece avisar o trecho (ex.: "dúvida no vídeo, em
+0:12"). O trecho vai no texto da mensagem; não há coluna nova no banco. A dúvida **não**
+pausa o exercício — dor e desconforto continuam pausando até a orientação do personal. A
+dúvida chega em **Dúvidas e atendimentos**; sem personal configurado, cai na fila
+administrativa, como antes.
+
+### Como usar
+
+1. **Aluno:** criar conta (4 etapas) → contratar o plano de R$ 39,90 → pagar → o acesso
+   libera na confirmação. A ficha do personal aparece em Treinos.
+2. **Personal:** painel → **Alunos** → abrir o aluno → **Nova ficha** → nomear os dias e
+   marcar o dia da semana → adicionar exercícios → colar o vídeo em cada um →
+   **Enviar para aluno**. A ficha anterior é arquivada automaticamente.
+3. **Aluno:** **Treinos → Organizar semana** → escolher um dia para cada Treino A/B →
+   **Salvar agenda**. Para alternar só naquele momento, basta tocar no Treino A/B desejado.
+4. **Personal:** painel → **Sistema → Meu perfil de personal** para o que o aluno vê.
+5. **Aluno no treino:** abrir o exercício, usar 0,5× e −10 s para entender o movimento e
+   **Tenho uma dúvida neste vídeo** se precisar.
+6. **Personal:** painel → **Dúvidas e atendimentos** para responder.
+
+Onde olhar no código: migrations `068_plano_unico.sql` e `069_personal_do_tenant.sql`;
+catálogo em `api/billing/routes.js` (`CATALOG`) e `frontend/src/views/billing/PlansShowcase.jsx`
+(`SELLABLE`); cadastro em `api/auth.js` e `frontend/src/views/Login.jsx`; vínculo e isenção
+em `api/pro.js` (`tenantPersonalId`, `isTenantPersonal`, `linkFailures`, `createLink`,
+`linkToTenantPersonal`); shells em `frontend/src/App.jsx` e `frontend/src/lib/accounts.js`;
+painel em `frontend/src/views/admin/AdminApp.jsx`; autoria na comunidade em
+`api/community.js`; ficha em `api/workout-schema.js` e
+`frontend/src/views/builder/WorkoutBuilder.jsx`; treino de hoje em `api/stats.js`
+(`nextSessionOf`); agenda do aluno em `api/pro.js` (`POST /api/plan/schedule`) e
+`frontend/src/views/app/Treinos.jsx`; vídeo em `frontend/src/lib/video.js`,
+`frontend/src/components/ExercisePlayer.jsx` e `frontend/src/views/guided/Train.jsx`;
+dúvida em `frontend/src/views/app/Acompanhamento.jsx` (`AskSheet`).
+
+### Validação desta versão
+
+Executado e aprovado localmente: **322 testes unitários do frontend**, **build de produção**
+do frontend e **10 testes da API** do formato da ficha
+(`api/test/ficha-dias-video.test.mjs`: dia da semana, agenda editável pelo aluno sem mudar
+exercícios, conflitos de dias, tipos de vídeo e vídeo opcional). Verificação de sintaxe nos
+módulos alterados da API.
+
+**Não executado, portanto não homologado:**
+
+- As migrations 068 e 069 **não foram aplicadas em nenhum banco**. A senha do `.env` não
+  autentica no PostgreSQL local desta máquina (`28P01`), então nem o banco isolado de
+  teste foi criado. Aplicar primeiro num banco isolado, duas vezes, para conferir
+  idempotência, e conferir o resultado com
+  `DB_NAME=<banco> npm run verificar:plano-unico` (somente leitura, em
+  `api/scripts/verificar-plano-unico.mjs`).
+
+As voltas estão em `api/db/down/068_down.sql` (religa Individual a R$ 12,90 e os planos de
+personal) e `069_down.sql` (remove a chave `personal_user_id`). A 069 não desativa perfis
+profissionais nem desatribui planos de acesso de propósito: desatribuir deixaria alunos sem
+plano de acesso e impediria qualquer vínculo. Campanhas reescritas pela 068 não voltam ao
+plano antigo automaticamente — conferir os cupons depois de uma volta.
+- Cenários de navegador (Playwright) do cadastro em 4 etapas, do player e da dúvida.
+- Vínculo automático, isenção de limite e publicação de ficha pelo personal: dependem do
+  banco e seguem pendentes.
+- A primeira cobrança real de R$ 39,90 ponta a ponta na InfinitePay continua sendo prova
+  operacional externa, não coberta por teste simulado.
 
 ## Cadastro e entrada — correção visual 1.8.1 (20/10/2026)
 
@@ -310,6 +494,7 @@ Conferir que esperar na preparação não cria sessão; campos vazios/negativos 
 O início utiliza `startRemote`, que preserva a autorização existente e a continuidade offline. Nenhuma alteração de permissão ou banco nesta versão.
 
 ## Histórico
+- 2.0.0 (21/10/2026): plano único de R$ 39,90, cadastro só de aluno, central administrativa convertida em painel do personal, aluno vinculado automaticamente, dia da semana na ficha, vídeo do personal por exercício com velocidade e dúvida no próprio exercício. Migrations 068 e 069 ainda não aplicadas em banco.
 - 1.9.0 (20/10/2026): publicação opcional e confirmada do card #TáPago na Comunidade, vinculada à sessão concluída e limitada a uma por treino.
 - 1.7.9 (19/10/2026): validade insere `/` após o mês; erro de permissão de tokenização Asaas recebe mensagem operacional clara, com encaminhamento para habilitação da conta.
 - 1.7.8 (19/10/2026): footer completo e responsivo na landing pública, com marca, atalhos internos, acesso e documentos legais separados; sem alteração de cadastro, planos ou API.

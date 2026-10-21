@@ -1,6 +1,6 @@
 {
   "name": "gym-api",
-  "version": "1.9.0",
+  "version": "2.0.1",
   "private": true,
   "type": "module",
   "main": "server.js",
@@ -11,6 +11,9 @@
     "test:email:integration": "node --test test/email-integration.test.mjs",
     "email:previews": "node scripts/email-previews.mjs",
     "migrate": "node db/migrate.js",
+    "verificar:plano-unico": "node scripts/verificar-plano-unico.mjs",
+    "test:plano-unico": "node --test test/ficha-dias-video.test.mjs",
+    "test:plano-unico:integration": "node test/plano-unico.integration.mjs",
     "dev": "node server.js",
     "create-admin": "node scripts/create-admin.mjs",
     "zerar-dados": "node scripts/zerar-dados.mjs",

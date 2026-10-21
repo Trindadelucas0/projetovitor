@@ -5,6 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
+import { r2Driver } from './r2.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 // QA: avatares (area publica) ficam dentro do DATA_DIR (persistente e no backup), nao mais em api/uploads/pub.
@@ -34,8 +35,9 @@ export const uploadFile = name => locate(UPLOADS_DIR, LEGACY_UPLOADS_DIR, name)
 export const proDocFile = name => locate(PRO_DOCS_DIR, LEGACY_PRO_DOCS_DIR, name)
 export const PRIVATE_DIR = process.env.STORAGE_LOCAL_PRIVATE_DIR || path.join(process.env.DATA_DIR || path.join(HERE, '..', 'data'), 'private-media')
 const AREAS = ['public', 'private']
-export const validKey = k => typeof k === 'string' && /^[a-z0-9][a-z0-9_\-/]{0,150}\.(jpg|png|webp)$/i.test(k) && !k.includes('..') && !k.includes('//')
-export const MIME = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }
+// V5-AP: vídeo entrou por causa da avaliação postural; a chave subiu para 200 porque passou a incluir o id da avaliação.
+export const validKey = k => typeof k === 'string' && /^[a-z0-9][a-z0-9_\-/]{0,200}\.(jpg|png|webp|mp4|webm)$/i.test(k) && !k.includes('..') && !k.includes('//')
+export const MIME = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', mp4: 'video/mp4', webm: 'video/webm' }
 export const mimeOf = key => MIME[String(key).split('.').pop().toLowerCase()] || 'application/octet-stream'
 
 function secret() {
@@ -60,6 +62,22 @@ function localDriver() {
       const old = area === 'public' ? path.join(LEGACY_PUBLIC_DIR, ...key.split('/')) : null   // QA: pasta antiga como reserva durante a migracao
       return old && fs.existsSync(old) ? fs.readFileSync(old) : null },
     async delete(area, key) { check(area, key); fs.rmSync(file(area, key), { force: true }) },
+    // faixa de bytes: serve vídeo com Range e lê os primeiros bytes na conferência de assinatura do arquivo
+    async getRange(area, key, start, end) {
+      check(area, key); const f = file(area, key)
+      if (!fs.existsSync(f)) return null
+      const total = fs.statSync(f).size, to = Math.min(end, total - 1), len = Math.max(0, to - start + 1)
+      const buf = Buffer.alloc(len), fd = fs.openSync(f, 'r')
+      try { if (len) fs.readSync(fd, buf, 0, len, start) } finally { fs.closeSync(fd) }
+      return { buf, status: 206, contentRange: `bytes ${start}-${to}/${total}`, totalBytes: total }
+    },
+    async head(area, key) {
+      check(area, key); const f = file(area, key)
+      if (!fs.existsSync(f)) return null
+      return { bytes: fs.statSync(f).size, mime: mimeOf(key), etag: null }
+    },
+    // local não tem URL pré-assinada: devolve null e quem chamou usa a rota de upload da própria API
+    presignPut() { return null },
     async signedUrl(area, key, ttlSec = 300) {
       check(area, key)
       if (area === 'public') return '/api/media/pub?k=' + key
@@ -68,10 +86,7 @@ function localDriver() {
     },
   }
 }
-function r2Driver() {
-  const need = ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET_PUBLIC', 'R2_BUCKET_PRIVATE'].filter(k => !process.env[k])
-  const fail = async () => { throw new Error('Driver R2 ainda não implementado' + (need.length ? ' (faltam: ' + need.join(', ') + ')' : '') + '. Use STORAGE_DRIVER=local.') }
-  return { name: 'r2', put: fail, get: fail, delete: fail, signedUrl: fail }
-}
 let driver = null
+// V5-AP: o driver R2 saiu do estado de rascunho e vive em ./r2.js (API S3, SigV4 à mão).
+// O padrão continua local — em desenvolvimento e nos testes nada deve depender de rede.
 export function storage() { if (!driver) driver = (process.env.STORAGE_DRIVER || 'local') === 'r2' ? r2Driver() : localDriver(); return driver }

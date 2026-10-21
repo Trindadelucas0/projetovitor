@@ -17,6 +17,9 @@ import { communityWorkoutRoutes } from './community-workout-post.js';
 import { communityEditorialRoutes } from './community-editorial.js';
 import { socialRoutes } from './social.js';
 import { tapagoRoutes } from './tapago.js';
+import { posturalRoutes } from './postural.js';
+import { posturalProRoutes } from './postural-pro.js';
+import { posturalAdminRoutes } from './postural-adm.js';
 import { rankingRoutes } from './ranking.js';
 import { lgpdRoutes, termsStatus } from './lgpd.js';
 import { legalRoutes } from './legal.js';
@@ -412,6 +415,9 @@ Object.assign(routes, communityWorkoutRoutes({ json, readBody }));  // publicaç
 Object.assign(routes, communityEditorialRoutes({ json, readBody }));  // calendário oficial da Comunidade
 Object.assign(routes, socialRoutes({ json, readBody }));  // V5 E1: perfil social, foto, seguidores, cartões #TáPago
 Object.assign(routes, tapagoRoutes({ json, readBody }));  // #TáPago 2.0: editor, campanha e recompensa de 30 dias
+Object.assign(routes, posturalRoutes({ json, readBody }));  // Avaliação Postural: wizard do aluno, capturas privadas e devolutiva
+Object.assign(routes, posturalProRoutes({ json, readBody }));  // Avaliação Postural: fila do profissional, análise por etapa, recaptura e recorrência
+Object.assign(routes, posturalAdminRoutes({ json, readBody }));  // Avaliação Postural: catálogo, versões, termo, indicadores e retenção
 Object.assign(routes, lgpdRoutes({ json, readBody, legacyState: readState, legacyErase: uid => { eraseStatePg(uid).catch(() => {}); try { fs.unlinkSync(stateFile(uid)) } catch {} db.users = db.users.filter(x => x.id !== uid); saveDb() } }));
 Object.assign(routes, legalRoutes({ json, readBody }));  // dados da empresa + aceite dos documentos legais
 Object.assign(routes, rankingRoutes({ json, readBody }));
@@ -462,6 +468,11 @@ const RL_RULES = {
   'POST /api/uploads': [30, 10 * 60e3], 'POST /api/me/avatar': [20, 60 * 60e3], 'POST /api/challenges/media': [30, 10 * 60e3],
   'POST /api/challenges/media/stream': [30, 10 * 60e3], 'POST /api/challenges/posts': [30, 10 * 60e3], 'POST /api/challenges/posts/comment': [60, 10 * 60e3],
   'POST /api/challenges/proofs': [30, 60 * 60e3], 'POST /api/pro/verification/document': [20, 60 * 60e3],
+  // Avaliacao postural: 18 etapas com retentativa por arquivo, entao o teto do upload e generoso de proposito
+  'POST /api/avaliacao-postural/captura/init': [200, 60 * 60e3], 'POST /api/avaliacao-postural/captura/upload': [120, 60 * 60e3],
+  'POST /api/avaliacao-postural/captura/confirm': [120, 60 * 60e3], 'POST /api/avaliacao-postural/submit': [20, 60 * 60e3],
+  'POST /api/avaliacao-postural/duvida': [40, 60 * 60e3], 'POST /api/pro/avaliacoes/solicitar': [60, 60 * 60e3],
+  'POST /api/adm/avaliacao/etapas/midia': [60, 60 * 60e3],
   'GET /api/social/handle-check': [120, 60e3],
   // V5 monetizacao: cupom (validacao/resgate), cartao e checkout por sessao
   'POST /api/billing/coupon/validate': [30, 10 * 60e3], 'POST /api/billing/coupon/redeem': [10, 60 * 60e3], 'POST /api/billing/cards': [10, 60 * 60e3],

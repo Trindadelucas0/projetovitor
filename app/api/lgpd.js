@@ -29,13 +29,20 @@ async function userColumns() {
     join information_schema.referential_constraints rc on rc.constraint_name=tc.constraint_name and rc.constraint_schema=tc.table_schema
     where tc.constraint_type='FOREIGN KEY' and ccu.table_name='users' and ccu.column_name='id' and tc.table_schema='public' order by 1,2`)).rows
 }
-const SENSITIVE = /password_hash|token_hash/
+// V5-AP: chaves de storage e token de upload nunca saem na exportação — buildExport varre TODA tabela com
+// FK para users(id), e sem isto ele devolveria o caminho interno das fotos corporais.
+const SENSITIVE = /password_hash|token_hash|media_key|upload_token|reference_media_key|demo_media_key/
 // tabelas de dados pessoais apagadas na exclusão; o restante (atendimento, publicações, auditoria) é mantido vinculado à conta anonimizada
 const PERSONAL = new Set(['post_likes', 'follows', 'notifications', 'ranking_prefs', 'ranking_pref_history', 'password_resets', 'user_access_plans', 'body_goals',
   // V5 (segurança/LGPD): identidade social, avatar, seguidores e curtidas em comentários
   'social_profiles', 'user_avatar', 'social_follows', 'comment_likes',
   // V5: contato e endereco
-  'user_contact'])
+  'user_contact',
+  ])
+// V5-AP: 'posture_captures' NAO entra em PERSONAL de proposito. O laco abaixo apaga por QUALQUER coluna com
+// FK para users(id), e nessa tabela a unica coluna assim e reviewed_by — excluir a conta de um PROFISSIONAL
+// apagaria as capturas corporais dos alunos que ele revisou. O titular das capturas chega pela avaliacao
+// (posture_assessments.student_id), entao a exclusao dele e feita explicitamente em anonymizeUser.
 
 // V5: arquivos de mídia do titular — avatar (storage) e uploads referenciados como /api/media?f=<nome> em colunas *url*
 import { UPLOADS_DIR, LEGACY_UPLOADS_DIR } from './storage/index.js'   // QA BUG-013
@@ -52,6 +59,13 @@ async function purgeMedia(uid) {
       try { fs.rmSync(path.join(UPLOADS_DIR, name), { force: true }); fs.rmSync(path.join(LEGACY_UPLOADS_DIR, name), { force: true }); files++ } catch {}
     }
   }
+  // V5-AP: a varredura acima só enxerga a pasta pública e colunas *url* com /api/media?f=. A mídia corporal
+  // da avaliação postural vive na ÁREA PRIVADA (disco ou R2) e é referenciada por media_key — sem este
+  // bloco, as fotos e vídeos do titular continuariam no armazenamento depois da exclusão.
+  const keys = (await q(`select c.media_key from posture_captures c
+    join posture_assessments a on a.id = c.assessment_id
+    where a.student_id = $1 and c.media_key is not null`, [uid]).catch(() => ({ rows: [] }))).rows
+  for (const { media_key } of keys) await storage().delete('private', media_key).then(() => files++).catch(() => {})
   return files
 }
 
@@ -81,6 +95,11 @@ export async function anonymizeUser(uid) {
   await q('update social_handles set user_id=null where user_id=$1', [uid]).catch(() => {})   // V5: @ continua reservado, sem vínculo com a pessoa
   await q(`update posts set status='removido', image_url=null where author_id=$1`, [uid]).catch(() => {})
   await q(`update coach_students set status='encerrado', ended_at=now(), end_reason='conta excluída' where (student_id=$1 or coach_id=$1) and status='ativo'`, [uid]).catch(() => {})
+  // V5-AP: as capturas corporais do titular saem pela avaliação (é lá que mora student_id). Os arquivos já
+  // foram apagados em purgeMedia; aqui vão as linhas. A avaliação e os eventos ficam, vinculados à conta
+  // anonimizada, como o resto do atendimento — e sem nenhuma mídia.
+  removed.posture_captures = (await q(`delete from posture_captures c using posture_assessments a
+    where a.id = c.assessment_id and a.student_id = $1`, [uid]).catch(() => ({ rowCount: 0 }))).rowCount
   await q(`update professional_profiles set state='encerrado', can_publish=false where user_id=$1`, [uid]).catch(() => {})
   return removed
 }

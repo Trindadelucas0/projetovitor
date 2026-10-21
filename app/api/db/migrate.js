@@ -12,6 +12,7 @@ import { GROUPS, PT, parseLabel, slug } from './muscles-pt.js'
 import { EQUIPMENT, EXERCISES, PROGRAMS } from './seed-data.js'
 import { PROGRAMS2, OVERRIDES, MEDIA, INSTR } from './seed-programs.js'
 import { syncOfficialPrograms } from './official-programs.js'
+import { syncPosturalProtocol } from './postural-protocol.js'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const DB = process.env.DB_NAME || 'avagym'
@@ -130,10 +131,12 @@ async function seed(c) {
   await c.query(`insert into program_equipment(program_id, equipment_id, required) select p.id, e, true from programs p, unnest(p.equipment) e where e is not null and exists (select 1 from equipment q where q.id = e) on conflict do nothing`)
   await c.query('begin')
   let official
-  try { official = await syncOfficialPrograms(c); await c.query('commit') }
+  let postural
+  try { official = await syncOfficialPrograms(c); postural = await syncPosturalProtocol(c); await c.query('commit') }
   catch (e) { await c.query('rollback'); throw e }
   const counts = (await c.query(`select (select count(*) from muscles) m, (select count(*) from exercises) e, (select count(*) from programs) p`)).rows[0]
   console.log(`seed ok: ${counts.m} músculos, ${counts.e} exercícios, ${counts.p} programas (${official.total} oficiais ORNY)`)
+  console.log(`avaliação postural: ${postural.protocols} protocolo(s), ${postural.versions} versão(ões) nova(s), ${postural.steps} etapa(s)` + (postural.review ? ` — ${postural.review} etapa(s) aguardando validação do profissional` : ''))
   if (adminPass) console.log(`ADMIN CRIADO: ${email}`)
   else if (!+(await c.query(`select count(*) from user_roles where role_id='admin'`)).rows[0].count) console.log('nenhum administrador: rode npm run create-admin')
 }

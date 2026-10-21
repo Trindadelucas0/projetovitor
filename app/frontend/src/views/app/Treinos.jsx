@@ -12,13 +12,14 @@ import { C, P } from '../../lib/care.js'
 import { PlanHistory } from '../v3/V42.jsx'
 import { validTab, normTab } from '../../lib/start.js'
 import { glyphOf } from '../../lib/glyphs.js'
-import { Empty, Err } from './kit.jsx'
+import { Empty, Err, Sheet } from './kit.jsx'
 import { ResumeBar, useLive } from '../v3/StartHub.jsx'
 import '../guided/guided.css'
 import { detachSystem, detachPro } from '../../components/ActiveTraining.jsx'
 import { AT } from '../../lib/active.js'
-import { ask, notifyError } from '../../lib/dialog.js'
+import { ask, notify, notifyError } from '../../lib/dialog.js'
 const NO_ROUTINES = []
+const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
 export const Li = ({ icon, t, s, to, onClick, testid, badge }) => { const nav = useNavigate()
   return <button className="g-li" onClick={onClick || (() => nav(to))} data-testid={testid}>
@@ -30,6 +31,7 @@ export default function Treinos() {
   const routines = useStore(s => s.S?.routines || NO_ROUTINES)
   const live = useLive()
   const [st, setSt] = useState(null), [care, setCare] = useState(null), [n, setN] = useState(0), [at, setAt] = useState(null)
+  const [schedule, setSchedule] = useState(null), [scheduleBusy, setScheduleBusy] = useState(false), [scheduleError, setScheduleError] = useState('')
   useEffect(() => { AT.get().then(setAt).catch(() => {}) }, [n])
   // V4.1: ficha não ativa → confirma e ativa (o programa do sistema fica pausado, sem apagar), depois inicia
   const startPlan = async (p, url) => {
@@ -52,6 +54,16 @@ export default function Treinos() {
   const otherPlans = plans.filter(p => p.id !== activePlan?.id)
   const reload = () => setN(x => x + 1)
   const startLabel = live ? 'Continuar treino' : 'Começar treino'
+  const openSchedule = p => { setSchedule({ planId: p.id, days: p.days.map((d, day_index) => ({ day_index, name: d.name, weekday: d.weekday ?? '' })) }); setScheduleError('') }
+  const saveSchedule = async () => {
+    if (!schedule || scheduleBusy) return
+    setScheduleBusy(true); setScheduleError('')
+    try {
+      const r = await C.schedulePlan(schedule.planId, schedule.days.map(({ day_index, weekday }) => ({ day_index, weekday: weekday === '' ? null : +weekday })))
+      setCare(old => ({ ...old, plans: old.plans.map(p => p.id === schedule.planId ? { ...p, days: r.days } : p) }))
+      setSchedule(null); notify('Agenda semanal salva. Os exercícios da ficha não foram alterados.')
+    } catch (e) { setScheduleError(e.message || 'Não foi possível salvar a agenda.') } finally { setScheduleBusy(false) }
+  }
 
   return <div className="ag tr-page" data-testid="treinos">
     <span className="g-eyebrow">Treinos</span><h1 style={{ marginTop: 2 }}>Seus treinos</h1>
@@ -67,8 +79,12 @@ export default function Treinos() {
           {activePlan.description && <p className="g-sm" data-testid="plan-description">{activePlan.description}</p>}
           <section data-testid="tab-profissionais"><div data-testid="pro-plan">
           {activePlan.days?.length > 1
-            ? <div className="tr-days">{activePlan.days.map((d, i) => <button key={i} className="g-btn" disabled={!!live} onClick={() => startPlan(activePlan, `/treinar?plan=${activePlan.id}&day=${i}`)} data-testid="plan-day"><Icon name="play" /> {d.name} · {d.exercises.length}</button>)}</div>
+            ? <div className="tr-days">{activePlan.days.map((d, i) => <button key={i} className="g-btn" disabled={!!live} onClick={() => startPlan(activePlan, `/treinar?plan=${activePlan.id}&day=${i}`)} data-testid="plan-day"><Icon name="play" /> {d.name} · {d.weekday == null ? 'Livre' : WEEKDAYS[+d.weekday]} · {d.exercises.length}</button>)}</div>
             : <button className="g-btn g-xl tr-start" onClick={() => live ? nav(live.to) : startPlan(activePlan, '/treinar?plan=' + activePlan.id)} data-testid="plan-start"><Icon name="play" /> {startLabel}</button>}
+          {activePlan.days?.length > 1 && <>
+            <p className="g-xs g-mut" style={{ marginTop: 8 }}>Você pode começar qualquer Treino A/B agora ou organizar em quais dias cada um aparece como treino de hoje.</p>
+            <button className="g-btn g-ghost" disabled={!!live} onClick={() => openSchedule(activePlan)} data-testid="edit-week-schedule"><Icon name="calendar" /> Organizar semana</button>
+          </>}
           </div></section>
           <p className="g-xs g-mut" data-testid="pro-locked">{at.can_detach ? 'É o seu único treino ativo. Para usar um programa do sistema, desvincule a ficha (ela fica no histórico).' : 'É o seu único treino ativo. Sua conta é coberta pelo personal; os programas do sistema ficam travados.'}</p>
           {at.paused_program && <p className="g-xs g-mut" data-testid="paused-program">Programa pausado: {at.paused_program.title} (a ficha do personal tem prioridade).</p>}
@@ -116,6 +132,14 @@ export default function Treinos() {
           </div>)}</>}
           <Li icon="chart" t="Histórico de treinos" s="Sessões feitas e versões anteriores" to="/history" /></div>
       </section>
+      {schedule && <Sheet title="Organizar semana" onClose={() => { if (!scheduleBusy) setSchedule(null) }}>
+        <section data-testid="week-schedule-dialog">
+          <p className="g-mut g-sm">Troque apenas os dias. Exercícios, séries e orientações continuam como o personal montou.</p>
+          {schedule.days.map((d, i) => <label className="g-field" key={d.day_index}><span>{d.name}</span><select className="g-in" value={d.weekday} disabled={scheduleBusy} onChange={e => setSchedule(s => ({ ...s, days: s.days.map((x, k) => k === i ? { ...x, weekday: e.target.value } : x) }))} data-testid="schedule-weekday"><option value="">Livre — escolho quando treinar</option>{WEEKDAYS.map((name, weekday) => <option key={name} value={weekday}>{name}</option>)}</select></label>)}
+          {scheduleError && <p className="g-warn" role="alert">{scheduleError}</p>}
+          <div className="g-actions"><button className="g-btn g-ghost" disabled={scheduleBusy} onClick={() => setSchedule(null)}>Cancelar</button><button className="g-btn" disabled={scheduleBusy} onClick={saveSchedule} data-testid="save-week-schedule">{scheduleBusy ? 'Salvando…' : 'Salvar agenda'}</button></div>
+        </section>
+      </Sheet>}
     </>}
   </div>
 }

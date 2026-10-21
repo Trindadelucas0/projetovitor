@@ -11,6 +11,7 @@ import { isScopedClient } from './accounts-v42.js'
 const TZ = `'America/Sao_Paulo'`
 export const PERIODS = [7, 30, 90, 180, 365, 0]
 export const e1rm = (w, r) => (w > 0 && r >= 1 && r <= 12) ? Math.round(w * (1 + r / 30) * 10) / 10 : null
+export const changePct = (current, previous) => previous > 0 ? Math.round((current - previous) / previous * 100) : null
 const qs = req => new URL(req.url, 'http://x').searchParams
 
 // meta semanal: dias do programa ativo > resposta do questionario > 3
@@ -24,7 +25,11 @@ export async function statsOf(u, dias) {
   const per = `and s.started_at<=now() and (s.started_at at time zone ${TZ})::date <= $4::date ` + (dias ? `and (s.started_at at time zone ${TZ})::date >= $4::date - ($3::int - 1)` : `and $3::int >= 0`)
   const P = [u.id, u.tenant_id, dias || 0, today]
   const base = `from sessions s where s.user_id=$1 and s.tenant_id=$2 and ${countsInMetrics('s')} ${per}`
-  const [k, weeks, dow, days, groups, exs, firstAt, target] = await Promise.all([
+  const previous = dias ? q(`select count(*)::int n, coalesce(sum(s.volume_kg),0)::float vol, coalesce(sum(s.duration_sec),0)::int secs,
+      count(distinct (s.started_at at time zone ${TZ})::date)::int active_days
+      from sessions s where s.user_id=$1 and s.tenant_id=$2 and ${countsInMetrics('s')} and s.started_at<=now()
+      and (s.started_at at time zone ${TZ})::date between $4::date - ($3::int * 2 - 1) and $4::date - $3::int`, P) : Promise.resolve({ rows: [] })
+  const [k, weeks, dow, days, groups, exs, firstAt, target, prev] = await Promise.all([
     q(`select count(*)::int n, coalesce(sum(s.volume_kg),0)::float vol, coalesce(sum(s.duration_sec),0)::int secs, coalesce(avg(nullif(s.duration_sec,0)),0)::int avg_secs,
         count(distinct (s.started_at at time zone ${TZ})::date)::int active_days, coalesce(sum(s.sets_count),0)::int sets ${base}`, P),
     q(`select date_trunc('week', s.started_at at time zone ${TZ})::date::text wk, count(*)::int n, coalesce(sum(s.volume_kg),0)::float vol, coalesce(sum(s.duration_sec),0)::int secs ${base} group by 1 order by 1`, P),
@@ -39,7 +44,7 @@ export async function statsOf(u, dias) {
         from session_sets ss join sessions s on s.id=ss.session_id join exercises e on e.id=ss.exercise_id
         where s.user_id=$1 and s.tenant_id=$2 and ${countsInMetrics('s')} ${per} and ss.removed_at is null group by 1,2,3 order by 3`, P),
     q(`select ((min(s.started_at) at time zone ${TZ})::date)::text first ${base}`, P),
-    weeklyTarget(u)
+    weeklyTarget(u), previous
   ])
   // carga por exercicio: os 8 com mais series no periodo, serie diaria de carga maxima e 1RM estimado
   const byEx = new Map()
@@ -58,9 +63,14 @@ export async function statsOf(u, dias) {
   const nWeeks = fullWeeks.length
   const hit = fullWeeks.filter(w => w.n >= target).length
   const kk = k.rows[0]
+  const pk = prev.rows[0] || null
   return {
     period_days: dias, target_per_week: target,
     kpis: { ...kk, records_count: recs.filter(r => r.improved && inPeriod(r)).length, per_week: Math.round(kk.n / nWeeks * 10) / 10, weeks: nWeeks, weeks_hit: hit, consistency_pct: Math.round(hit / nWeeks * 100), avg_volume: kk.n ? Math.round(kk.vol / kk.n) : 0 },
+    comparison: pk ? {
+      previous: pk,
+      change_pct: { n: changePct(kk.n, pk.n), vol: changePct(kk.vol, pk.vol), secs: changePct(kk.secs, pk.secs), active_days: changePct(kk.active_days, pk.active_days) }
+    } : null,
     weeks: fullWeeks, days: days.rows, weekdays: [1, 2, 3, 4, 5, 6, 7].map(d => ({ dow: d, n: dow.rows.find(x => x.dow === d)?.n || 0 })),
     groups: isScopedClient(u) ? [] : groups.rows.map(g => ({ group_id: g.group_id, sets: Math.round(g.sets * 10) / 10, vol: Math.round(g.vol) })),
     exercises, records

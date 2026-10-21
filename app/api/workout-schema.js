@@ -36,6 +36,28 @@ export function normDays(days) {
   }))
 }
 export const WEEKDAYS_PT = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+// Agenda editável pelo aluno: altera somente o dia da semana de cada bloco e
+// preserva exercícios, orientações e autoria da ficha. O índice é validado para
+// impedir que um payload incompleto crie/remova dias da prescrição.
+export function applyWeekdaySchedule(days, assignments) {
+  if (!Array.isArray(days) || !Array.isArray(assignments) || assignments.length !== days.length) {
+    return { error: 'Envie a agenda completa da ficha.' }
+  }
+  const seen = new Map(), next = days.map((day, index) => {
+    const item = assignments.find(x => +x.day_index === index)
+    if (!item || (item.weekday !== null && item.weekday !== '' && (!Number.isInteger(+item.weekday) || +item.weekday < 0 || +item.weekday > 6))) return null
+    const weekday = item.weekday === null || item.weekday === '' ? null : +item.weekday
+    if (weekday != null) {
+      if (seen.has(weekday)) return { clash: `${WEEKDAYS_PT[weekday]} está em dois treinos (${seen.get(weekday)} e ${day.name || `Treino ${index + 1}`}). Escolha outro dia ou deixe um deles como Livre.` }
+      seen.set(weekday, day.name || `Treino ${index + 1}`)
+    }
+    return { ...day, weekday }
+  })
+  const invalid = next.find(x => x === null || x?.clash)
+  if (invalid?.clash) return { error: invalid.clash }
+  if (invalid === null) return { error: 'A agenda contém um dia inválido.' }
+  return { days: next }
+}
 // Vídeo do personal no exercício: YouTube (player dentro do app, com velocidade e
 // posição), arquivo enviado para o próprio servidor, ou outro endereço https, que abre
 // fora do app. Reconhecer o tipo aqui mantém uma regra só para a tela e para a API.

@@ -2,7 +2,7 @@
 // Só o formato da ficha (sem banco): node --test test/ficha-dias-video.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { normDays, shapeProblems, videoKind } from '../workout-schema.js'
+import { applyWeekdaySchedule, normDays, shapeProblems, videoKind } from '../workout-schema.js'
 
 const ex = (over = {}) => ({ exercise_id: 'supino', name: 'Supino', sets: 3, reps: '10-12', rest_sec: 60, ...over })
 
@@ -42,6 +42,20 @@ test('vários dias Livre não entram em conflito', () => {
     { name: 'C', weekday: 3, exercises: [ex()] },
   ]))
   assert.deepEqual(p, [])
+})
+
+test('aluno troca somente a agenda e preserva os exercícios da ficha', () => {
+  const original = normDays([{ name: 'Treino A', weekday: 1, exercises: [ex()] }, { name: 'Treino B', weekday: 3, exercises: [ex({ name: 'Remada' })] }])
+  const r = applyWeekdaySchedule(original, [{ day_index: 0, weekday: 5 }, { day_index: 1, weekday: null }])
+  assert.equal(r.error, undefined)
+  assert.deepEqual(r.days.map(d => d.weekday), [5, null])
+  assert.deepEqual(r.days.map(d => d.exercises), original.map(d => d.exercises))
+})
+
+test('agenda do aluno recusa dia repetido e payload incompleto', () => {
+  const original = normDays([{ name: 'Treino A', exercises: [ex()] }, { name: 'Treino B', exercises: [ex()] }])
+  assert.match(applyWeekdaySchedule(original, [{ day_index: 0, weekday: 2 }, { day_index: 1, weekday: 2 }]).error, /Terça.*Treino A.*Treino B/)
+  assert.match(applyWeekdaySchedule(original, [{ day_index: 0, weekday: 2 }]).error, /agenda completa/i)
 })
 
 test('vídeo: reconhece YouTube, arquivo enviado e endereço externo', () => {

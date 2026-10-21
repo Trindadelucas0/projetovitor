@@ -73,3 +73,65 @@ ORIGIN=https://ornygym.avadesk.com.br
 ```
 
 O AVAGYM cria um checkout individual por contratação ou renovação e envia automaticamente o webhook `https://ornygym.avadesk.com.br/api/billing/webhook/infinitepay`. Não cadastrar nem documentar segredo de webhook fictício: o backend confirma `order_nsu`, transação, slug e valor pela API `payment_check` antes de liberar acesso. O Asaas permanece configurado apenas para conciliação do legado. Rollback lógico: restaurar `BILLING_PROVIDER=asaas`, reiniciar `avagym-api --update-env` e preservar as cobranças InfinitePay para auditoria.
+
+## Publicação 2.0.0 — plano único e painel do personal (21/10/2026)
+
+Esta entrega muda **catálogo de planos, cadastro, papéis e menu do painel**. Duas migrations
+aditivas (`068_plano_unico.sql`, `069_personal_do_tenant.sql`) e nenhuma remoção de dados.
+Voltas em `app/api/db/down/068_down.sql` e `069_down.sql`.
+
+### Antes de publicar
+- [ ] Rodar as duas migrations **num banco isolado primeiro**, duas vezes (idempotência), e conferir:
+      `DB_NAME=orny_plano_unico node db/migrate.js && DB_NAME=orny_plano_unico npm run verificar:plano-unico`
+- [ ] Confirmar **quem é o personal**: a 069 elege o administrador mais antigo e ativo do ambiente.
+      Se não for o Vitor, corrigir a chave depois de aplicar (comando abaixo) — a isenção de
+      limite e o vínculo automático dependem dela.
+- [ ] Confirmar que o preço 3990 é o desejado: ele sai da migration, não de tela.
+
+### Aplicar (depois do backup do roteiro padrão acima)
+```bash
+cd /opt/avagym/app/api && node db/migrate.js --no-seed
+DB_NAME=avagym npm run verificar:plano-unico      # somente leitura; precisa fechar sem falha
+cd ../frontend && npm ci && npx vite build
+pm2 restart avagym-api avagym-web --update-env && pm2 save
+```
+
+Trocar o personal do ambiente, se a eleição automática pegou a conta errada:
+```bash
+docker exec -i avagym-postgres psql -U avagym -d avagym -c \
+  "update app_settings set value = to_jsonb('<uuid-do-personal>'::text), updated_at=now() where key='personal_user_id'"
+```
+Depois, garantir o perfil profissional ativo dele (a 069 faz isso só para quem ela elegeu):
+reaplicar a 069 não resolve, pois ela é idempotente pela chave — criar/ativar o perfil pelo
+painel em **Sistema → Meu perfil de personal**, que grava `professional_profiles`.
+
+### Smoke test desta entrega
+```bash
+U=https://ornygym.avadesk.com.br
+curl -s $U/api/public/plans | grep -o '"id":"[^"]*"'          # só individual
+curl -s $U/api/public/plans | grep -o '"price_cents":[0-9]*'  # 3990
+curl -s -o /dev/null -w '%{http_code}\n' $U/api/billing/pro-summary   # 401 sem login; 410 logado
+```
+Na interface, conferindo em 390 px e no desktop:
+- [ ] `/precos` mostra **um** cartão, R$ 39,90, sem seletor aluno/personal
+- [ ] Cadastro em **4 etapas**, sem a pergunta "Quero treinar / Sou profissional"
+- [ ] Conta nova **sem pagar**: Treinos, Comunidade e Progresso continuam bloqueados *(tem de falhar)*
+- [ ] Conta nova aparece sozinha em **Meus alunos → Alunos**, com vínculo "Sim"
+- [ ] Painel sem Profissionais e verificação, Limites de acompanhamento e Solicitações de vagas;
+      `?tab=profissionais` redireciona para Alunos
+- [ ] **Sistema → Meu perfil de personal** salva; publicação na Comunidade sai com nome e foto do personal
+- [ ] Ficha com um dia marcado em **Segunda**: no Início do aluno, na segunda, abre esse treino
+- [ ] Dois dias no mesmo dia da semana: **recusado** com os dois nomes na mensagem *(tem de falhar)*
+- [ ] Exercício com vídeo do YouTube: toca no app, 0,5× funciona, −10 s/+10 s funcionam
+- [ ] **Tenho uma dúvida neste vídeo**: chega em Dúvidas e atendimentos com o exercício e o trecho,
+      e o exercício **não** fica pausado
+
+### Riscos conhecidos
+| Risco | O que acontece | O que fazer |
+|---|---|---|
+| `aluno_free` apagado por engano | criar conta para de funcionar (`ensureSubscription`) | a 068 preserva; nunca remover esse registro |
+| 069 elege o admin errado | vínculo automático liga alunos à conta errada | corrigir a chave e conferir `verificar:plano-unico` |
+| Nenhum admin ativo no ambiente | sem `personal_user_id`: cadastro funciona, mas sem vínculo automático | criar o admin e reaplicar a 069 |
+| Conta legada com papel `profissional` | entra como aluno; `/pro` leva ao treino | esperado; nada a fazer |
+| Vídeo do YouTube removido/privado | aluno vê "indisponível" + imagem do exercício | trocar o link na ficha |
+| Cupom apontava para plano de personal | a 068 reaponta para `individual` | revisar Cobrança → cupons depois de publicar |

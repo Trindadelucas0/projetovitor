@@ -89,6 +89,14 @@ async function record(u, document, version, req, granted = true) {
   await q('insert into legal_acceptances(tenant_id,user_id,document,version,granted,ip,user_agent) values($1,$2,$3,$4,$5,$6,$7)',
     [u.tenant_id, u.id, document, version, granted, ip(req), String(req.headers['user-agent'] || '').slice(0, 200)])
 }
+// V5-AP: a avaliação postural registra consentimento específico (e a autorização separada de divulgação) no
+// mesmo registro central. Exportado para o módulo não escrever LGPD por conta própria.
+export const recordAcceptance = (u, document, version, req, granted = true) => record(u, document, version, req, granted)
+export async function healthConsentOf(userId) {
+  const r = await q(`select granted from legal_acceptances where user_id=$1 and document='consentimento_saude' order by accepted_at desc limit 1`, [userId])
+  return r.rows[0] ? r.rows[0].granted : null
+}
+export const docVersionOf = async tenantId => (await getCompany(tenantId)).doc_version
 
 export function legalRoutes({ json, readBody }) {
   return {

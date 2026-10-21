@@ -119,6 +119,10 @@ export const ROUTE_RULES = {
   'POST /api/pro/prescriptions': { audience: 'profissional', feature: 'prescrever' },
   'POST /api/pro/plans': { audience: 'profissional', feature: 'prescrever' },
   'POST /api/pro/invites': { audience: 'profissional', feature: 'convidar_alunos' },
+  // Avaliacao postural: solicitar e um ato de prescricao, mesmo recurso de plano da ficha.
+  // Hoje fica inerte porque o personal e o admin do tenant (migration 069) e admin nunca e barrado;
+  // volta a valer sozinho quando o app reabrir para varios profissionais.
+  'POST /api/pro/avaliacoes/solicitar': { audience: 'profissional', feature: 'prescrever' },
   'POST /api/invites/accept': { audience: 'aluno', feature: 'receber_ficha_profissional' },
   // V5 billing: publicar programa/ficha publica na biblioteca e recurso dos planos PRO pagos (so vale com monetizacao_ativa=true)
   'POST /api/pro/programs/submit': { audience: 'profissional', feature: 'fichas_publicas', whenMonetized: true },

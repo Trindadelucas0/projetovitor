@@ -19,7 +19,12 @@ export const ALWAYS_ALLOWED = [
   /^[A-Z]+ \/api\/(config|health|cep|activity)$/, /^GET \/api\/media(\/pub|\/private)?$/, /^[A-Z]+ \/api\/notification-prefs$/, /^[A-Z]+ \/api\/notifications(\/read)?$/,
   /^[A-Z]+ \/api\/push\/(public-key|subscribe|unsubscribe)$/, /^[A-Z]+ \/api\/social\/(profile|handle-check)$/,
   /^[A-Z]+ \/api\/access\//, /^GET \/api\/referral\/me$/, /^[A-Z]+ \/api\/invites\/(view|accept|decline)$/, /^POST \/api\/guided\/onboarding$/,
-  /^[A-Z]+ \/api\/pro\/(verification|verification\/document|profile|partner)$/, /^[A-Z]+ \/api\/verification\/document$/, /^GET \/api\/convite$/
+  /^[A-Z]+ \/api\/pro\/(verification|verification\/document|profile|partner)$/, /^[A-Z]+ \/api\/verification\/document$/, /^GET \/api\/convite$/,
+  // Avaliacao postural: concluir um ciclo JA consentido continua liberado mesmo se o acesso cair no meio.
+  // Decisao consciente: deixar foto corporal pendurada em limbo e pior que o prejuizo comercial de um ciclo -
+  // o dado pessoal sensivel ficaria no aparelho do aluno, sem chegar ao profissional nem poder ser apagado.
+  // Comecar avaliacao nova continua exigindo acesso (as outras rotas do modulo nao estao aqui).
+  /^POST \/api\/avaliacao-postural\/(submit|captura\/(upload|confirm))$/
 ]
 export const isAlwaysAllowed = key => ALWAYS_ALLOWED.some(r => r.test(key))
 

@@ -2,7 +2,7 @@
 import { api } from './api.js'
 const post = (p, b) => api(p, { method: 'POST', body: JSON.stringify(b || {}) })
 export const C = {
-  care: () => api('/api/care'), plan: id => api('/api/plan?id=' + id), blocks: () => api('/api/blocks'),
+  care: () => api('/api/care'), plan: id => api('/api/plan?id=' + id), schedulePlan: (plan_id, days) => post('/api/plan/schedule', { plan_id, days }), blocks: () => api('/api/blocks'),
   occurrence: b => post('/api/occurrences', b), newThread: b => post('/api/threads', b), thread: id => api('/api/thread?id=' + id), send: (thread_id, body) => post('/api/messages', { thread_id, body }),
   notifications: () => api('/api/notifications'), readAll: () => post('/api/notifications/read', {}),
   pros: area => api('/api/professionals' + (area ? '?area=' + encodeURIComponent(area) : '')), pro: id => api('/api/professional?id=' + id),

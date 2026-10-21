@@ -1,10 +1,61 @@
-# Guia diário do administrador — ORNY
+# Guia diário do personal — ORNY
 
 Fonte oficial: [documentação do sistema](../app/DOCUMENTACAO-SISTEMA.md). Este guia descreve o uso, sem substituir as regras da fonte oficial.
 
+## O que é o app (21/10/2026)
+
+O ORNY é o app de **um personal e seus alunos**. O aluno treina no app; você atende pelo
+**painel do personal** (a antiga central administrativa). Não existe mais uma área
+separada para profissional entrar, nem cadastro público de personal.
+
+Há **um plano**: R$ 39,90 por mês, do aluno, pago no app por cartão ou Pix. O aluno só
+acessa treinos, progresso e comunidade depois do pagamento confirmado.
+
+### Seu dia a dia no painel
+
+1. **Meus alunos → Alunos**: quem é seu aluno, a situação da assinatura e o vínculo. Use
+   **+ Novo aluno** para cadastrar alguém você mesmo; ele recebe uma senha temporária e
+   contrata a assinatura no primeiro acesso.
+2. **Nova ficha** (no aluno): nomeie os dias, marque o **dia da semana** de cada um
+   (ou deixe **Livre**), adicione os exercícios da biblioteca, preencha séries,
+   repetições, carga e descanso, cole **o seu vídeo** em cada exercício e toque em
+   **Enviar para aluno**. A ficha anterior dele vai para o histórico automaticamente.
+3. **Treinos → Exercícios e vídeos**: envie seus vídeos para reusar nas fichas.
+4. **Meus alunos → Dúvidas e atendimentos**: responda as dúvidas e os relatos. Dor e
+   desconforto deixam o exercício pausado até a sua orientação; dúvida não pausa o treino.
+5. **Sistema → Meu perfil de personal**: nome, foto, apresentação, especialidades e
+   registro. É o que o aluno vê na comunidade e nas fichas.
+6. **Comunidade → Publicações**: só você cria publicações, e elas saem com o seu nome e a
+   sua foto. O aluno comenta e pode publicar o card do treino dele.
+
+### Aluno: organizar Treino A/B na semana
+
+1. Abra **Treinos** e, na ficha ativa, toque em **Organizar semana**.
+2. Escolha o dia de cada Treino A/B ou deixe como **Livre**.
+3. Toque em **Salvar agenda**. Não é permitido colocar dois treinos no mesmo dia.
+4. Para alternar apenas o treino que fará agora, toque diretamente no Treino A/B desejado;
+   isso não muda a agenda dos próximos dias.
+
+O aluno altera somente os dias. Exercícios, séries, orientações e vídeos continuam sob a
+responsabilidade do personal. Durante um treino já iniciado, a agenda fica bloqueada até a
+sessão ser concluída.
+
+### Sobre o vídeo do exercício
+
+- **YouTube** (recomendado, vídeo **não listado**): toca dentro do app, e o aluno pode
+  pausar, voltar 10 s, avançar 10 s e reduzir para 0,75× ou 0,5×.
+- **Vídeo que você enviou** em Exercícios e vídeos: mesmo controle.
+- **Link do Instagram ou outro site**: abre **fora** do app e **não** tem controle de
+  velocidade. Use só quando não houver alternativa.
+- Link de canal ou playlist não é aceito: cole o link direto do vídeo.
+- Se você apagar o vídeo no YouTube ou deixá-lo privado, o aluno vê "indisponível" e a
+  imagem padrão do exercício. Não volta sozinho.
+
 ## Criar conta e concluir os documentos
 
-1. Escolha um plano pago e disponível para continuar o cadastro. Se recebeu um código do personal, abra **Tenho código do meu personal** e informe-o. Não existe mais a opção **Decidir depois**; após criar a conta, conclua a contratação por cartão de crédito. O acesso só começa depois da confirmação do pagamento.
+1. O cadastro tem 4 etapas: Acesso, Seus dados, Assinatura e Confirmação. É preciso
+   contratar o plano para criar a conta; depois de criá-la, conclua o pagamento por cartão
+   ou Pix. O acesso só começa depois da confirmação do pagamento.
 2. Na tela de documentos, marque os aceites obrigatórios e toque em **Continuar**. Se aparecer **Aguardando dados da empresa**, o administrador deve completar os campos informados em **Sistema → Dados da empresa** e salvar; depois, recarregue a tela para continuar.
 
 ## Aluno: Início, programas e evolução
@@ -13,8 +64,8 @@ Fonte oficial: [documentação do sistema](../app/DOCUMENTACAO-SISTEMA.md). Este
 2. Confira os cartões de sequência, volume, tempo e recordes. O mapa informa os músculos do próximo treino. Preparar este treino abre o dia mostrado; para uma ficha com vários dias, você também pode escolher o dia em Treinos.
 3. Antes de iniciar uma nova sessão, confira os pesos e toque em Confirmar pesos e iniciar treino. Só então o cronômetro começa. Finalize as séries e conclua o treino para atualizar o progresso.
 4. Em Programas, combine Objetivo, Nível e Local. O catálogo oficial oferece ganho de massa, emagrecimento, força, condicionamento, mobilidade e bem-estar e treino em casa nos níveis Iniciante, Intermediário e Avançado. Os cartões mostram semanas, frequência, duração e equipamentos. Abra o programa para conferir Como evoluir.
-5. Em Progresso, abra Estatísticas detalhadas e escolha o período. Volume, frequência, tempo e cargas usam treinos válidos; semanas vazias entram como zero. A consistência usa sua meta atual e inclui semanas parciais no período. A primeira carga é a base; recorde exige superar uma marca anterior.
-6. Se aparecer cadeado no catálogo ou em outra área interna, abra **Ver planos**, escolha o plano e conclua o pagamento. Em produção, somente uma cobrança real confirmada libera o sistema; plano escolhido, teste, cortesia ou pagamento pendente não liberam. A cobertura pelo personal exige plano PRO pago e confirmado, e mantém as fichas e recursos incluídos para o aluno.
+5. Em **Progresso**, confira quantos treinos faltam para a meta da semana, a comparação de tempo e volume com a semana anterior e os destaques reais dos últimos 30 dias. Use **Estatísticas detalhadas** para escolher o período e alternar o gráfico entre Frequência, Volume e Tempo. A comparação usa o período anterior de igual duração; **Sem base anterior** significa que ainda não há dados suficientes. Abra as explicações somente quando quiser consultar o cálculo de 1RM, séries efetivas ou consistência.
+6. Se aparecer cadeado no catálogo ou em outra área interna, abra **Ver planos** e conclua o pagamento do plano de R$ 39,90. Em produção, somente uma cobrança real confirmada libera o sistema; plano escolhido, teste, cortesia ou pagamento pendente não liberam.
 7. Depois da confirmação do pagamento, use **Encontrar minha ficha**. Se necessário, responda objetivo, nível, local, equipamentos e disponibilidade. Confira a opção **Mais indicado** e toque em **Ativar treino recomendado**; a ficha só passa para Meu treino depois da sua confirmação.
 8. Abra o sino para consultar as notificações em português. Mensagens escritas pelo seu profissional mantêm a redação original. Se uma consulta falhar, use Tentar novamente.
 
@@ -26,16 +77,15 @@ As fichas antigas de teste não aparecem para novas adesões após a migration 0
 
 1. Entre com uma conta administradora e abra Visão geral.
 2. Escolha Últimos 7, 30 ou 90 dias. Cadastros e treinos mudam conforme o período. Vínculos, assinaturas e vagas mostram a situação atual.
-3. Use Atenção necessária para abrir contas, verificação profissional, solicitações de vagas ou atendimentos. Os atalhos de atendimentos abrem a fila para consulta e filtro existentes.
-4. Em Pessoas → Contas, o acesso acompanha automaticamente pagamento confirmado e vigente, ou cobertura por um personal com PRO pago. Testes e concessões não liberam as áreas internas em produção.
+3. Use Atenção necessária para abrir contas ou atendimentos. Os atalhos de atendimentos abrem a fila para consulta e filtro existentes.
+4. Em Meus alunos → Alunos, o acesso acompanha automaticamente o pagamento confirmado e vigente. Testes e concessões não liberam as áreas internas em produção.
 5. Use Suspensões de acesso somente em caso excepcional. Para suspender, informe o motivo; para devolver o uso, clique em Reativar. Nenhum dado ou pagamento é apagado.
-6. Em Profissionais e verificação, os registros profissionais são cadastrais e não bloqueiam o uso do PRO. Vagas extras continuam exigindo motivo e validade.
-7. Em Assinaturas, gerencie plano, pagamento e recursos. Em Limites de acompanhamento, defina quantos profissionais podem atender o aluno.
-8. Em Vínculos e convites, acompanhe os relacionamentos e convites. O profissional convida e o aluno aceita; pedidos antigos de vínculo ficam em Solicitações de vagas → Histórico.
-9. Programas guiados fica em Treinos e conteúdo. Modelos de treino e Biblioteca e mídia continuam separados.
-10. Publicações/moderação, grupos/desafios e privacidade/termos estão agrupados em abas. As funções atuais continuam disponíveis.
+6. Em Assinaturas, acompanhe plano, pagamento e recursos do aluno. Você é o personal do app e não tem limite de alunos.
+7. Em Convites, acompanhe os convites enviados. Todo aluno que se cadastra já entra vinculado a você; o convite serve para casos manuais.
+8. Programas fica em Treinos. Modelos de ficha e Exercícios e vídeos continuam separados.
+9. Publicações/moderação, grupos/desafios e privacidade/termos estão agrupados em abas. As funções atuais continuam disponíveis.
 
-Nos gráficos, passe sobre os pontos ou abra Ver valores por dia. Base anterior zero deixa a variação indisponível. Sem limite significa profissional ilimitado, separado do total de vagas finitas. Se falhar o carregamento, use Tentar novamente; Atualizar busca uma nova apuração.
+Nos gráficos, passe sobre os pontos ou abra Ver valores por dia. Base anterior zero deixa a variação indisponível. Se falhar o carregamento, use Tentar novamente; Atualizar busca uma nova apuração.
 
 Os registros usados na validação são de uma base isolada. A entrega local não confirma publicação.
 
@@ -47,24 +97,25 @@ As opções internas aparecem em linhas, sem precisar arrastar botões para os l
 2. Treinos mostra a ficha ativa. Abra Fichas anteriores ou Rotinas antigas — consulta para rever registros. Explorar programas aparece conforme acesso.
 3. Antes de um treino novo, confirme os pesos; 0 significa sem carga. O cronômetro começa após Confirmar pesos e iniciar treino. A retomada preserva o andamento.
 4. Progresso reúne Resumo, Histórico, Recordes, Músculos e Troféus. Corpo 3D fica em Músculos.
-5. Acompanhamento reúne profissionais, conversas, dúvidas e relatos; Ocorrências fica recolhido. Encontrar profissional aparece conforme acesso.
+5. Acompanhamento reúne as conversas, dúvidas e relatos com o seu personal; Ocorrências fica recolhido.
 6. Comunidade reúne Publicações, Grupos, Desafios e Ranking. Dentro do desafio, consulte Regras separadamente da Gestão.
 7. Perfil → Preferências: aparência, idioma e treino. Perfil → Conta: identificação, código e convites. Privacidade e segurança: senha, aparelhos e pedidos de dados.
-8. Meu plano mostra recursos, limites e contratação. Recursos fora da cobertura do personal direcionam para o plano Individual, sem pedido de liberação.
+8. Meu plano mostra os recursos e a contratação do plano de R$ 39,90.
+8.1. No exercício, quando o personal colocou um vídeo, use ▶/⏸, −10 s, +10 s e a velocidade (0,5× / 0,75× / 1×). **Tenho uma dúvida neste vídeo** manda a sua pergunta para ele, com o trecho do vídeo, e não pausa o treino.
 9. Perfil → Ajuda e suporte permite enviar um e-mail pelo aplicativo de e-mail do aparelho e usar Rever orientações para abrir novamente as dicas. Se o contato não aparecer, o administrador deve preencher o e-mail em Sistema → Dados da empresa.
 10. No sino, alterne Não lidas/Todas. Na entrada, Esqueci a senha abre uma etapa própria para solicitar o link.
 
-## Profissional: alunos, treinos e atendimentos
-1. Painel mostra pendências e atividade; Plano e vagas fica recolhido e também está em Mais.
-2. Alunos → Adicionar aluno oferece Cadastrar conta ou Convidar aluno existente. Cadastro enfileira link por e-mail para definir senha; não exibe senha provisória.
-3. Convites pendentes tem tela própria. Para reenviar acesso, abra Contas dos alunos criados por você dentro de Alunos.
+## Personal: alunos, fichas e atendimentos
+1. Visão geral mostra pendências e atividade.
+2. Meus alunos → Alunos: a lista, com assinatura e vínculo. **+ Novo aluno** cria a conta e mostra a senha temporária uma única vez.
+3. Convites acompanha os convites enviados. Quem se cadastra pelo app já entra vinculado a você.
 4. Abra um aluno: Resumo, Treinos, Evolução e Atendimento. Ao voltar, a busca e o filtro são mantidos.
-5. Treinos reúne Fichas dos alunos, Modelos e Programas públicos. Criar ficha abre o construtor; revise dados/dias/exercícios antes de enviar. Ajustes avançados ficam dentro do exercício.
-6. Atendimentos: Pendentes, Em andamento ou Encerrados, com busca por aluno/assunto. Histórico exibe até 200 registros recentes de cada categoria.
-7. Mais reúne Comunidade, Perfil profissional, Verificação, Meu plano e vagas e Minha conta. No desktop, os destinos principais ficam na lateral.
+5. Treinos reúne Modelos de ficha, Exercícios e vídeos e Programas. Nova ficha abre o construtor; revise dados, dias da semana, exercícios e vídeos antes de enviar. Ajustes avançados ficam dentro do exercício.
+6. Dúvidas e atendimentos: Pendentes, Em andamento ou Encerrados, com busca por aluno/assunto. Histórico exibe até 200 registros recentes de cada categoria.
+7. Sistema reúne Meu perfil de personal, Dados da empresa, Privacidade e termos, Logs e Configurações.
 
-## Administração: organização atual
-Os grupos atuais são Visão geral, Pessoas, Planos e capacidade, Treinos, Comunidade, Operação e Sistema. Pessoas → Contas substitui o rótulo anterior Usuários e liberações; Treinos substitui Treinos e conteúdo. Em Visão geral, abra Análises detalhadas para gráficos e distribuição. No celular, cada registro começa com três campos; Ver mais campos revela os demais. Busca, ordenação, paginação e CSV continuam disponíveis.
+## Painel: organização atual
+Os grupos atuais são Visão geral, Meus alunos, Treinos, Comunidade, Assinaturas e Sistema. Saíram do menu Profissionais e verificação, Limites de acompanhamento e Solicitações de vagas: com um personal só, não têm uso; links antigos levam para Alunos. Em Visão geral, abra Análises detalhadas para gráficos e distribuição. No celular, cada registro começa com três campos; Ver mais campos revela os demais. Busca, ordenação, paginação e CSV continuam disponíveis.
 
 ### Conteúdo oficial da Comunidade
 
@@ -72,7 +123,7 @@ Os grupos atuais são Visão geral, Pessoas, Planos e capacidade, Treinos, Comun
 2. Use **Carregar calendário inicial** para criar três publicações imediatas e nove agendadas. Repetir a ação não duplica conteúdo.
 3. Para criar outro item, toque em **Novo conteúdo**, preencha Título, Assunto, Conteúdo e Data e hora da publicação e salve.
 4. Abra um conteúdo agendado para editar, **Publicar agora** ou **Cancelar conteúdo**.
-5. No feed, a autoria aparece como **Equipe ORNY — Perfil oficial**. Curtidas e comentários são sempre de usuários reais e começam em zero.
+5. No feed, o que **você** publica sai com o seu nome e a sua foto de personal. Conteúdo publicado por outro administrador continua como **Equipe ORNY — Perfil oficial**. Curtidas e comentários são sempre de usuários reais e começam em zero.
 6. Conteúdo futuro permanece invisível até o horário programado; conteúdo cancelado fica somente no histórico administrativo.
 
 Em Sistema → Dados da empresa, confira a identificação da ORNY, a chave Pix CNPJ e os e-mails usados nos documentos e no contato de suporte. Use Preencher pela Receita para consultar os dados públicos do CNPJ, revise o resultado e clique em Salvar. A consulta não inventa e-mail nem completa endereço ausente. Alterar a versão dos documentos exige novo aceite dos usuários.
