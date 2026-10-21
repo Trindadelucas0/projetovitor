@@ -1,4 +1,4 @@
-// V4.3 · regras de acesso à comunidade e aos desafios (docs/v4/REGRAS-ACESSO.md)
+// V4.3 · regras de acesso historicas à comunidade e aos desafios.
 // R1 usuário normal: sistema + comunidades/desafios dos personais aos quais está vinculado.
 // R2 aluno do personal (coberto pelo personal): SOMENTE a comunidade/desafios do seu personal.
 // R3 personal: sistema + a própria comunidade/desafios.  R4 admin: tudo.

@@ -1,8 +1,8 @@
 // Testes "como cliente real" (SÓ LOCAL): contas fictícias, celular 390px, tema claro. Cada passo gera print (e-mails e senhas borrados)
-// e uma linha em docs/v4/testes-reais/resultados.json (fluxo, passo, ok/falha, print). Nada é apagado.
+// e uma linha em test-artifacts/testes-reais/resultados.json (fluxo, passo, ok/falha, print).
 import { test, expect } from '@playwright/test'
 import fs from 'node:fs'
-const DIR = process.env.REAIS_DIR || '../../docs/v4/testes-reais', SHOTS = process.env.REAIS_SHOTS_DIR || 'test-artifacts/testes-reais'; fs.mkdirSync(SHOTS + '/prints', { recursive: true })
+const DIR = process.env.REAIS_DIR || 'test-artifacts/testes-reais', SHOTS = process.env.REAIS_SHOTS_DIR || 'test-artifacts/testes-reais'; fs.mkdirSync(DIR, { recursive: true }); fs.mkdirSync(SHOTS + '/prints', { recursive: true })
 const BASE = 'http://localhost:4449', PASS = 'e2e-Avadesk-2026', RES = DIR + '/resultados.json'
 if (!process.env.REAIS_APPEND) fs.writeFileSync(RES, '[]')
 let n = 0
@@ -51,7 +51,7 @@ test('1) usuário normal: cadastro → liberação → programa → treino → c
   let { ctx, page } = await ctxAs(browser, S.normal)
   await step(page, F, 'Início com conta travada (aviso)', () => go(page, '/#/hoje', 'lock-banner'))
   await step(page, F, 'Pedir liberação', async () => { await go(page, '/#/planos'); await page.getByTestId('unlock-request-btn').click(); const t = page.getByTestId('dialog-input'); if (await t.isVisible().catch(() => false)) { await t.fill('Quero treinar'); await page.getByTestId('dialog-ok').click() }; await expect(page.getByTestId('unlock-pending')).toBeVisible() })
-  const A = await ctxAs(browser, 'admin.e2e@avadesk.local')
+  const A = await ctxAs(browser, 'admin.e2e\u0040avadesk.local')
   await step(A.page, F, 'Admin vê o pedido em Liberação de contas', () => go(A.page, '/#/admin/painel?tab=usuarios&secao=liberacoes', 'lib-aprovar'))
   await step(A.page, F, 'Admin libera a conta', async () => { await A.page.getByRole('row').filter({ hasText: 'Marina Cliente' }).first().getByTestId('lib-aprovar').click(); const ok = A.page.getByTestId('dialog-ok'); if (await ok.isVisible().catch(() => false)) await ok.click() })
   await A.ctx.close(); await ctx.close(); ({ ctx, page } = await ctxAs(browser, S.normal))
@@ -75,7 +75,7 @@ test('1) usuário normal: cadastro → liberação → programa → treino → c
   await ctx.close()
 })
 test('2) personal: cadastra aluno com senha provisória → aluno troca senha → ficha → treino → atendimento', async ({ browser }) => {
-  const F = 'personal', P = await ctxAs(browser, 'pro1.e2e@avadesk.local'), email = `aluno.real.${Date.now()}@lock.test`
+  const F = 'personal', P = await ctxAs(browser, 'pro1.e2e\u0040avadesk.local'), email = `aluno.real.${Date.now()}@lock.test`
   await step(P.page, F, 'Painel do personal', () => go(P.page, '/#/pro'))
   await step(P.page, F, 'Verificação profissional', () => go(P.page, '/#/pro?tab=verificacao'))
   await step(P.page, F, 'Alunos → Adicionar aluno', () => go(P.page, '/#/pro?tab=adicionar', 'add-client'))
@@ -103,7 +103,7 @@ test('2) personal: cadastra aluno com senha provisória → aluno troca senha �
   S.client = email; await C.close(); await P.ctx.close()
 })
 test('3) aluno se cadastra com o código do personal', async ({ browser, playwright }) => {
-  const F = 'codigo', P = await ctxAs(browser, 'pro1.e2e@avadesk.local')
+  const F = 'codigo', P = await ctxAs(browser, 'pro1.e2e\u0040avadesk.local')
   const code = (await (await P.ctx.request.get('/api/me/code')).json()).code; await P.ctx.close()
   const rq = await playwright.request.newContext({ baseURL: BASE, extraHTTPHeaders: { Origin: new URL(BASE).origin } }), email = `codigo.real.${Date.now()}@e2e.local`
   const u = await register(rq, 'Beatriz Código', email, { pro_code: code }); await rq.dispose()
@@ -117,8 +117,8 @@ test('3) aluno se cadastra com o código do personal', async ({ browser, playwri
   await ctx.close()
 })
 test('4) personal com mensalidade pendente: aluno só visualiza, com aviso', async ({ browser }) => {
-  const F = 'pendente', A = await ctxAs(browser, 'admin.e2e@avadesk.local')
-  const pro = (await (await A.ctx.request.get('/api/adm/professionals')).json()).professionals.find(p => p.email === 'pro1.e2e@avadesk.local' || p.name?.includes('pro1'))
+  const F = 'pendente', A = await ctxAs(browser, 'admin.e2e\u0040avadesk.local')
+  const pro = (await (await A.ctx.request.get('/api/adm/professionals')).json()).professionals.find(p => p.email === 'pro1.e2e\u0040avadesk.local' || p.name?.includes('pro1'))
   const proId = pro?.user_id
   await step(A.page, F, 'Admin marca a mensalidade do personal como pendente', async () => { const r = await A.ctx.request.post('/api/adm/access/set', { data: { user_id: proId, unlocked: false, note: 'teste local: pendente' } }); expect(r.ok()).toBeTruthy() })
   const { ctx, page } = await ctxAs(browser, S.client, 'Rafael-Senha-42')
@@ -129,7 +129,7 @@ test('4) personal com mensalidade pendente: aluno só visualiza, com aviso', asy
   await A.ctx.close()
 })
 test('5) admin: todas as áreas', async ({ browser }) => {
-  const F = 'admin', { ctx, page } = await ctxAs(browser, 'admin.e2e@avadesk.local')
+  const F = 'admin', { ctx, page } = await ctxAs(browser, 'admin.e2e\u0040avadesk.local')
   const tabs = [['Visão geral', 'dashboard'], ['Contas', 'usuarios'], ['Pendências', 'usuarios&secao=pendencias'], ['Liberação das ações (lote)', 'usuarios&secao=liberacoes'], ['Profissionais', 'profissionais'], ['Verificação profissional', 'profissionais&secao=verificacoes'], ['Vínculos', 'vinculos'], ['Convites', 'vinculos&secao=convites'], ['Assinaturas dos personais', 'assinaturas'], ['Limites de acompanhamento', 'planos'], ['Solicitações de vagas', 'solicitacoes'], ['Programas guiados', 'programas'], ['Modelos de treino', 'modelos'], ['Biblioteca e mídia', 'exercicios'], ['Publicações', 'publicacoes'], ['Moderação', 'publicacoes&secao=moderacao'], ['Grupos', 'grupos'], ['Desafios', 'grupos&secao=desafios'], ['Ranking', 'ranking'], ['Atendimentos e prazos', 'filas'], ['LGPD', 'lgpd'], ['Termos', 'lgpd&secao=termos'], ['Auditoria', 'auditoria'], ['Configurações', 'config']]
   for (const [l, t] of tabs) await step(page, F, l, async () => { await go(page, '/#/admin/painel?tab=' + t, 'adm-title'); await expect(page.getByText(/not found|erro inesperado/i)).toHaveCount(0) })
   await step(page, F, 'Painel do usuário (mensalidade, assinatura)', async () => { await go(page, '/#/admin/painel?tab=usuarios', 'dt-row'); await page.getByTestId('dt-row').first().click(); await expect(page.getByTestId('user-panel')).toBeVisible() })

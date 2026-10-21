@@ -39,7 +39,7 @@ const setMon = on => call(adm, 'POST', '/api/adm/billing/settings', { monetizaca
 after(async () => { if (adm) await setMon(false); await pool.end() })
 
 test('preparacao: admin e monetizacao DESLIGADA', async () => {
-  adm = await login('admin.e2e@avadesk.local'); assert.ok(adm)
+  adm = await login('admin.e2e\u0040avadesk.local'); assert.ok(adm)
   assert.equal((await setMon(false)).s, 200)
 })
 test('cupom de teste usa os dias configurados no servidor', async () => {
@@ -77,7 +77,7 @@ test('mesmo titular nao ganha 2o teste: outra conta com o mesmo telefone (e outr
 })
 test('mesmo e-mail normalizado (gmail com pontos/+tag) conta como o mesmo titular', async () => {
   const base = 'mon' + uniq()
-  const a = await conta('gm1', 'aluno', newPhone(), `${base}@gmail.com`), b = await conta('gm2', 'aluno', newPhone(), `${base.slice(0, 3)}.${base.slice(3)}+x@gmail.com`)
+  const a = await conta('gm1', 'aluno', newPhone(), `${base}@gmail.com`), b = await conta('gm2', 'aluno', newPhone(), `${base.slice(0, 3)}.${base.slice(3)}+x\u0040gmail.com`)
   await pool.query('update users set access_unlocked_at=now() where id = any($1)', [[a.id, b.id]])   // fora do dominio de auto-liberacao
   assert.equal((await call(a.tok, 'POST', '/api/billing/coupon/redeem', { code: (await cupom()).code })).s, 201)
   assert.equal((await call(b.tok, 'POST', '/api/billing/coupon/redeem', { code: (await cupom()).code })).d.code, 'TRIAL_ALREADY_USED')

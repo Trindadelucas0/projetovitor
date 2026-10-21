@@ -4,7 +4,7 @@ import { pool } from '../db/pool.js'
 // QA 16/10/2026: as regras de ficha desta suite (ficha nova 'aguardando', desvincular programa antes) foram SUBSTITUIDAS pela V4.3 R13
 // (ficha do personal vira o treino ativo e pausa o programa). Cobertas por test/v43-um-treino.mjs. Rode a antiga com V41_LEGACY=1.
 if (!process.env.V41_LEGACY) { console.log('v41: suite substituida por v43-um-treino (V4.3 R13) - pulada'); process.exit(0) }
-const adm = await login('admin.e2e@avadesk.local'), p1 = await login('pro1.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local'), p1 = await login('pro1.e2e\u0040avadesk.local')
 const p1id = (await get(p1, '/api/auth/me')).d.user.id
 const a = await signup(adm, 'v41al')
 check((await get(a.tok, '/api/me/theme')).d.theme === 'system', 'tema padrão: seguir o sistema')

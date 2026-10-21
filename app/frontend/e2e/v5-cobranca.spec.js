@@ -47,7 +47,7 @@ test('aluno: cartao recusado mostra erro; cartao de teste aprovado ativa o Indiv
   await expect(page.getByTestId('billing-note')).toContainText('desfeito')
 })
 test('admin: aba Cobranca abre planos (3 ativos) e cupons', async ({ page }) => {
-  const r = await page.request.post('/api/auth/login', { data: { email: 'admin.e2e@avadesk.local', password: PASS } }); expect(r.status()).toBe(200)
+  const r = await page.request.post('/api/auth/login', { data: { email: 'admin.e2e\u0040avadesk.local', password: PASS } }); expect(r.status()).toBe(200)
   await page.goto('/#/admin/painel?tab=cobranca')
   await expect(page.getByTestId('adm-billing')).toBeVisible({ timeout: 15000 })
   await expect(page.getByTestId('billing-provider')).toContainText('TESTE')

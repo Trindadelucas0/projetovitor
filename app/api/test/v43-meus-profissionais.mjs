@@ -1,7 +1,7 @@
 // V4.3 · Meus profissionais (aluno) e responsável padrão (ficha ativa > vínculo mais recente). Só base local de teste.
 import { get, post, login, check, summary, q, signup, verifiedPro } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 const A = await verifiedPro(adm, 'mpA'), B = await verifiedPro(adm, 'mpB')
 const n = await signup(adm, 'mpN')
 const link = (pro, since) => q(`insert into coach_students(tenant_id,coach_id,student_id,status,origin,since) select tenant_id,$1,$2,'ativo','convite',$3 from users where id=$2`, [pro.id, n.id, since])

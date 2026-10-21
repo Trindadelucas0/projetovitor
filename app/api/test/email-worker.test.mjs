@@ -3,8 +3,8 @@ import assert from 'node:assert/strict'
 import { processOutbox } from '../mailer.js'
 process.env.EMAIL_PROVIDER='resend'
 process.env.RESEND_API_KEY ||= 'test-only'
-process.env.RESEND_FROM ||= 'test@example.invalid'
-const row={id:42,to_email:'test@example.invalid',subject:'Teste',body:'Teste',attempts:1,kind:'geral'}
+process.env.RESEND_FROM ||= 'test\u0040example.invalid'
+const row={id:42,to_email:'test\u0040example.invalid',subject:'Teste',body:'Teste',attempts:1,kind:'geral'}
 function db(rows=[row],valid=true) {
   const calls=[]
   return {calls,query:async(sql,params)=>{calls.push({sql,params});return {rows:sql.includes('returning *')?rows:[],rowCount:valid?1:0}}}

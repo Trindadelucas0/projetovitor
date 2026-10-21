@@ -3,7 +3,7 @@
 // pedido de vínculo via administração.
 import { check, summary, get, post, login, PASS, verifiedPro, cleanupDocs, q } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 async function reg(label, intent) {
   const terms = (await get(null, '/api/terms')).d.terms
   const email = `${label}${Date.now()}${Math.floor(Math.random() * 1e4)}@e2e.local`
@@ -50,7 +50,7 @@ const care = (await get(s.tok, '/api/care')).d
 check(care.professionals.length === 1 && Array.isArray(care.plans), 'Meus treinos › Dos meus profissionais carrega vínculo e fichas')
 
 console.log('Pedido de vínculo via administração removido')
-const p1 = await login('pro1.e2e@avadesk.local')
+const p1 = await login('pro1.e2e\u0040avadesk.local')
 const code = (await get(s.tok, '/api/me/code')).d.code
 r = await post(p1, '/api/pro/requests', { type: 'vinculo', student_code: code, specialty: 'Musculação', justification: 'Aluno pediu acompanhamento' })
 check(r.s === 410 && r.d.code === 'FLOW_REMOVED', 'profissional não cria mais pedido de vínculo (410)')

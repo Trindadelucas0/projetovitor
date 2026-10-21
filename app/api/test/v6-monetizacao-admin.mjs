@@ -21,8 +21,8 @@ after(() => pool.end())
 let adm, a, b, c
 before(async () => {
   a = await reg('a'); b = await reg('b'); c = await reg('c')
-  adm = (await call('/api/auth/login', { method: 'POST', body: { email: 'admin.e2e@avadesk.local', password: PASS } })).j.token; assert.ok(adm)
-  a.id = (await q('select id from users where lower(email)=$1', ['admin.e2e@avadesk.local'])).rows[0].id
+  adm = (await call('/api/auth/login', { method: 'POST', body: { email: 'admin.e2e\u0040avadesk.local', password: PASS } })).j.token; assert.ok(adm)
+  a.id = (await q('select id from users where lower(email)=$1', ['admin.e2e\u0040avadesk.local'])).rows[0].id
 })
 test('nao-admin recebe 403 em todas as rotas', async () => {
   for (const p of ['overview', 'testes', 'cupons', 'indicacoes', 'conversoes', 'auditoria']) assert.equal((await call('/api/adm/monetizacao/' + p, { token: b.token })).s, 403, p)

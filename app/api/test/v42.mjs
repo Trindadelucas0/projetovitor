@@ -2,7 +2,7 @@
 // ficha nova substitui a anterior, exportação LGPD por e-mail (senha + e-mail, 1/24 h, fila).
 import { get, post, login, check, summary, q, PASS } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
-const adm = await login('admin.e2e@avadesk.local'), p1 = await login('pro1.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local'), p1 = await login('pro1.e2e\u0040avadesk.local')
 const terms = (await get(null, '/api/terms')).d.terms
 // 1) conta nova nao entra em fila de liberacao; somente suspensao explicita bloqueia
 const em = `lock${Date.now()}@lock.test`
@@ -57,7 +57,7 @@ check((await get(p1, '/api/pro/clients')).d.clients.some(c => c.id === cid), 'pe
 check((await get(ct, '/api/me/export')).s === 404, 'download direto continua desligado')
 r = await post(ct, '/api/me/export-request', { password: 'errada', email: ce })
 check(r.s === 400, 'exportação exige reconfirmar a senha')
-r = await post(ct, '/api/me/export-request', { password: 'NovaSenha-123', email: 'outro@x.com' })
+r = await post(ct, '/api/me/export-request', { password: 'NovaSenha-123', email: 'outro\u0040x.com' })
 check(r.s === 400, 'exportação exige o e-mail da conta')
 r = await post(ct, '/api/me/export-request', { password: 'NovaSenha-123', email: ce })
 check(r.s === 202, 'pedido de exportação na fila')

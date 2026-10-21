@@ -4,7 +4,7 @@
 import { call, get, post, login, signup, check, summary, q } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
 import { forgottenSweep } from '../sessions-v4.js'
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 const s = await signup(adm, 'v4f2aluno')
 const cid = () => 'v4f2-' + Date.now() + Math.random().toString(36).slice(2)
 const prog = (await q(`select p.id, pw.id pw, (select exercise_id from program_workout_exercises x where x.program_workout_id=pw.id limit 1) ex
@@ -116,7 +116,7 @@ check(r.s === 403, 'não inicia sessão nova de programa encerrado')
 await q(`update user_programs set status='active', ended_at=null where id=$1`, [up])
 
 console.log('— ficha exige vínculo ativo')
-const pro = (await q(`select id from users where email='pro1.e2e@avadesk.local'`)).rows[0]
+const pro = (await q(`select id from users where email='pro1.e2e\u0040avadesk.local'`)).rows[0]
 const plan = (await q(`insert into pro_plans(tenant_id,owner_id,student_id,title,exercises,status) select tenant_id,$1,$2,'Ficha F2','[]','ativo' from users where id=$2 returning id`, [pro.id, s.id])).rows[0].id
 r = await post(s.tok, '/api/guided/sessions/start', { client_id: cid(), pro_plan_id: plan, workout_name: 'Ficha' })
 check(r.s === 403 && r.d.code === 'LINK_INACTIVE', 'ficha ativa sem vínculo ativo é recusada (LINK_INACTIVE)')

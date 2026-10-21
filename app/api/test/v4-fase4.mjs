@@ -2,7 +2,7 @@
 import { call, get, post, login, signup, check, summary, q } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
 import { hasEquipment } from '../guided.js'
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 check(hasEquipment(['halter'], { equipment_answered: true, equipamentos: ['halter'] }), 'obrigatório possuído → compatível')
 check(!hasEquipment(['halter', 'banco'], { equipment_answered: true, equipamentos: ['halter'] }), 'falta um obrigatório → incompatível')
 check(!hasEquipment(['halter'], { equipment_answered: true, equipment_unknown: true, equipamentos: [] }), '"Não sei identificar" não marca compatível')

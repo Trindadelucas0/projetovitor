@@ -1,6 +1,6 @@
 // Protocolos oficiais de avaliação postural (semente idempotente, 20/10/2026).
-// Fonte: docs/referencias/EXEMPLO-AV-PROTOCOLO.pdf, transcrito sem a identidade visual nem a marca de
-// terceiros que aparecem no PDF. O documento original está redigido no feminino e prescreve biquíni; aqui
+// Fonte historica: PDF de protocolo removido da copia documental por solicitacao do responsavel.
+// O documento original estava redigido no feminino e prescrevia biquini; aqui
 // ele virou DOIS protocolos — masculino (concordância e vestimenta adaptadas) e feminino (redação original).
 // Nenhuma adaptação muda o significado de um movimento: só concordância verbal e peça de roupa.
 // Divergências entre o PDF e o briefing ficam marcadas em needs_review/review_note para o profissional

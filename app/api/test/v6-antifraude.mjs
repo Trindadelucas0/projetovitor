@@ -19,7 +19,7 @@ async function conta() {
 after(() => pool.end())
 let adm, camp
 test('preparacao', async () => {
-  adm = (await call(null, 'POST', '/api/auth/login', { email: 'admin.e2e@avadesk.local', password: PASS })).d.token; assert.ok(adm)
+  adm = (await call(null, 'POST', '/api/auth/login', { email: 'admin.e2e\u0040avadesk.local', password: PASS })).d.token; assert.ok(adm)
   camp = (await call(adm, 'POST', '/api/adm/billing/campaigns', { name: 'Fraude ' + uniq(), kind: 'oficial', benefit: 'trial', status: 'ativa' })).d
   camp = camp.id || camp.campaign?.id; assert.ok(camp)
 })

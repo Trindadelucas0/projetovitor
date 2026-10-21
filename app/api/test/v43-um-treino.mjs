@@ -1,7 +1,7 @@
 // V4.3 — R13: UM treino ativo por vez (servidor). Ficha do personal tem prioridade; desvincular só com mensalidade própria.
 import { get, post, call, login, check, summary, q, signup, verifiedPro, PASS } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 const pro = await verifiedPro(adm, 'umT')
 await post(adm, '/api/adm/grants', { user_id: pro.id, audience: 'profissional', kind: 'limit', key: 'alunos_ativos', value: 10, days: 30, reason: 'teste' })
 const ex = (await q('select id from exercises limit 1')).rows[0].id

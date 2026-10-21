@@ -29,7 +29,7 @@ let adm
 const setMon = on => call(adm, 'POST', '/api/adm/billing/settings', { monetizacao_ativa: on })
 after(async () => { if (adm) await setMon(false); await pool.end() })
 
-test('preparacao', async () => { adm = await login('admin.e2e@avadesk.local'); assert.ok(adm); assert.equal((await setMon(false)).s, 200) })
+test('preparacao', async () => { adm = await login('admin.e2e\u0040avadesk.local'); assert.ok(adm); assert.equal((await setMon(false)).s, 200) })
 
 let p, ref
 test('admin gera cupom personalizado e o responsavel ve codigo e link', async () => {

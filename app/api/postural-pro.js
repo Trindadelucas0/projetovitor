@@ -49,9 +49,22 @@ export function posturalProRoutes({ json, readBody }) {
     if (!(await isLinked(u.id, a.student_id))) return null  // vínculo encerrado = sem acesso
     return a
   }
-  const scope = u => isAdm(u) ? '' : 'and a.professional_id = $2'
+  const scope = u => isAdm(u) ? '' : `and a.professional_id = $2 and exists
+    (select 1 from coach_students cs where cs.coach_id=$2 and cs.student_id=a.student_id and cs.status='ativo')`
 
   return {
+    // Catálogo de leitura para solicitar avaliações, sem expor rascunhos nem governança.
+    'GET /api/pro/avaliacao/protocolos': async (req, res) => {
+      const u = await prof(req, res); if (!u) return
+      const protocols = (await q(`select p.id, p.name, p.audience, p.suggested_period_months,
+          p.tenant_id is null oficial
+        from posture_protocols p
+        where p.active and (p.tenant_id is null or p.tenant_id=$1)
+          and exists (select 1 from posture_protocol_versions v
+            where v.protocol_id=p.id and v.status='publicada')
+        order by p.tenant_id nulls first, p.name`, [u.tenant_id])).rows
+      json(res, 200, { protocols })
+    },
     // fila: contadores por estado + lista filtrável
     'GET /api/pro/avaliacoes': async (req, res) => {
       const u = await prof(req, res); if (!u) return

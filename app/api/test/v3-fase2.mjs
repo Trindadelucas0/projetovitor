@@ -8,7 +8,7 @@ import { pool } from '../db/pool.js'
 const PDF = 'data:application/pdf;base64,' + Buffer.from('%PDF-1.4\n% teste V3\n%%EOF').toString('base64')
 
 console.log('Fase 2 — identidade global')
-const adm = await login('admin.e2e@avadesk.local'), p2 = await login('pro2.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local'), p2 = await login('pro2.e2e\u0040avadesk.local')
 check(adm && p2, 'login admin/profissional e2e')
 const pro = await signup(adm, 'v3pro', 'profissional')
 check(pro.user.roles.includes('aluno') && pro.user.roles.includes('profissional'), 'cadastro "Sou profissional": mesma conta com capacidades aluno + profissional')
@@ -63,7 +63,7 @@ r = (await get(stu.tok, '/api/auth/me')).d.user
 check(r.roles.includes('profissional') && r.roles.includes('aluno') && r.verification === 'pendente', 'mesma conta: aluno + profissional pendente')
 
 console.log('Migração das contas existentes')
-const kept = (await q(`select u.email, m.status from users u left join tenant_memberships m on m.user_id=u.id and m.is_home where lower(u.email) in ('admin@avagym.com.br','teste@gmail.com')`)).rows
+const kept = (await q(`select u.email, m.status from users u left join tenant_memberships m on m.user_id=u.id and m.is_home where lower(u.email) in ('admin\u0040avagym.com.br','teste\u0040gmail.com')`)).rows
 if (/_test$/.test(process.env.DB_NAME || '')) console.log('  - (pulado no banco de teste: contas reais nao existem em *_test)')
 else check(kept.length === 2 && kept.every(k => k.status === 'ativo'), 'contas reais preservadas e com membership ativa')
 check((await q(`select count(*)::int n from users u where not exists (select 1 from tenant_memberships m where m.user_id=u.id)`)).rows[0].n === 0, 'todas as contas têm membership')

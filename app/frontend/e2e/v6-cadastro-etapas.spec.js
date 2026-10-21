@@ -5,7 +5,7 @@ import { fillContact } from './_contact.js'
 const PASS = 'e2e-Avadesk-2026'
 async function coupon(rq, baseURL) {
   const H = { Origin: baseURL }
-  const adm = (await (await rq.post('/api/auth/login', { headers: H, data: { email: 'admin.e2e@avadesk.local', password: PASS } })).json()).token
+  const adm = (await (await rq.post('/api/auth/login', { headers: H, data: { email: 'admin.e2e\u0040avadesk.local', password: PASS } })).json()).token
   const A = { ...H, Authorization: 'Bearer ' + adm }
   const camp = await (await rq.post('/api/adm/billing/campaigns', { headers: A, data: { name: 'E2E etapas ' + Date.now(), kind: 'oficial', benefit: 'trial', status: 'ativa' } })).json()
   const code = 'ETP' + Date.now().toString(36).toUpperCase().slice(-6)

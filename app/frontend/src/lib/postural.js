@@ -30,6 +30,7 @@ export const AP = {
 // permissões próprias no servidor. Quando o app reabrir para vários personais, estas telas saem do
 // painel administrativo sem que nada aqui mude.
 export const APV = {
+  protocolos: () => api('/api/pro/avaliacao/protocolos'),
   fila: (p = {}) => api('/api/pro/avaliacoes?' + new URLSearchParams({ ...(p.status ? { status: p.status } : {}), ...(p.q ? { q: p.q } : {}), page: p.page || 0 })),
   item: id => api('/api/pro/avaliacao?id=' + encodeURIComponent(id)),
   solicitar: b => post('/api/pro/avaliacoes/solicitar', b),

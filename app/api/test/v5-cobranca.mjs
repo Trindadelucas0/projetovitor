@@ -26,7 +26,7 @@ let adm
 after(async () => { if (adm) await call(adm, 'POST', '/api/adm/billing/settings', { teste_so_cupom: true }); await pool.end() })   // F6: legado do 'teste do plano' coberto aqui; padrao volta a 'so cupom'
 
 test('preparacao: precos de teste sem periodo gratuito automatico nos planos', async () => {
-  adm = await login('admin.e2e@avadesk.local'); assert.ok(adm)
+  adm = await login('admin.e2e\u0040avadesk.local'); assert.ok(adm)
   assert.equal((await call(adm, 'POST', '/api/adm/billing/settings', { carencia_dias: 7, retentativas_dias: [1, 3], monetizacao_ativa: false, teste_so_cupom: false })).s, 200)
   assert.equal((await call(adm, 'POST', '/api/adm/billing/plans', { id: 'individual', price_cents: 2990, trial_days: null, sellable: true })).s, 200)
   assert.equal((await call(adm, 'POST', '/api/adm/billing/plans', { id: 'pro', price_cents: 7990, trial_days: 7, sellable: true })).s, 200)

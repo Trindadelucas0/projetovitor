@@ -52,12 +52,13 @@ export default defineConfig({
   // V4 · F1: specs do Playwright (e2e/) não rodam no vitest
   test: { exclude: ['test-artifacts/**', 'e2e-results/**', '.cache/**', 'e2e/**', 'node_modules/**', 'android/**', 'ios/**'] },
   server: {
+    host: '127.0.0.1',
     port: 5551,
     // artefatos de teste não disparam recarga (no Windows o arquivo em uso derrubava o watcher com EBUSY)
     watch: { ignored: ['**/test-artifacts/**', '**/e2e-results/**', '**/.cache/**'] },
     proxy: {
       '/api': {
-        target: process.env.VITE_API_PROXY || 'http://localhost:8787',
+        target: process.env.VITE_API_PROXY || 'http://127.0.0.1:8787',
         changeOrigin: true
       }
     }

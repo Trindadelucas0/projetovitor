@@ -41,7 +41,7 @@ test('apply (sem ligar) cria a transicao como teste, avisa e registra auditoria;
   assert.equal(me.trial.source, 'transicao'); assert.equal(me.trial.active, true); assert.equal(me.trial_eligible, false)
 })
 test('D1: depois da transicao, cupom de teste e recusado (TRIAL_ALREADY_USED)', async () => {
-  adm = (await call(null, 'POST', '/api/auth/login', { email: 'admin.e2e@avadesk.local', password: PASS })).d.token
+  adm = (await call(null, 'POST', '/api/auth/login', { email: 'admin.e2e\u0040avadesk.local', password: PASS })).d.token
   let camp = (await call(adm, 'POST', '/api/adm/billing/campaigns', { name: 'Virada ' + uniq(), kind: 'oficial', benefit: 'trial', status: 'ativa' })).d
   const code = 'VIR' + uniq().toUpperCase().slice(-7)
   assert.ok((await call(adm, 'POST', '/api/adm/billing/codes', { campaign_id: camp.id || camp.campaign?.id, code, kind: 'teste' })).s < 300)

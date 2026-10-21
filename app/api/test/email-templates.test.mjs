@@ -27,18 +27,18 @@ test('links são construídos a partir da origem configurada', () => {
 })
 test('Resend recebe idempotência, cópia, HTML, texto e anexo base64', async () => {
   let sent
-  const id = await sendResend({ id: 123, to_email: 'destino@example.invalid', cc_email: 'copia@example.invalid', subject: 'Teste', body: 'Mensagem', attachment_name: 'dados.json', attachment_type: 'application/json', attachment: '{"teste":true}' }, {
+  const id = await sendResend({ id: 123, to_email: 'destino\u0040example.invalid', cc_email: 'copia\u0040example.invalid', subject: 'Teste', body: 'Mensagem', attachment_name: 'dados.json', attachment_type: 'application/json', attachment: '{"teste":true}' }, {
     fetchImpl: async (url, options) => { sent = { url, options, body: JSON.parse(options.body) }; return { ok: true, json: async () => ({ id: 'email-id' }) } }
   })
   assert.equal(id, 'email-id')
   assert.equal(sent.options.headers['Idempotency-Key'], 'avagym-outbox-123')
   assert.equal(sent.url, 'https://api.resend.com/emails')
-  assert.deepEqual(sent.body.cc, ['copia@example.invalid'])
+  assert.deepEqual(sent.body.cc, ['copia\u0040example.invalid'])
   assert.equal(Buffer.from(sent.body.attachments[0].content, 'base64').toString(), '{"teste":true}')
   assert.ok(sent.body.html && sent.body.text)
 })
 test('falha não expõe resposta ou credenciais e preserva Retry-After', async () => {
-  await assert.rejects(sendResend({ id: 1, to_email: 'a@example.invalid', subject: 'Teste', body: 'Teste' }, {
+  await assert.rejects(sendResend({ id: 1, to_email: 'a\u0040example.invalid', subject: 'Teste', body: 'Teste' }, {
     fetchImpl: async () => ({ ok: false, status: 429, headers: new Headers({ 'retry-after': '90' }) })
   }), e => e.message === 'Resend HTTP 429' && e.retryAfter === 90)
 })

@@ -3,11 +3,11 @@ export async function run({ adm, p1, p2, stu, sid, P1, P2, get, post, check }) {
   console.log('Fase 6 — admin edita e exclui')
   const t = Date.now()
   // permissões
-  for (const [path, body] of [['/api/adm/users/update', { id: sid, name: 'X', email: 'x@x.com' }], ['/api/adm/posts/delete', { id: sid, confirm: 'EXCLUIR' }], ['/api/adm/plans/save', { student_id: sid, title: 'X', days: [] }]])
+  for (const [path, body] of [['/api/adm/users/update', { id: sid, name: 'X', email: 'x\u0040x.com' }], ['/api/adm/posts/delete', { id: sid, confirm: 'EXCLUIR' }], ['/api/adm/plans/save', { student_id: sid, title: 'X', days: [] }]])
     check((await post(p1, path, body)).s === 403 && (await post(stu, path, body)).s === 403, `só admin: ${path}`)
   // usuários: editar e excluir
   let r = await post(adm, '/api/adm/users/create', { name: 'Para Editar', email: `edit${t}@e2e.local`, type: 'aluno', password: 'temporaria-123' }); const eid = r.d.id
-  check((await post(adm, '/api/adm/users/update', { id: eid, name: 'Editado', email: 'pro1.e2e@avadesk.local' })).s === 409, 'editar: e-mail único')
+  check((await post(adm, '/api/adm/users/update', { id: eid, name: 'Editado', email: 'pro1.e2e\u0040avadesk.local' })).s === 409, 'editar: e-mail único')
   check((await post(adm, '/api/adm/users/update', { id: eid, name: 'Editado', email: `editado${t}@e2e.local` })).s === 200, 'admin edita nome e e-mail')
   check((await post(adm, '/api/adm/users/delete', { id: eid })).s === 400, 'excluir exige confirmação EXCLUIR')
   check((await post(adm, '/api/adm/users/delete', { id: eid, confirm: 'EXCLUIR', reason: 'teste' })).d.anonymized, 'excluir conta anonimiza (histórico preservado)')

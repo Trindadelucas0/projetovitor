@@ -10,15 +10,15 @@ const j = async (p, b, t) => (await fetch(API + p, { method: b ? 'POST' : 'GET',
 const email = `tela${Date.now()}@e2e.local`, spw = 'senha-forte-1'
 const terms = (await j('/api/terms')).terms
 const reg = await j('/api/auth/register', { name: 'Marina Souza', email, password: spw, accept_terms: true, terms_version: terms.version })
-const adm = (await j('/api/auth/login', { email: 'admin.e2e@avadesk.local', password: PASS })).token
+const adm = (await j('/api/auth/login', { email: 'admin.e2e\u0040avadesk.local', password: PASS })).token
 await j('/api/adm/users/status', { id: reg.user.id, status: 'ativo' }, adm)
 await j('/api/adm/users/plan', { id: reg.user.id, plan_id: 'plus' }, adm)
 await j('/api/guided/onboarding', { objetivo: 'hypertrophy', nivel: 'beginner', local: 'gym', dias: 3, minutos: 45, restricoes: [] }, reg.token)
 const pros = (await j('/api/adm/professionals', null, adm)).professionals
-const P1 = pros.find(p => p.email === 'pro1.e2e@avadesk.local')
+const P1 = pros.find(p => p.email === 'pro1.e2e\u0040avadesk.local')
 await j('/api/adm/links', { student_id: reg.user.id, coach_id: P1.user_id, confirm: true }, adm)
 // ficha publicada pelo profissional, para as telas do aluno e do PRO terem dados reais
-const p1 = (await j('/api/auth/login', { email: 'pro1.e2e@avadesk.local', password: PASS })).token
+const p1 = (await j('/api/auth/login', { email: 'pro1.e2e\u0040avadesk.local', password: PASS })).token
 const lib = (await j('/api/pro/library?q=a', null, p1)).exercises
 const pl = await j('/api/pro/prescriptions', { student_id: reg.user.id, title: 'Hipertrofia A/B', goal: 'hypertrophy', specialty: 'Musculação', days: [{ name: 'Treino A', weekday: 1, exercises: lib.slice(0, 3).map(e => ({ exercise_id: e.id, name: e.name, sets: 3, reps_max: 10 })) }, { name: 'Treino B', weekday: 4, exercises: lib.slice(3, 6).map(e => ({ exercise_id: e.id, name: e.name, sets: 4, reps_max: 8 })) }] }, p1)
 await j('/api/pro/prescriptions/publish', { id: pl.id }, p1)
@@ -41,10 +41,10 @@ async function shoot(who, pw, routes, size) {
 }
 const M = { width: 375, height: 812 }
 await shoot(email, spw, ['/hoje', '/treinos', '/comunidade', '/comunidade?tab=profissionais', '/comunidade?tab=ranking', '/progresso', '/perfil', '/acompanhamento'], M)
-await shoot('pro1.e2e@avadesk.local', PASS, ['/pro', '/pro?tab=alunos', '/pro?tab=alunos&id=' + reg.user.id, '/pro?tab=treinos', '/pro?tab=capacidade', '/pro/treino?student=' + reg.user.id, '/pro?tab=atendimentos', '/comunidade', '/perfil'], M)
+await shoot('pro1.e2e\u0040avadesk.local', PASS, ['/pro', '/pro?tab=alunos', '/pro?tab=alunos&id=' + reg.user.id, '/pro?tab=treinos', '/pro?tab=capacidade', '/pro/treino?student=' + reg.user.id, '/pro?tab=atendimentos', '/comunidade', '/perfil'], M)
 await shoot(email, spw, ['/home', '/plan', '/stats', '/history', '/library', '/settings', '/muscles'], M)
-await shoot('admin.e2e@avadesk.local', PASS, ['/admin/painel', '/admin/painel?tab=usuarios', '/admin/painel?tab=solicitacoes', '/admin/painel?tab=modelos', '/admin/painel?tab=exercicios', '/admin/painel?tab=lgpd', '/admin/painel?tab=config'], M)
-await shoot('admin.e2e@avadesk.local', PASS, ['/admin/painel', '/admin/painel?tab=usuarios', '/admin/painel?tab=solicitacoes', '/admin/painel?tab=auditoria'], { width: 1440, height: 900 })
+await shoot('admin.e2e\u0040avadesk.local', PASS, ['/admin/painel', '/admin/painel?tab=usuarios', '/admin/painel?tab=solicitacoes', '/admin/painel?tab=modelos', '/admin/painel?tab=exercicios', '/admin/painel?tab=lgpd', '/admin/painel?tab=config'], M)
+await shoot('admin.e2e\u0040avadesk.local', PASS, ['/admin/painel', '/admin/painel?tab=usuarios', '/admin/painel?tab=solicitacoes', '/admin/painel?tab=auditoria'], { width: 1440, height: 900 })
 await shoot(email, spw, ['/hoje', '/comunidade'], { width: 320, height: 640 })
 await browser.close()
 fs.writeFileSync(`${OUT}/console.txt`, errors.join('\n') || 'sem erros de console')

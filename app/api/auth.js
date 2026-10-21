@@ -54,7 +54,9 @@ async function loadUser(id) {
       exists(select 1 from subscriptions s join plans p on p.id=s.plan_id where s.user_id=u.managed_by and s.audience='profissional' and not p.is_free and s.status in ('ativa','trial','inadimplente','carencia'))
         or exists(select 1 from trial_grants g where g.user_id=u.managed_by and g.audience='profissional' and g.revoked_at is null and g.starts_at<=now() and g.ends_at>now())
         or exists(select 1 from entitlement_grants g where g.user_id=u.managed_by and g.audience='profissional' and g.kind='feature' and g.key='acesso' and g.revoked_at is null and g.starts_at<=now() and (g.expires_at is null or g.expires_at>now())) coach_has_access,
-      (select pp.verification_status from professional_profiles pp where pp.user_id=u.id) verification,t.slug tenant_slug,t.name tenant_name,
+      (select pp.verification_status from professional_profiles pp where pp.user_id=u.id) verification,
+      coalesce((select pp.internal_managed from professional_profiles pp where pp.user_id=u.id), false) internal_personal,
+      t.slug tenant_slug,t.name tenant_name,
       coalesce(array_agg(ur.role_id) filter (where ur.role_id is not null),'{}') roles
     from users u join tenants t on t.id=u.tenant_id left join user_roles ur on ur.user_id=u.id and ur.tenant_id=u.tenant_id
     where u.id=$1 group by u.id,t.slug,t.name`, [id])
@@ -94,6 +96,7 @@ export const contextOf = u => (u.active_context && u.roles.includes(u.active_con
 const sign = u => jwt.sign({ sub: u.id, tid: u.tenant_id, roles: u.roles, tv: u.token_version || 0, jti: crypto.randomUUID() }, SECRET, { expiresIn: TTL_H + 'h' })
 export const pub = u => ({ id: u.id, name: u.name, email: u.email, roles: u.roles, admin: u.roles.includes('admin'), pro: u.roles.includes('profissional'), status: u.status,
   capacities: u.roles.filter(r => r === 'aluno' || r === 'profissional'), context: contextOf(u), verification: u.verification || null,
+  internal_personal: !!u.internal_personal,
   tenant: { id: u.tenant_id, slug: u.tenant_slug, name: u.tenant_name },
   // Aluno coberto pelo personal fica no escopo do PRO ate adquirir acesso Individual proprio.
   account_type: u.account_type || 'normal', must_change_password: !!u.must_change_password,

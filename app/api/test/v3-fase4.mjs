@@ -3,7 +3,7 @@
 import { check, summary, get, post, login, signup, verifiedPro, student, cleanupDocs, q } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
 console.log('Fase 4 — Aluno Free')
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 const a = await signup(adm, 'v3f4a', 'aluno')
 let r = (await get(a.tok, '/api/me/subscriptions')).d.subscriptions.aluno
 const FREE = ['treino_pessoal', 'programas_guiados', 'execucao', 'progresso', 'ranking', 'desafios_oficiais', 'receber_ficha_profissional']
@@ -23,7 +23,7 @@ check(r.s === 201 && /^[A-Z0-9]{8}$/.test(inv1.code) && inv1.link.endsWith('/#/c
 r = await get(a.tok, '/api/invites/view?code=' + inv1.code)
 check(r.s === 200 && r.d.professional.verified && !r.d.professional.email && r.d.status === 'pendente', 'aluno vê só dados públicos do profissional')
 check((await post(pro.tok, '/api/invites/accept', { code: inv1.code })).s === 400, 'profissional não aceita o próprio convite')
-r = await post(await login('pro2.e2e@avadesk.local'), '/api/invites/accept', { code: inv1.code })
+r = await post(await login('pro2.e2e\u0040avadesk.local'), '/api/invites/accept', { code: inv1.code })
 check(r.s === 403 && r.d.code === 'PERMISSION_DENIED', 'conta só profissional (sem capacidade aluno) não aceita convite')
 check((await get(a.tok, '/api/care')).d.professionals.length === 0, 'convite pendente não cria vínculo')
 r = await post(a.tok, '/api/invites/accept', { code: inv1.code })

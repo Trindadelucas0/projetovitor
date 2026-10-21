@@ -1,4 +1,4 @@
-// Regressao QA (docs/bugs): BUG-001 (termos 2x), BUG-003 (/admin/painel), BUG-004 (/home), BUG-005 (switches).
+// Regressao QA historica: BUG-001 (termos 2x), BUG-003 (/admin/painel), BUG-004 (/home), BUG-005 (switches).
 // SOMENTE LOCAL: front de teste com proxy para a API de teste (8797, banco avagym_test); contas ficticias @e2e.local.
 import { test, expect } from '@playwright/test'
 const PASS = 'e2e-Avadesk-2026'

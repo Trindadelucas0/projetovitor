@@ -2,14 +2,14 @@
 import { check, summary, get, post, login, signup, verifiedPro, student, cleanupDocs, q } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
 console.log('Fase 3 — catálogo e assinaturas')
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 check((await get(null, '/api/plans')).s === 401, 'catálogo de planos exige login (sem modo visitante)')
 let r = await get(adm, '/api/plans')
 const byId = Object.fromEntries(r.d.plans.map(p => [p.id, p]))
 check(byId.aluno_free?.is_free && byId.profissional_free?.current.limits.alunos_ativos === 2, 'catálogo: Aluno Free e Profissional Free (2 alunos ativos)')
 check(['individual', 'pro'].every(id => byId[id]) && !byId.pro_growth && !byId.pro_business, 'catálogo com 3 planos: Grátis, Individual e PRO (preços no admin; 049)')
-const legacy = (await q(`select s.audience, s.plan_id from subscriptions s join users u on u.id=s.user_id where lower(u.email)='teste@gmail.com'`)).rows
-if (/_test$/.test(process.env.DB_NAME || '')) console.log('  - (pulado no banco de teste: conta real teste@gmail.com nao existe)')
+const legacy = (await q(`select s.audience, s.plan_id from subscriptions s join users u on u.id=s.user_id where lower(u.email)='teste\u0040gmail.com'`)).rows
+if (/_test$/.test(process.env.DB_NAME || '')) console.log('  - (pulado no banco de teste: conta real teste\u0040gmail.com nao existe)')
 else check(legacy.length === 1 && legacy[0].plan_id === 'profissional_free', 'conta existente migrada para o plano gratuito da sua capacidade')
 
 const pro = await verifiedPro(adm, 'v3p3pro')

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { check, summary, get, post, call, login, PASS, q } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
 const put = (t, p, b) => call(t, 'PUT', p, b)
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 async function reg(label) {
   const terms = (await get(null, '/api/terms')).d.terms
   const email = `${label}${Date.now()}${Math.floor(Math.random() * 1e4)}@e2e.local`

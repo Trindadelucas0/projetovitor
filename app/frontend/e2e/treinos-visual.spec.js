@@ -29,7 +29,7 @@ test(SCREEN + ': aluno com programa / sem treino / aluno do personal', async ({ 
   await c1.request.post('/api/guided/onboarding', { data: { objetivo: 'hypertrophy', nivel: 'beginner', local: 'gym', dias: 3, minutos: 45, restricoes: [] } })
   const prog = (await (await c1.request.get('/api/guided/programs')).json()).programs[0]; await c1.request.post('/api/guided/start', { data: { program_id: prog.id } }); await c1.close()
   const empty = await reg(rq, 'Aluno Novo'); await rq.dispose()
-  const P = await browser.newContext({ baseURL: B, extraHTTPHeaders: { Origin: new URL(B).origin } }); await P.request.post('/api/auth/login', { data: { email: 'pro1.e2e@avadesk.local', password: PASS } })
+  const P = await browser.newContext({ baseURL: B, extraHTTPHeaders: { Origin: new URL(B).origin } }); await P.request.post('/api/auth/login', { data: { email: 'pro1.e2e\u0040avadesk.local', password: PASS } })
   const cem = `tvc.${Date.now()}@lock.test`, c = await (await P.request.post('/api/pro/clients', { data: { name: 'Aluno do Personal', email: cem } })).json()
   const ex = (await (await P.request.get('/api/pro/library?limit=2')).json()).exercises
   await P.request.post('/api/pro/plans', { data: { title: 'Ficha Força A', student_id: c.id, exercises: ex.map(e => ({ exercise_id: e.id, sets: 3, reps: '10' })) } }); await P.close()

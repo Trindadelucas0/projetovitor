@@ -5,7 +5,7 @@ const OUT = process.env.SHOTS_DIR || 'test-artifacts/reorg'; fs.mkdirSync(OUT, {
 const PASS = 'e2e-Avadesk-2026', W = [360, 390, 768, 1440], SCH = ['light', 'dark']
 const SCREENS = { aluno: [['hoje', '/#/hoje'], ['treinos', '/#/treinos'], ['comunidade', '/#/comunidade'], ['progresso', '/#/progresso'], ['perfil', '/#/perfil'], ['meu-plano', '/#/planos']],
   pro: [['painel', '/#/pro'], ['atendimentos', '/#/pro?tab=atendimentos']], admin: [['visao-geral', '/#/admin/painel'], ['contas', '/#/admin/painel?tab=usuarios']] }
-const EMAIL = { pro: 'pro1.e2e@avadesk.local', admin: 'admin.e2e@avadesk.local' }
+const EMAIL = { pro: 'pro1.e2e\u0040avadesk.local', admin: 'admin.e2e\u0040avadesk.local' }
 test.setTimeout(240000)
 for (const who of Object.keys(SCREENS)) test('evidências ' + who, async ({ browser, playwright }) => {
   let email = EMAIL[who]

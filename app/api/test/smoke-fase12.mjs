@@ -9,7 +9,7 @@ export async function run({ adm, p1, p2, stu, sid, P1, P2, get, post, check }) {
   check((await get(p1, '/api/challenges/ranking?id=' + c)).d.state === 'nao_iniciado', 'antes do início: ranking ainda não iniciado')
   for (const tk of [p1, p2, stu]) await post(tk, '/api/challenges/join', { id: c })
   await q(`update challenges set starts_at=now() - interval '3 days' where id=$1`, [c]); await get(stu, '/api/challenge?id=' + c)
-  const tid = (await q('select tenant_id from users where id=$1', [sid])).rows[0].tenant_id, p2id = (await q(`select id from users where email='pro2.e2e@avadesk.local'`)).rows[0].id
+  const tid = (await q('select tenant_id from users where id=$1', [sid])).rows[0].tenant_id, p2id = (await q(`select id from users where email='pro2.e2e\u0040avadesk.local'`)).rows[0].id
   const mk = async (uid, ago, voided) => (await q(`insert into sessions(tenant_id,user_id,started_at,finished_at,status,voided_at) values($1,$2,now()-$3::interval,now()-$3::interval+interval '30 min','done',$4) returning id`, [tid, uid, ago, voided ? new Date() : null])).rows[0].id
   await mk(P1.user_id, '50 hours'); await mk(P1.user_id, '26 hours'); await mk(P1.user_id, '25 hours'); await mk(p2id, '49 hours'); const sv = await mk(sid, '2 hours', true)
   r = (await get(p1, '/api/challenges/ranking?id=' + c)).d

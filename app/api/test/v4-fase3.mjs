@@ -2,8 +2,8 @@
 // (rascunho → revisão → correção → aprovação sem autoaprovação → publicação versionada → selos → arquivamento/revogação).
 import { call, get, post, login, signup, check, summary, q } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
-const adm = await login('admin.e2e@avadesk.local')
-const admId = (await q(`select id from users where email='admin.e2e@avadesk.local'`)).rows[0].id
+const adm = await login('admin.e2e\u0040avadesk.local')
+const admId = (await q(`select id from users where email='admin.e2e\u0040avadesk.local'`)).rows[0].id
 async function pro(label, publish = true) {
   const p = await signup(adm, label, 'profissional')
   await q(`insert into professional_profiles(user_id,tenant_id,display_name,state,can_publish,verification_status) select id,tenant_id,'Prof '||$2,'ativo',$3,'verificado' from users where id=$1

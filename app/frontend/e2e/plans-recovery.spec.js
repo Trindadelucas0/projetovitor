@@ -20,7 +20,7 @@ test('página de preços explica falha temporária e permite carregar novamente'
 test('opções do campo UF têm contraste nos temas escuro e claro', async ({ page }) => {
   await page.goto('/#/?cadastro=1')
   await page.getByLabel('Nome', { exact: false }).first().fill('Teste Visual')
-  await page.getByLabel('E-mail').fill('visual@e2e.local')
+  await page.getByLabel('E-mail').fill('visual\u0040e2e.local')
   const passwords = page.locator('input[type=password]')
   await passwords.nth(0).fill('e2e-Avadesk-2026')
   await passwords.nth(1).fill('e2e-Avadesk-2026')

@@ -2,7 +2,7 @@
 // Uso (API local rodando): node test/v4-fase1.mjs
 import { get, post, login, signup, check, summary, q } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 const s = await signup(adm, 'v4f1aluno')
 const cid = () => 'v4f1-' + Date.now() + Math.random().toString(36).slice(2)
 const sess = (extra = {}) => ({ client_id: cid(), workout_name: 'Livre', started_at: new Date(Date.now() - 1800e3).toISOString(), finished_at: new Date().toISOString(), sets: [], ...extra })

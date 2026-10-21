@@ -44,6 +44,10 @@ export async function notifyAdmins(tid, kind, title, body, link) {
   const r = await q(`select user_id from user_roles where tenant_id=$1 and role_id='admin'`, [tid])
   for (const x of r.rows) await notify(x.user_id, kind, title, body, link)
 }
+async function workLink(userId, proTab, adminTab = 'filas') {
+  const admin = (await q("select 1 from user_roles where user_id=$1 and role_id='admin'", [userId])).rowCount > 0
+  return admin ? '/admin/painel?tab=' + adminTab : '/pro?tab=' + proTab
+}
 const guard = role => async (req, res, json) => {
   const u = await requireAuth(req, res, json); if (!u) return null
   if (role && !has(u, role) && !has(u, 'admin')) { json(res, 403, { error: 'Você não tem permissão para esta ação.', code: 'PERMISSION_DENIED' }); return null }
@@ -84,11 +88,8 @@ const PRO_SQL = `select pp.*, u.name, (select count(*) from coach_students cs wh
   (select count(*) from follows f where f.professional_id=pp.user_id) followers`
 
 
-// Plano único (20/10/2026): o app tem um personal, que é o administrador do ambiente.
-// Ele não compra plano de profissional, então não tem vaga nem limite de alunos ativos
-// a respeitar. A isenção exige as DUAS condições: estar marcado em app_settings
-// ('personal_user_id', gravado pela migration 069) E ter o papel 'admin'. Um segundo
-// profissional, quando o app abrir para vários personais, continua sujeito ao limite.
+// O personal principal é identificado por tenant. Durante a transição, o admin antigo
+// continua válido até a conta profissional separada assumir a configuração.
 export async function tenantPersonalId(tid) {
   const r = await q(`select value #>> '{}' id from app_settings where tenant_id=$1 and key='personal_user_id'`, [tid])
   return r.rows[0]?.id || null
@@ -96,7 +97,7 @@ export async function tenantPersonalId(tid) {
 export async function isTenantPersonal(tid, userId) {
   if (!userId) return false
   if (String(await tenantPersonalId(tid)) !== String(userId)) return false
-  return (await q(`select 1 from user_roles where user_id=$1 and tenant_id=$2 and role_id='admin'`, [userId, tid])).rowCount > 0
+  return (await q(`select 1 from user_roles where user_id=$1 and tenant_id=$2 and role_id in ('admin','profissional')`, [userId, tid])).rowCount > 0
 }
 export async function isManagedPersonal(tid, userId, client) {
   return await isTenantPersonal(tid, userId) || await isInternalPersonal(tid, userId, client)
@@ -140,7 +141,7 @@ export async function createLink(admin, studentId, coachId, area, origin = 'admi
   // No cadastro o aluno acabou de entrar e já vê o personal na tela; avisar que "a
   // administração vinculou alguém" seria confuso. O personal é avisado nos dois casos.
   if (origin !== 'cadastro') await notify(studentId, 'vinculo', 'Novo profissional responsável', 'A administração vinculou um profissional ao seu acompanhamento.', '/acompanhamento')
-  await notify(coachId, 'vinculo', origin === 'cadastro' ? 'Novo aluno no app' : 'Novo aluno vinculado', '', '/admin/painel?tab=usuarios')
+  await notify(coachId, 'vinculo', origin === 'cadastro' ? 'Novo aluno no app' : 'Novo aluno vinculado', '', await workLink(coachId, 'alunos', 'usuarios'))
   return r.rows[0].id
 }
 // Cadastro público: o aluno novo já nasce vinculado ao personal do ambiente. Falhar aqui
@@ -158,7 +159,7 @@ export async function linkNewStudentToPrincipal(tid, studentId, actorId, client)
   const query = client?.query?.bind(client) || q
   const principal = (await query(`select u.id from app_settings s join users u
       on u.id::text=(s.value #>> '{}') and u.tenant_id=s.tenant_id
-      join user_roles r on r.user_id=u.id and r.tenant_id=u.tenant_id and r.role_id='admin'
+      join user_roles r on r.user_id=u.id and r.tenant_id=u.tenant_id and r.role_id in ('admin','profissional')
       join professional_profiles p on p.user_id=u.id and p.tenant_id=u.tenant_id and p.state='ativo'
       where s.tenant_id=$1 and s.key='personal_user_id' and u.status='ativo' and u.disabled_at is null`, [tid])).rows[0]?.id
   if (!principal) throw Object.assign(new Error('Personal principal indisponível para receber alunos'), { code: 'PRINCIPAL_UNAVAILABLE' })
@@ -230,7 +231,7 @@ export function proRoutes({ json, readBody }) {
         await db.query('commit')
       } catch (e) { await db.query('rollback').catch(() => {}); throw e } finally { db.release() }
       await audit(u.tenant_id, u.id, 'treino.agenda_aluno', 'pro_plan', p.id, { before, after })
-      await notify(p.owner_id, 'plano', 'Agenda de treino alterada pelo aluno', p.title, '/admin/painel?tab=usuarios').catch(() => {})
+      await notify(p.owner_id, 'plano', 'Agenda de treino alterada pelo aluno', p.title, await workLink(p.owner_id, 'treinos', 'usuarios')).catch(() => {})
       json(res, 200, { ok: true, days: changed.days })
     },
     'GET /api/blocks': async (req, res) => {
@@ -256,7 +257,7 @@ export function proRoutes({ json, readBody }) {
       if (['dor', 'desconforto'].includes(b.category) && o.exercise_id)
         await q(`insert into exercise_blocks(tenant_id,student_id,exercise_id,occurrence_id) values($1,$2,$3,$4)`, [u.tenant_id, u.id, o.exercise_id, o.id])
       await audit(u.tenant_id, u.id, 'ocorrencia.criada', 'occurrence', o.id, { category: o.category, exercise: o.exercise_id })
-      if (responsible) await notify(responsible, 'ocorrencia', `Nova ocorrência: ${o.category}`, `${u.name}${o.exercise_name ? ' · ' + o.exercise_name : ''}`, '/admin/painel?tab=filas')
+      if (responsible) await notify(responsible, 'ocorrencia', `Nova ocorrência: ${o.category}`, `${u.name}${o.exercise_name ? ' · ' + o.exercise_name : ''}`, await workLink(responsible, 'atendimentos'))
       else await notifyAdmins(u.tenant_id, 'ocorrencia', 'Ocorrência sem profissional responsável', `${u.name} relatou: ${o.category}`, '/admin/painel?tab=filas')
       json(res, 201, { occurrence: o, blocked: ['dor', 'desconforto'].includes(b.category) && !!o.exercise_id })
     },
@@ -271,7 +272,7 @@ export function proRoutes({ json, readBody }) {
       const t = (await q(`insert into threads(tenant_id,student_id,responsible_id,context_type,exercise_id,exercise_name,plan_id,due_at) values($1,$2,$3,$4,$5,$6,$7, now() + make_interval(hours => $8)) returning *`,
         [u.tenant_id, u.id, responsible, ctx, b.exercise_id ? txt(b.exercise_id, 80) : null, b.exercise_name ? txt(b.exercise_name, 120) : null, planId, +st.prazo_mensagem_horas || 48])).rows[0]
       await q('insert into messages(thread_id,author_id,body) values($1,$2,$3)', [t.id, u.id, body])
-      if (responsible) await notify(responsible, 'mensagem', 'Nova dúvida de aluno', `${u.name}${t.exercise_name ? ' · ' + t.exercise_name : ''}: ${body.slice(0, 80)}`, '/admin/painel?tab=filas')
+      if (responsible) await notify(responsible, 'mensagem', 'Nova dúvida de aluno', `${u.name}${t.exercise_name ? ' · ' + t.exercise_name : ''}: ${body.slice(0, 80)}`, await workLink(responsible, 'atendimentos'))
       else await notifyAdmins(u.tenant_id, 'mensagem', 'Dúvida sem profissional responsável', `${u.name}: ${body.slice(0, 80)}`, '/admin/painel?tab=filas')
       json(res, 201, { thread: t })
     },
@@ -297,7 +298,8 @@ export function proRoutes({ json, readBody }) {
         if (isPro) await q(`update threads set status='respondida', updated_at=now(), due_at=null where id=$1`, [t.id])
         else await q(`update threads set status='aguardando', updated_at=now(), due_at=now() + make_interval(hours => $2), overdue_flagged_at=null where id=$1`, [t.id, +st.prazo_mensagem_horas || 48])
       } else await q('update threads set updated_at=now() where id=$1', [t.id])   // encerrada: fica só no histórico
-      await notify(isPro ? t.student_id : (t.assigned_to || t.responsible_id), 'mensagem', isPro ? 'Seu profissional respondeu' : 'Nova mensagem do aluno', body.slice(0, 100), isPro ? '/acompanhamento' : '/admin/painel?tab=filas')
+      const recipient = isPro ? t.student_id : (t.assigned_to || t.responsible_id)
+      await notify(recipient, 'mensagem', isPro ? 'Seu profissional respondeu' : 'Nova mensagem do aluno', body.slice(0, 100), isPro ? '/acompanhamento' : await workLink(recipient, 'atendimentos'))
       await audit(u.tenant_id, u.id, 'mensagem.enviada', 'thread', t.id)
       json(res, 201, { ok: true })
     },
@@ -475,7 +477,7 @@ export function proRoutes({ json, readBody }) {
       const r = await q(`insert into change_proposals(tenant_id,occurrence_id,plan_id,author_id,decider_id,description,change,attempt) values($1,$2,$3,$4,$5,$6,$7,$8) returning id`,
         [u.tenant_id, o.id, plan?.id || null, u.id, decider, desc, b.change ? JSON.stringify(b.change) : null, o.rejections + 1])
       await audit(u.tenant_id, u.id, 'proposta.criada', 'proposal', r.rows[0].id, { occurrence: o.id })
-      if (decider !== u.id) await notify(decider, 'proposta', 'Proposta de alteração para avaliar', desc.slice(0, 100), '/admin/painel?tab=filas')
+      if (decider !== u.id) await notify(decider, 'proposta', 'Proposta de alteração para avaliar', desc.slice(0, 100), await workLink(decider, 'atendimentos'))
       json(res, 201, { id: r.rows[0].id })
     },
     'POST /api/pro/proposals/decide': async (req, res) => {
@@ -501,7 +503,7 @@ export function proRoutes({ json, readBody }) {
         await c.query('commit')
       } catch (e) { await c.query('rollback'); throw e } finally { c.release() }
       await audit(u.tenant_id, u.id, b.accept ? 'proposta.aceita' : 'proposta.rejeitada', 'proposal', p.id, { reason })
-      await notify(p.author_id, 'proposta', b.accept ? 'Proposta aceita' : 'Proposta rejeitada', reason.slice(0, 120), '/admin/painel?tab=filas')
+      await notify(p.author_id, 'proposta', b.accept ? 'Proposta aceita' : 'Proposta rejeitada', reason.slice(0, 120), await workLink(p.author_id, 'atendimentos'))
       json(res, 200, { ok: true })
     },
 
@@ -723,7 +725,7 @@ export function proRoutes({ json, readBody }) {
       await audit(u.tenant_id, u.id, 'vinculo.encerrado', 'link', l.id, { reason, archived_plans: a.rowCount })
       await refreshUsage(l.coach_id, 'profissional')   // V3: libera a vaga e recalcula OVER_LIMIT
       await notify(l.student_id, 'vinculo', 'Um acompanhamento foi encerrado', reason, '/acompanhamento')
-      await notify(l.coach_id, 'vinculo', 'Vínculo encerrado', reason, '/admin/painel?tab=perfil')
+      await notify(l.coach_id, 'vinculo', 'Vínculo encerrado', reason, await workLink(l.coach_id, 'alunos', 'perfil'))
       json(res, 200, { ok: true, archived_plans: a.rowCount })
     },
     'GET /api/adm/queue': async (req, res) => {
@@ -753,7 +755,7 @@ export function proRoutes({ json, readBody }) {
       const r = await q(`update ${table} set assigned_to=$2, due_at=now() + make_interval(hours => $3), overdue_flagged_at=null ${extra} where id=$1 and tenant_id=$4 returning id, student_id`, [b.id, b.professional_id, hours || 24, u.tenant_id])
       if (!r.rowCount) return json(res, 404, { error: 'Item não encontrado', code: 'NOT_FOUND' })
       await audit(u.tenant_id, u.id, 'designacao', b.type === 'thread' ? 'thread' : 'occurrence', b.id, { professional: b.professional_id, review_reason: txt(b.review_reason, 500) || null })
-      await notify(b.professional_id, 'designacao', 'Você foi designado(a) para um atendimento', '', '/admin/painel?tab=filas')
+      await notify(b.professional_id, 'designacao', 'Você foi designado(a) para um atendimento', '', await workLink(b.professional_id, 'atendimentos'))
       json(res, 200, { ok: true })
     },
     'POST /api/adm/close-occurrence': async (req, res) => {

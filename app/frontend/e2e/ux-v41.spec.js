@@ -41,12 +41,12 @@ test('aluno', async ({ browser, playwright }) => {
   }
 })
 test('profissional', async ({ browser }) => {
-  const ctx = await ctxLogin(browser, 'pro1.e2e@avadesk.local'), page = await ctx.newPage()
+  const ctx = await ctxLogin(browser, 'pro1.e2e\u0040avadesk.local'), page = await ctx.newPage()
   await shots(page, [['painel', '/pro'], ['alunos', '/pro?tab=alunos'], ['atendimentos', '/pro?tab=atendimentos'], ['treinos', '/pro?tab=treinos'], ['perfil', '/pro?tab=perfil'], ['comunidade', '/comunidade']], 'pro')
   await ctx.close()
 })
 test('admin', async ({ browser }) => {
-  const ctx = await ctxLogin(browser, 'admin.e2e@avadesk.local'), page = await ctx.newPage()
+  const ctx = await ctxLogin(browser, 'admin.e2e\u0040avadesk.local'), page = await ctx.newPage()
   await shots(page, [['painel', '/admin'], ['usuarios', '/admin?tab=usuarios'], ['programas', '/admin/programas']], 'admin')
   await ctx.close()
 })

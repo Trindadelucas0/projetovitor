@@ -2,7 +2,7 @@
 import { get, post, login, signup, check, summary, q, PASS } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
 import { notify } from '../pro.js'
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 const a = await signup(adm, 'v4f7al')
 const t1 = (await post(null, '/api/auth/login', { email: a.email, password: PASS })).d.token
 const t2 = (await post(null, '/api/auth/login', { email: a.email, password: PASS })).d.token

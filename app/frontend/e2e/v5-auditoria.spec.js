@@ -2,7 +2,7 @@
 import { test, expect } from '@playwright/test'
 const PASS = 'e2e-Avadesk-2026'
 test('admin ve logs com filtros e paginacao', async ({ page }) => {
-  const r = await page.request.post('/api/auth/login', { data: { email: 'admin.e2e@avadesk.local', password: PASS } })
+  const r = await page.request.post('/api/auth/login', { data: { email: 'admin.e2e\u0040avadesk.local', password: PASS } })
   expect(r.ok()).toBeTruthy(); const u = (await r.json()).user
   await page.context().addInitScript(x => { localStorage.setItem('gym_user', JSON.stringify(x)) }, u)
   await page.goto('/#/admin/painel?tab=auditoria')

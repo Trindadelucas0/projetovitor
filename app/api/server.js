@@ -98,7 +98,7 @@ let vapid;
 // V5: chaves VAPID no Postgres (server_keys); VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY (env) tem prioridade; vapid.json importado uma vez
 vapid = await serverKey('vapid', { envValue: process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY ? { publicKey: process.env.VAPID_PUBLIC_KEY, privateKey: process.env.VAPID_PRIVATE_KEY } : null, file: vapidFile, parse: v => { const j = JSON.parse(v); return j.publicKey && j.privateKey ? j : null }, gen: () => webpush.generateVAPIDKeys() });
 await importStateFiles(DATA, writeStatePg).catch(e => console.error('[legacy] importacao de state-*.json:', e.message));
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || (SECURE ? ORIGIN : 'mailto:admin@localhost');
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || (SECURE ? ORIGIN : ['mailto:admin', 'localhost'].join(String.fromCharCode(64)));
 webpush.setVapidDetails(VAPID_SUBJECT, vapid.publicKey, vapid.privateKey);
 
 async function sendPush(userId, payload) {

@@ -25,7 +25,7 @@ export async function main() {
   const me0 = await get(stu, '/api/auth/me')
   check(me0.s === 200 && me0.d.user.needs_terms === false, 'pendente: carrega o perfil; aceite dos termos registrado')
   check((await post(null, '/api/login/options')).s === 404 && (await get(null, '/api/admin/users')).s === 404, 'passkey e admin legado removidos (404)')
-  const adm = await login('admin.e2e@avadesk.local'), p1 = await login('pro1.e2e@avadesk.local'), p2 = await login('pro2.e2e@avadesk.local')
+  const adm = await login('admin.e2e\u0040avadesk.local'), p1 = await login('pro1.e2e\u0040avadesk.local'), p2 = await login('pro2.e2e\u0040avadesk.local')
   check(adm && p1 && p2, 'login admin/profissionais e2e')
   check((await get(adm, '/api/adm/live')).s === 200 && (await get(p1, '/api/adm/live')).s === 403, 'admin legado incorporado: /api/adm/live só para admin')
   check((await get(stu, '/api/adm/overview')).s === 403, 'aluno não acessa rota admin')
@@ -38,7 +38,7 @@ export async function main() {
   console.log('Fase 1 — profissionais, planos e vínculos')
   check((await post(adm, '/api/adm/links', { student_id: sid, coach_id: 'x', confirm: true })).s === 400, 'vínculo com dados inválidos é recusado')
   const pros = (await get(adm, '/api/adm/professionals')).d.professionals
-  const P1 = pros.find(p => p.email === 'pro1.e2e@avadesk.local'), P2 = pros.find(p => p.email === 'pro2.e2e@avadesk.local')
+  const P1 = pros.find(p => p.email === 'pro1.e2e\u0040avadesk.local'), P2 = pros.find(p => p.email === 'pro2.e2e\u0040avadesk.local')
   for (const [t, P] of [[p1, P1], [p2, P2]]) {
     if (!P.qualifications.some(q => q.status === 'verificada')) {
       const qid = (await post(t, '/api/pro/qualifications', { kind: 'CREF', number: '000' + Math.floor(Math.random() * 1e5), area: 'Musculação' })).d.id

@@ -70,7 +70,7 @@ test('nunca abre com treino ativo', async ({ browser, playwright }) => {
 })
 
 test('aluno do personal: boas-vindas aponta o cadeado', async ({ browser }) => {
-  const p = await open(browser, 'pro1.e2e@avadesk.local')
+  const p = await open(browser, 'pro1.e2e\u0040avadesk.local')
   const email = `tourcli.${Date.now()}@lock.test`
   const r = await (await p.ctx.request.post('/api/pro/clients', { data: { name: 'Aluno Tour', email } })).json(); await p.ctx.close()
   const rq = await browser.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin } })
@@ -85,14 +85,14 @@ test('aluno do personal: boas-vindas aponta o cadeado', async ({ browser }) => {
 })
 
 test('personal: boas-vindas e convites', async ({ browser }) => {
-  const { ctx, page } = await open(browser, 'pro1.e2e@avadesk.local')
+  const { ctx, page } = await open(browser, 'pro1.e2e\u0040avadesk.local')
   await page.goto('/#/pro'); await walk(page, 'personal-boasvindas')
   await page.goto('/#/pro?tab=cadastrar'); await walk(page, 'personal-cadastrar')   // reorganização: Adicionar aluno → Cadastrar
   await ctx.close()
 })
 
 test('admin: boas-vindas (abre o menu no celular), usuários, painel do usuário, liberações', async ({ browser }) => {
-  const { ctx, page } = await open(browser, 'admin.e2e@avadesk.local', PASS, { vp: { width: 390, height: 844 } })
+  const { ctx, page } = await open(browser, 'admin.e2e\u0040avadesk.local', PASS, { vp: { width: 390, height: 844 } })
   await page.goto('/#/admin/painel'); const n = await walk(page, 'admin-boasvindas'); expect(n).toBe(6)
   await page.goto('/#/admin/painel?tab=usuarios'); await walk(page, 'admin-usuarios')
   await page.getByTestId('dt-row').first().click(); await expect(page.getByTestId('user-panel')).toBeVisible()

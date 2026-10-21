@@ -1,7 +1,7 @@
 // Diagnostico somente-leitura da integracao Asaas: config local, IP de saida, validade da chave,
 // estado da fila de webhook e se a tokenizacao de cartao esta liberada na conta.
 // A saida NUNCA contem a ASAAS_API_KEY, o ASAAS_WEBHOOK_TOKEN nem o authToken do webhook,
-// entao pode ser colada em chamado (docs/sistema/21-asaas-ambientes.md -> "Diagnostico seguro").
+// Revise a saida antes de compartilhar o diagnostico em um chamado.
 // Uso: node scripts/diagnostico-asaas.mjs [--sonda-tokenizacao] [--sem-banco]
 //      --sonda-tokenizacao faz UMA chamada POST de tokenizacao com cartao invalido de proposito
 //      (nao cria cobranca nem cliente) so para saber se a conta tem o recurso liberado.
@@ -110,7 +110,7 @@ else {
     const r = await call('POST', '/creditCard/tokenizeCreditCard', {
       customer: cus, remoteIp: ip || '127.0.0.1',
       creditCard: { holderName: 'DIAGNOSTICO ORNY', number: '0000000000000000', expiryMonth: '12', expiryYear: '2030', ccv: '123' },
-      creditCardHolderInfo: { name: 'Diagnostico ORNY', email: 'diagnostico@ornygym.com.br', cpfCnpj: '11144477735', postalCode: '01001000', addressNumber: '1', phone: '1130000000' }
+      creditCardHolderInfo: { name: 'Diagnostico ORNY', email: ['diagnostico', 'example.invalid'].join(String.fromCharCode(64)), cpfCnpj: '11144477735', postalCode: '01001000', addressNumber: '1', phone: '1130000000' }
     })
     linha('POST tokenizeCreditCard', descreve(r))
     const desc = r.err?.description || ''

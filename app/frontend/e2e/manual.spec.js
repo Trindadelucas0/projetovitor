@@ -79,7 +79,7 @@ test('profissional', async ({ browser, playwright }) => {
   await rq.post('/api/pro/verification', { data: { full_name: 'Prof. Exemplo', council: 'CREF', registry_number: String(Date.now()).slice(-6) + '-G', registry_uf: 'SP', specialties: ['Musculação'] } })
   await rq.post('/api/pro/verification/document', { data: { data: 'data:application/pdf;base64,' + Buffer.from('%PDF-1.4\n%%EOF').toString('base64'), file_name: 'cref.pdf' } })
   const adm = await playwright.request.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin } })
-  await adm.post('/api/auth/login', { data: { email: 'admin.e2e@avadesk.local', password: PASS } })
+  await adm.post('/api/auth/login', { data: { email: 'admin.e2e\u0040avadesk.local', password: PASS } })
   const pid = (await (await rq.get('/api/auth/me')).json()).user.id
   const v = (await (await adm.get('/api/adm/verifications?status=pendente')).json()).verifications.find(x => x.user_id === pid)
   await adm.post('/api/adm/verifications/decide', { data: { id: v.id, status: 'verificado' } })
@@ -100,7 +100,7 @@ test('profissional', async ({ browser, playwright }) => {
 })
 test('admin', async ({ browser }) => {
   test.setTimeout(120000)
-  const ctx = await ctxFor(browser, 'admin.e2e@avadesk.local', D), page = await ctx.newPage()
+  const ctx = await ctxFor(browser, 'admin.e2e\u0040avadesk.local', D), page = await ctx.newPage()
   await page.goto('/#/admin/painel'); await shot(page, 'd01-painel')
   for (const [t, n] of [['alunos', 'd02-usuarios'], ['profissionais', 'd03-profissionais'], ['solicitacoes', 'd04-solicitacoes'], ['verificacoes', 'd05-verificacoes']]) { await page.goto('/#/admin/painel?tab=' + t); await shot(page, n) }
   await page.goto('/#/admin/programas'); await shot(page, 'd06-fila-editorial')

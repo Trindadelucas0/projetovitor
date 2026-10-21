@@ -15,7 +15,7 @@ test('cria checkout único com preço do servidor, Pix e cartão sem expor a cha
   const calls = []
   const provider = infinitepay({ env, fetchImpl: async (url, init) => { calls.push({ url, init }); return { ok: true, json: async () => ({ url: 'https://checkout.infinitepay.com.br/orny?lenc=abc' }) } } })
   const charge = { id: '00000000-0000-0000-0000-000000000001' }
-  const result = await provider.createCheckout({ charge, amountCents: 2990, description: 'ORN Y Individual', customer: { name: 'Cliente', email: 'cliente@example.com' }, validUntil: new Date('2026-11-01T12:00:00Z') })
+  const result = await provider.createCheckout({ charge, amountCents: 2990, description: 'ORN Y Individual', customer: { name: 'Cliente', email: 'cliente\u0040example.com' }, validUntil: new Date('2026-11-01T12:00:00Z') })
   const body = JSON.parse(calls[0].init.body)
   assert.equal(result.status, 'pendente')
   assert.equal(body.order_nsu, charge.id)

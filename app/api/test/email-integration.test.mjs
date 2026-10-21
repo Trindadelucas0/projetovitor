@@ -9,7 +9,7 @@ import { authRoutes, authUser } from '../auth.js'
 import { accountRoutes } from '../accounts-v42.js'
 import { queuePasswordLink, allowPasswordEmail, tokenHash } from '../password-email.js'
 const prefix = 'email-test-' + crypto.randomUUID()
-const emails = [prefix + '@example.invalid', prefix + '-coach@example.invalid', prefix + '-other@example.invalid']
+const emails = [prefix + '@example.invalid', prefix + '-coach\u0040example.invalid', prefix + '-other\u0040example.invalid']
 const ids = []
 const routes = { ...authRoutes({ json: (res, status, data) => {res.status=status;res.data=data}, readBody: async req => req.body }),
   ...accountRoutes({ json: (res, status, data) => {res.status=status;res.data=data}, readBody: async req => req.body }) }
@@ -59,7 +59,7 @@ test('integração transacional: eventos, acesso e recuperação', async t => {
     })
     await t.test('exportação exige senha e e-mail corretos, grava anexo e limita novo pedido',async()=>{
       assert.equal((await call('POST /api/me/export-request',{password:'incorreta',email:emails[0]},student)).status,400)
-      assert.equal((await call('POST /api/me/export-request',{password:'Anterior-12345',email:'outro@example.invalid'},student)).status,400)
+      assert.equal((await call('POST /api/me/export-request',{password:'Anterior-12345',email:'outro\u0040example.invalid'},student)).status,400)
       const response=await call('POST /api/me/export-request',{password:'Anterior-12345',email:emails[0]},student)
       assert.equal(response.status,202)
       const message=(await q('select o.* from email_outbox o join data_export_requests r on r.outbox_id=o.id where r.id=$1',[response.data.id])).rows[0]
@@ -86,7 +86,7 @@ test('integração transacional: eventos, acesso e recuperação', async t => {
       await q("update password_resets set expires_at=now()-interval '1 minute' where token_hash=$1",[tokenHash(token)])
       assert.equal((await call('POST /api/auth/reset',{token,password:'NovaSenha-12345'})).status,400)
       const existing=await call('POST /api/auth/forgot',{email:emails[0]})
-      const absent=await call('POST /api/auth/forgot',{email:prefix+'-absent@example.invalid'})
+      const absent=await call('POST /api/auth/forgot',{email:prefix+'-absent\u0040example.invalid'})
       assert.deepEqual(existing,absent)
     })
     await t.test('limite por endereço persiste no banco',async()=>{
@@ -116,7 +116,7 @@ test('integração transacional: eventos, acesso e recuperação', async t => {
       await q('delete from audit_log where actor_id=any($1::uuid[])',[ids])
       await q('delete from users where id=any($1::uuid[])',[ids])
     }
-    await q('delete from email_rate_limits where key_hash=any($1)',[[tokenHash('ip:test-'+prefix),...emails.map(e=>tokenHash('email:'+e)),tokenHash('email:'+prefix+'-absent@example.invalid')]])
+    await q('delete from email_rate_limits where key_hash=any($1)',[[tokenHash('ip:test-'+prefix),...emails.map(e=>tokenHash('email:'+e)),tokenHash('email:'+prefix+'-absent\u0040example.invalid')]])
     await pool.end()
   }
 })

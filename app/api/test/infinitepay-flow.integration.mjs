@@ -36,7 +36,7 @@ after(async () => {
 })
 
 test('prepara plano vendável no banco isolado', async () => {
-  admin = await login('admin.e2e@avadesk.local')
+  admin = await login('admin.e2e\u0040avadesk.local')
   assert.ok(admin)
   assert.equal((await call(admin, 'POST', '/api/adm/billing/settings', { monetizacao_ativa: true, teste_so_cupom: true })).status, 200)
   assert.equal((await call(admin, 'POST', '/api/adm/billing/plans', { id: 'individual', price_cents: 1290, trial_days: null, sellable: true })).status, 200)

@@ -1,12 +1,28 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { COMPANY_FIELDS, ORNY_COMPANY_DEFAULTS, companyReadiness, fmtCNPJ, validCNPJ } from '../legal.js'
+import { COMPANY_FIELDS, companyEnvDefaults, companyReadiness, fmtCNPJ, validCNPJ } from '../legal.js'
 
-test('identificação padrão da ORNY usa CNPJ válido também como chave Pix', () => {
-  assert.equal(validCNPJ(ORNY_COMPANY_DEFAULTS.cnpj), true)
-  assert.equal(ORNY_COMPANY_DEFAULTS.chave_pix, ORNY_COMPANY_DEFAULTS.cnpj)
+test('identificação legal inicial vem somente das variáveis de ambiente', () => {
+  const defaults = companyEnvDefaults({
+    COMPANY_LEGAL_NAME: 'Empresa de teste',
+    COMPANY_CNPJ: '67.790.913/0001-20',
+    COMPANY_PIX_KEY: 'pix-de-teste',
+    COMPANY_SUPPORT_EMAIL: ['suporte', 'example.invalid'].join(String.fromCharCode(64)),
+  })
+  assert.equal(defaults.razao_social, 'Empresa de teste')
+  assert.equal(validCNPJ(defaults.cnpj), true)
+  assert.equal(defaults.chave_pix, 'pix-de-teste')
+  assert.equal(defaults.email_suporte.includes(String.fromCharCode(64)), true)
   assert.equal(fmtCNPJ('67790913000120'), '67.790.913/0001-20')
   assert.equal(COMPANY_FIELDS.includes('chave_pix'), true)
+})
+
+test('instalação nova não recebe contatos ou dados legais embutidos', () => {
+  const defaults = companyEnvDefaults({})
+  assert.equal(defaults.razao_social, '')
+  assert.equal(defaults.cnpj, '')
+  assert.equal(defaults.email_suporte, '')
+  assert.equal(defaults.doc_version, '1.1')
 })
 
 test('validação rejeita CNPJ incompleto ou com dígitos inválidos', () => {
@@ -15,7 +31,7 @@ test('validação rejeita CNPJ incompleto ou com dígitos inválidos', () => {
 })
 
 test('documentos legais só ficam prontos quando todos os campos obrigatórios existem', () => {
-  const incomplete = companyReadiness(ORNY_COMPANY_DEFAULTS)
+  const incomplete = companyReadiness(companyEnvDefaults({}))
   assert.equal(incomplete.ready, false)
   assert.ok(incomplete.missing.includes('endereco'))
   assert.ok(incomplete.missing.includes('hosting_provider_country'))

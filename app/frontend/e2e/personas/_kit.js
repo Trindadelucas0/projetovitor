@@ -1,14 +1,15 @@
 // Kit das personas (SÓ LOCAL: API :8787 + Postgres local, contas fictícias). Cada passo vira um caso de teste com print borrado
-// e uma linha em docs/v4/casos-de-teste/resultados-<perfil>.json. Nada é apagado: cada execução cria contas novas.
+// e uma linha no CASOS_DIR informado pelo operador. Cada execução cria contas fictícias novas.
 import { expect } from '@playwright/test'
 import fs from 'node:fs'
 // QA: sem padroes perigosos. PERSONAS_BASE e CASOS_DIR sao obrigatorios; front/API do Lucas (4449/8787) so com PERSONAS_ALLOW_DEV=1.
-function requireEnv(k) { const v = process.env[k]; if (!v) throw new Error(`Defina ${k} (ex.: PERSONAS_BASE=http://localhost:4459 CASOS_DIR=../../docs/v4/casos-de-teste). Sem valor padrao por seguranca.`); return v }
+function requireEnv(k) { const v = process.env[k]; if (!v) throw new Error(`Defina ${k} (ex.: PERSONAS_BASE=http://localhost:4459 CASOS_DIR=test-artifacts/casos-de-teste). Sem valor padrao por seguranca.`); return v }
 export const BASE = requireEnv('PERSONAS_BASE')
 if (/:(4449|8787)(\/|$)/.test(BASE) && process.env.PERSONAS_ALLOW_DEV !== '1') throw new Error('PERSONAS_BASE aponta para o ambiente do Lucas (4449/8787). Use a API/front de teste ou defina PERSONAS_ALLOW_DEV=1 conscientemente.')
 export const
-  PASS = 'e2e-Avadesk-2026', ADMIN = 'admin.e2e@avadesk.local', PRO_SEED = 'pro1.e2e@avadesk.local'
+  PASS = 'e2e-Avadesk-2026', ADMIN = 'admin.e2e\u0040avadesk.local', PRO_SEED = 'pro1.e2e\u0040avadesk.local'
 export const DIR = requireEnv('CASOS_DIR')
+fs.mkdirSync(DIR, { recursive: true })
 // prints ficam fora do git/deploy; o JSON guarda o caminho relativo (prints/<perfil>/...) dentro desta pasta
 export const SHOTS = process.env.CASOS_SHOTS_DIR || 'test-artifacts/casos-de-teste'
 export const MOBILE = { width: 390, height: 844 }, DESKTOP = { width: 1280, height: 860 }

@@ -23,7 +23,7 @@ for(const theme of ['light','dark'])for(const width of [320,375,768,1280]){
     expect(await page.locator('.lg-wrap').evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true)
     const button=page.getByRole('button',{name:'Entrar',exact:true})
     await expect(button).toHaveCSS('background-color','rgb(32, 245, 27)');await expect(button).toHaveCSS('color','rgb(0, 0, 0)')
-    await page.getByLabel('E-mail',{exact:true}).fill('teste@example.com');await button.click()
+    await page.getByLabel('E-mail',{exact:true}).fill('teste\u0040example.com');await button.click()
     await expect(page.locator('.lg-brand img')).toBeVisible()
     await page.screenshot({path:`test-artifacts/orny/login-${theme}-${width}.png`,fullPage:true})
   })

@@ -1,9 +1,7 @@
-# Documentação da ORNY
+# Projeto Vitor — documentos do aplicativo
 
-Este arquivo é a capa da documentação do repositório. A fonte única de comportamento é [app/DOCUMENTACAO-SISTEMA.md](app/DOCUMENTACAO-SISTEMA.md), incluindo treino e painel de gestão. Atualizações de regras devem ser feitas nessa fonte, evitando versões conflitantes.
+O [PRD do Projeto Vitor](docs/PRD-PROJETO-VITOR.md) é o documento principal de produto. Ele reúne visão, público, requisitos, regras, estados, critérios de aceite e **App Flow** do aluno, personal e administração.
 
-- [Guia diário do personal](docs/como-usar-o-sistema.md).
-- [Inventário histórico inicial](app/docs/INVENTARIO-FUNCIONAL.md): snapshot antigo; não representa o painel atual.
-- [Inventário histórico de transição](docs/INVENTARIO-SISTEMA-ATUAL.md): snapshot de 14/10/2026, mantido como histórico.
+A [documentação oficial](app/DOCUMENTACAO-SISTEMA.md) registra o comportamento identificado nesta cópia do código e o estado de validação. O [guia de uso](docs/como-usar-o-sistema.md) traz os passos do dia a dia. A [execução local](app/docs/EXECUCAO-LOCAL.md) cobre somente o ambiente de desenvolvimento.
 
-A seção de validação na fonte oficial distingue implementação local, testes isolados e publicação.
+**Identidade em transição:** Projeto Vitor é o nome definido para o novo PRD. A interface e os valores legais ainda apresentam a marca anterior; a troca visual e legal não foi feita nesta entrega documental.

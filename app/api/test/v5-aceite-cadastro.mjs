@@ -73,12 +73,12 @@ test('/api/health publico devolve so {ok:true}; HEAD -> 200', async () => {
   const h = await fetch(B + '/api/health', { method: 'HEAD' }); assert.equal(h.status, 200)
 })
 test('BUG-026: envio de teste de e-mail so para admin; com e-mail desligado responde 503 sem enviar', async () => {
-  const adm = (await call('POST', '/api/auth/login', { email: 'admin.e2e@avadesk.local', password: PASS })).d.token
-  const r = await fetch(B + '/api/adm/email-test', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adm }, body: JSON.stringify({ to: 'qa@e2e.local' }) })
+  const adm = (await call('POST', '/api/auth/login', { email: 'admin.e2e\u0040avadesk.local', password: PASS })).d.token
+  const r = await fetch(B + '/api/adm/email-test', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adm }, body: JSON.stringify({ to: 'qa\u0040e2e.local' }) })
   assert.ok([200, 503].includes(r.status), String(r.status))
   const bad = await fetch(B + '/api/adm/email-test', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adm }, body: JSON.stringify({ to: 'x' }) })
   assert.equal(bad.status, 400)
   const al = (await call('POST', '/api/auth/register', { name: 'Nao Admin', email: mail('na'), password: PASS, accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version, plan_id: 'individual' })).d.token
-  const no = await fetch(B + '/api/adm/email-test', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + al }, body: JSON.stringify({ to: 'qa@e2e.local' }) })
+  const no = await fetch(B + '/api/adm/email-test', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + al }, body: JSON.stringify({ to: 'qa\u0040e2e.local' }) })
   assert.equal(no.status, 403)
 })

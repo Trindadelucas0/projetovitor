@@ -9,17 +9,24 @@ export const COMPANY_FIELDS = ['razao_social', 'nome_fantasia', 'cnpj', 'chave_p
 export const REQUIRED_COMPANY_FIELDS = ['razao_social', 'nome_fantasia', 'cnpj', 'endereco', 'email_suporte', 'email_dpo', 'email_financeiro', 'email_moderacao', 'url_cancelamento', 'foro', 'hosting_provider_country', 'doc_version', 'doc_vigencia']
 const KEY = 'empresa_legal'
 export const DEFAULT_VERSION = '1.1'
-export const ORNY_COMPANY_DEFAULTS = {
-  razao_social: 'ORNYGYM',
-  nome_fantasia: 'ORNYGYM',
-  cnpj: '67.790.913/0001-20',
-  chave_pix: '67.790.913/0001-20',
-  email_suporte: 'avadesktech@gmail.com',
-  email_dpo: 'avadesktech@gmail.com',
-  email_financeiro: 'avadesktech@gmail.com',
-  email_moderacao: 'avadesktech@gmail.com',
-  foro: 'Brasília/DF',
-}
+export const companyEnvDefaults = (env = process.env) => ({
+  razao_social: env.COMPANY_LEGAL_NAME || '',
+  nome_fantasia: env.COMPANY_TRADE_NAME || '',
+  cnpj: env.COMPANY_CNPJ || '',
+  chave_pix: env.COMPANY_PIX_KEY || '',
+  endereco: env.COMPANY_ADDRESS || '',
+  email_suporte: env.COMPANY_SUPPORT_EMAIL || '',
+  email_dpo: env.COMPANY_DPO_EMAIL || '',
+  email_financeiro: env.COMPANY_FINANCE_EMAIL || '',
+  email_moderacao: env.COMPANY_MODERATION_EMAIL || '',
+  url_cancelamento: env.COMPANY_CANCELLATION_URL || '',
+  foro: env.COMPANY_JURISDICTION || '',
+  hosting_provider_country: env.COMPANY_HOSTING_COUNTRY || '',
+  doc_version: env.COMPANY_DOCUMENT_VERSION || DEFAULT_VERSION,
+  doc_vigencia: env.COMPANY_DOCUMENT_EFFECTIVE_DATE || '',
+})
+// Compatibilidade para chamadores existentes; contém apenas valores do ambiente do servidor.
+export const ORNY_COMPANY_DEFAULTS = companyEnvDefaults()
 const onlyDigits = s => String(s || '').replace(/\D/g, '')
 export function validCNPJ(v) {
   const c = onlyDigits(v); if (c.length !== 14 || /^(\d)\1+$/.test(c)) return false
@@ -39,8 +46,8 @@ async function defaultTenant() { return (await q('select id from tenants where s
 export async function getCompany(tenantId) {
   const tid = tenantId || await defaultTenant(); if (!tid) return {}
   const r = await q('select value from app_settings where tenant_id=$1 and key=$2', [tid, KEY])
-  const v = r.rows[0]?.value || {}, out = {}
-  for (const k of COMPANY_FIELDS) out[k] = String(v[k] ?? '').trim() || ORNY_COMPANY_DEFAULTS[k] || ''
+  const v = r.rows[0]?.value || {}, defaults = companyEnvDefaults(), out = {}
+  for (const k of COMPANY_FIELDS) out[k] = String(v[k] ?? '').trim() || defaults[k] || ''
   if (!out.doc_version) out.doc_version = DEFAULT_VERSION
   return out
 }

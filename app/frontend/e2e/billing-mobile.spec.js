@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 const plan = { id: 'individual', audience: 'aluno', product: 'individual', name: 'Individual', description: 'Treino completo', price_cents: 1290, currency: 'BRL', billing_interval: 'month', benefits: [], limits: {}, features: {}, is_free: false, purchasable: true }
 
 async function setup(page, width) {
-  const user = { id: 'billing-mobile', name: 'Cliente Teste', email: 'cliente@e2e.local', roles: ['aluno'], context: 'aluno', status: 'ativo', needs_terms: false, access_locked: false }
+  const user = { id: 'billing-mobile', name: 'Cliente Teste', email: 'cliente\u0040e2e.local', roles: ['aluno'], context: 'aluno', status: 'ativo', needs_terms: false, access_locked: false }
   let subscribeCalls = 0
   await page.setViewportSize({ width, height: 720 })
   await page.addInitScript(u => localStorage.setItem('gym_user', JSON.stringify(u)), user)

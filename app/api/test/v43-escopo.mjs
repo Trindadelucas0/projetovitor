@@ -1,7 +1,7 @@
 // V4.3 — regras de acesso R1–R5 (docs/v4/REGRAS-ACESSO.md): comunidade e desafios do sistema x do personal.
 import { get, post, login, check, summary, q, signup, verifiedPro } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 const pa = await verifiedPro(adm, 'escA'), pb = await verifiedPro(adm, 'escB')
 await q('update professional_profiles set can_publish=true where user_id = any($1)', [[pa.id, pb.id]])
 const ids = { }

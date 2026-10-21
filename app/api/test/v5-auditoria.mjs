@@ -25,7 +25,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms))
 let adm, al
 after(() => pool.end())
 
-test('preparacao', async () => { adm = await login('admin.e2e@avadesk.local'); assert.ok(adm); al = await aluno('a') })
+test('preparacao', async () => { adm = await login('admin.e2e\u0040avadesk.local'); assert.ok(adm); al = await aluno('a') })
 
 test('middleware: rota protegida sem login -> 401 AUTH_REQUIRED (antes da rota)', async () => {
   const r = await call(null, 'GET', '/api/guided/state'); assert.equal(r.s, 401); assert.equal(r.d.code, 'AUTH_REQUIRED')

@@ -2,7 +2,7 @@
 import fs from 'node:fs'
 import { get, post, login, q, signup, verifiedPro } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
-const adm = await login('admin.e2e@avadesk.local'), pro = await verifiedPro(adm, 'umUI')
+const adm = await login('admin.e2e\u0040avadesk.local'), pro = await verifiedPro(adm, 'umUI')
 await post(adm, '/api/adm/grants', { user_id: pro.id, audience: 'profissional', kind: 'limit', key: 'alunos_ativos', value: 10, days: 30, reason: 'teste' })
 const ex = (await q('select id from exercises limit 1')).rows[0].id
 const ficha = (sid, title) => post(pro.tok, '/api/pro/plans', { title, student_id: sid, exercises: [{ exercise_id: ex, sets: 3, reps: '10' }] })

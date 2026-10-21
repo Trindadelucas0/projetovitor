@@ -37,9 +37,9 @@ test('cliente Asaas recebe apenas nome e e-mail para tokenizar o cartão', async
   const calls = []
   const fetchImpl = async (url, init) => { calls.push({ url, init }); return { ok: true, json: async () => ({ id: 'cus_1' }) } }
   const p = asaas({ env: { ASAAS_ENV: 'producao', ASAAS_API_KEY: '$aact_prod_example', ASAAS_WEBHOOK_TOKEN: token }, fetchImpl })
-  await p.ensureCustomer({ id: 'user_1', name: 'Cliente', email: 'cliente@example.com' })
+  await p.ensureCustomer({ id: 'user_1', name: 'Cliente', email: 'cliente\u0040example.com' })
   assert.equal(calls.length, 1)
-  assert.deepEqual(JSON.parse(calls[0].init.body), { name: 'Cliente', email: 'cliente@example.com', externalReference: 'user_1', notificationDisabled: true })
+  assert.deepEqual(JSON.parse(calls[0].init.body), { name: 'Cliente', email: 'cliente\u0040example.com', externalReference: 'user_1', notificationDisabled: true })
 })
 
 // um 403 na tokenizacao tem causas diferentes e cada uma pede uma acao diferente de quem opera:
@@ -47,7 +47,7 @@ test('cliente Asaas recebe apenas nome e e-mail para tokenizar o cartão', async
 const tokenizaCom = resposta => {
   const p = asaas({ env: { ASAAS_ENV: 'producao', ASAAS_API_KEY: '$aact_prod_example', ASAAS_WEBHOOK_TOKEN: token }, fetchImpl: async () => resposta })
   return p.tokenize({ customerId: 'cus_1', card: { number: '4242424242424242', holderName: 'Cliente', expMonth: '12', expYear: '30', cvv: '123' },
-    holder: { name: 'Cliente', email: 'cliente@example.com' }, remoteIp: '203.0.113.10' })
+    holder: { name: 'Cliente', email: 'cliente\u0040example.com' }, remoteIp: '203.0.113.10' })
 }
 const erroAsaas = (status, description, code) => ({ ok: false, status, json: async () => ({ errors: [{ description, ...(code ? { code } : {}) }] }) })
 
@@ -71,7 +71,7 @@ test('negação de tokenização em produção preserva uma causa acionável', a
   const fetchImpl = async () => ({ ok: false, status: 403, json: async () => ({ errors: [{ description: 'Você não possui permissão para utilizar este recurso. Entre em contato com seu gerente de contas.' }] }) })
   const p = asaas({ env: { ASAAS_ENV: 'producao', ASAAS_API_KEY: '$aact_prod_example', ASAAS_WEBHOOK_TOKEN: token }, fetchImpl })
   await assert.rejects(
-    p.tokenize({ customerId: 'cus_1', card: { number: '4242424242424242', holderName: 'Cliente', expMonth: '12', expYear: '30', cvv: '123' }, holder: { name: 'Cliente', email: 'cliente@example.com' }, remoteIp: '203.0.113.10' }),
+    p.tokenize({ customerId: 'cus_1', card: { number: '4242424242424242', holderName: 'Cliente', expMonth: '12', expYear: '30', cvv: '123' }, holder: { name: 'Cliente', email: 'cliente\u0040example.com' }, remoteIp: '203.0.113.10' }),
     error => error.code === 'TOKENIZATION_NOT_ENABLED' && /não está habilitada/.test(error.message)
   )
 })

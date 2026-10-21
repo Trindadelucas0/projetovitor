@@ -6,8 +6,8 @@ export const STUDENT_NAV = [
 ]
 export const PRO_NAV = [
   ['painel', 'house', 'Painel', '/pro'], ['alunos', 'users', 'Alunos', '/pro?tab=alunos'],
-  ['treinos', 'dumbbell', 'Treinos', '/pro?tab=treinos'], ['atendimentos', 'chat', 'Atendimentos', '/pro?tab=atendimentos'],
-  ['mais', 'list', 'Mais', '/pro?tab=mais']
+  ['treinos', 'dumbbell', 'Fichas', '/pro?tab=treinos'], ['avaliacao', 'clipboard', 'Avaliações', '/pro?tab=avaliacao'],
+  ['atendimentos', 'chat', 'Atendimentos', '/pro?tab=atendimentos']
 ]
 const GROUP = {
   hoje: 'inicio', inicio: 'inicio', avisos: 'inicio', acompanhamento: 'inicio', profissionais: 'inicio', profissional: 'inicio', conversa: 'inicio',
@@ -24,10 +24,11 @@ export function professionalTab(path, search = '') {
   if (path.startsWith('/pro/programas') || path.startsWith('/pro/treino')) return 'treinos'
   if (first !== 'pro') return 'mais'
   if (['adicionar', 'convites', 'cadastrar'].includes(tab)) return 'alunos'
-  return ['painel', 'alunos', 'treinos', 'atendimentos'].includes(tab) ? tab : 'mais'
+  return ['painel', 'alunos', 'treinos', 'avaliacao', 'atendimentos'].includes(tab) ? tab : 'mais'
 }
 export function visibleResource(user, subscriptions, resource) {
   if (user?.admin) return true
+  if (user?.internal_personal && ['prescrever', 'convidar', 'construtor'].includes(resource)) return true
   // Plano único: a Biblioteca de exercícios é ferramenta de quem monta ficha, ou seja,
   // o personal — que agora é o administrador, já liberado na linha acima.
   if (resource === 'biblioteca') return false

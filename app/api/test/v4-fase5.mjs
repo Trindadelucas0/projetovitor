@@ -1,7 +1,7 @@
 // V4 · Fase 5 — limite único (plano + concessões), capacidade legada não autoriza, identidade única.
 import { get, post, login, signup, verifiedPro, check, summary, q } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 const pro = await verifiedPro(adm, 'v4f5pro')
 const accept = async () => { const s = await signup(adm, 'v4f5al'); const inv = await post(pro.tok, '/api/pro/invites', {}); if (inv.s !== 201) return inv; return post(s.tok, '/api/invites/accept', { code: inv.d.code }) }
 let c = (await get(pro.tok, '/api/pro/capacity')).d

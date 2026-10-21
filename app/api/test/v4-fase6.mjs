@@ -1,7 +1,7 @@
 // V4 · Fase 6 — comunidade: aluno sem publicar; ranking ignora sessão com tempo corrigido.
 import { get, post, login, signup, check, summary, q } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 const a = await signup(adm, 'v4f6al')
 const cats = (await get(a.tok, '/api/feed/categories')).d
 check(cats.can_publish === false, 'aluno não tem botão de publicar (can_publish=false)')

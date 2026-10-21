@@ -7,7 +7,7 @@ import Icon from '../../components/Icon.jsx'
 import RevisaoAvaliacao from './RevisaoAvaliacao.jsx'
 import { Btn, Empty, Err, Load, Field, Tabs, useLoad, useAutoRefresh } from '../app/kit.jsx'
 import { notify, notifyError } from '../../lib/dialog.js'
-import { APV, APA, STATUS_PT } from '../../lib/postural.js'
+import { APV, STATUS_PT } from '../../lib/postural.js'
 import { P } from '../../lib/care.js'
 import './postural.css'
 
@@ -15,13 +15,13 @@ const dt = s => s ? new Date(s).toLocaleDateString('pt-BR') : ''
 
 function Solicitar({ onDone }) {
   const [alunos] = useLoad(() => P.students('ativos', ''))
-  const [protos] = useLoad(() => APA.protocolos())
+  const [protos] = useLoad(() => APV.protocolos())
   const [f, setF] = useState({ student_id: '', protocol_id: '', due_days: 7, message: '', recorrente: false, period_months: 1, day_of_month: 1 })
   const [busy, setBusy] = useState(false)
 
   const lista = alunos?.students || alunos?.rows || []
   // só protocolo com versão publicada pode ser solicitado (o servidor confere de novo)
-  const disponiveis = (protos?.protocols || []).filter(p => p.active && (p.versions || []).some(v => v.status === 'publicada'))
+  const disponiveis = protos?.protocols || []
 
   const enviar = async () => {
     if (!f.student_id || !f.protocol_id) return notify('Escolha o aluno e o protocolo.', 'error')
@@ -52,7 +52,7 @@ function Solicitar({ onDone }) {
         {disponiveis.map(p => <option key={p.id} value={p.id}>{p.name}{p.oficial ? ' (oficial)' : ''}</option>)}
       </select>
     </Field>
-    {disponiveis.length === 0 && <p className="g-note g-sm">Nenhum protocolo com versão publicada. Publique um em Protocolos e indicadores.</p>}
+    {disponiveis.length === 0 && <p className="g-note g-sm">Nenhum protocolo publicado disponível. A administração pode publicar um protocolo.</p>}
     <Field label="Prazo (dias)">
       <input className="g-in" type="number" min={1} max={90} value={f.due_days} onChange={e => setF({ ...f, due_days: e.target.value })} data-testid="ap-sol-prazo" />
     </Field>
@@ -127,7 +127,7 @@ export default function FilaAvaliacoes() {
       {aba === 'solicitar' && <Solicitar onDone={() => { setAba('fila'); reload() }} />}
       {aba === 'recorrencias' && <Recorrencias />}
       {aba === 'duvidas' && <p className="g-mut g-sm">
-        As dúvidas abrem na conversa do atendimento, junto com o resto. <a className="g-link" href="#/admin/painel?tab=filas">Ir para Dúvidas e atendimentos</a>.
+        As dúvidas abrem na conversa do atendimento, junto com o resto. <a className="g-link" href="#/pro?tab=atendimentos">Ir para Dúvidas e atendimentos</a>.
       </p>}
 
       {aba === 'fila' && <>

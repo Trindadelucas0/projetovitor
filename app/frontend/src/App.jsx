@@ -30,7 +30,7 @@ import ShareCard from './views/guided/ShareCard.jsx'
 import Settings from './views/Settings.jsx'
 const MuscleMap = lazy(() => import('./views/MuscleMap.jsx'))
 // treino guiado (AVAGYM)
-import GuidedTabBar, { isAdminAccount, isProAccount } from './views/guided/TabBar.jsx'
+import GuidedTabBar, { ProfessionalTabBar, isAdminAccount, isProAccount } from './views/guided/TabBar.jsx'
 import Onboarding from './views/guided/Onboarding.jsx'
 import Today from './views/guided/Today.jsx'
 import { Recommendations, Library as ProgramLibrary, ProgramDetail } from './views/guided/Programs.jsx'
@@ -49,7 +49,7 @@ import Gate from './views/app/Locked.jsx'
 import Acompanhamento, { Conversa } from './views/app/Acompanhamento.jsx'
 import Avisos from './views/app/Avisos.jsx'
 import AdminApp from './views/admin/AdminApp.jsx'
-import ProApp from './views/app/Pro.jsx'
+import ProPortal from './views/pro/Portal.jsx'
 import { LegalGate, LegalPage } from './views/app/Legal.jsx'
 /* Plano unico: o portal do profissional (views/pro/Portal.jsx, views/pro/MyPrograms.jsx)
    e a assinatura PRO (views/billing/ProSubscription.jsx) saem das rotas. Os arquivos
@@ -160,7 +160,7 @@ function Shell() {
               <Route path="/post/:id" element={<Gate title="Comunidade"><PostPage /></Gate>} />
               <Route path="/profissional/:id" element={<Gate title="Comunidade"><ProfessionalPage /></Gate>} />
               <Route path="/ranking" element={<Navigate to="/comunidade" replace />} />
-              <Route path="/pro" element={isProAccount(user) ? <ProApp /> : <Navigate to={user?.admin ? '/admin/painel?tab=usuarios' : '/hoje'} replace />} />
+              <Route path="/pro" element={isProAccount(user) ? <ProPortal /> : <Navigate to="/hoje" replace />} />
               <Route path="/pro/programas" element={<Navigate to={user?.admin ? '/admin/painel?tab=modelos' : '/hoje'} replace />} />
               <Route path="/pro/assinatura" element={<Navigate to="/assinatura" replace />} />
               <Route path="/admin/painel" element={user?.admin ? <AdminApp /> : <Navigate to="/hoje" replace state={{ noOnboarding: true }} />} />{/* QA AD-40/43: sem permissao -> Inicio, sem cair no questionario */}
@@ -202,6 +202,7 @@ function Shell() {
       </div>
       {/* barra principal = treino guiado; a antiga só aparece no treino manual em execução */}
       {authed && !user?.needs_terms && !user?.must_change_password && !isAdminAccount(user) && !isProAccount(user) && !loc.pathname.startsWith('/admin/painel') && !loc.pathname.startsWith('/pro/treino') && !(loc.pathname.startsWith('/avaliacao/') && !loc.pathname.endsWith('/devolutiva')) && <GuidedTabBar />}
+      {authed && !user?.needs_terms && !user?.must_change_password && isProAccount(user) && !loc.pathname.startsWith('/pro/treino') && <ProfessionalTabBar />}
       {authed && isAdminAccount(user) && !user?.needs_terms && !loc.pathname.startsWith('/admin/painel') && !loc.pathname.startsWith('/pro/treino') && <button className="adm-btn" style={{ position: 'fixed', left: 12, bottom: 12, minHeight: 44, zIndex: 50 }} onClick={() => navigate('/admin/painel')} data-testid="back-admin">← Painel admin</button>}
       <RestTimer />
       <Modals />

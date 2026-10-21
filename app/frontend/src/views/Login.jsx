@@ -189,7 +189,7 @@ function LoginForm() {
         {reg && <p className="lg-sub" data-testid="signup-step" style={{ marginTop: 0 }}>Etapa {step} de 4 · {['Acesso', 'Seus dados', 'Assinatura', 'Confirmação'][step - 1]}</p>}
         {(!reg || step === 1) && <>
         {reg && field('name', 'Nome', 'text', 'name', { maxLength: 80 })}
-        {field('email', 'E-mail', 'email', 'email', { inputMode: 'email', placeholder: 'voce@email.com' })}
+        {field('email', 'E-mail', 'email', 'email', { inputMode: 'email', placeholder: 'Digite seu e-mail' })}
         {field('password', 'Senha', showPw ? 'text' : 'password', reg ? 'new-password' : 'current-password')}
         {reg && field('confirm', 'Confirmar senha', showPw ? 'text' : 'password', 'new-password')}
         </>}

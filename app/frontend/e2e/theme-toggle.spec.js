@@ -18,7 +18,7 @@ test('logado (aluno, personal, admin): alterna e salva no servidor', async ({ br
   const terms = (await (await rq.get('/api/terms')).json()).terms, email = `tema.${Date.now()}@e2e.local`
   await rq.post('/api/auth/register', { data: { name: 'Pessoa Tema', email, password: PASS, accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version } })
   await rq.post('/api/guided/onboarding', { data: { objetivo: 'hypertrophy', nivel: 'beginner', local: 'gym', dias: 3, minutos: 45, restricoes: [] } }); await rq.dispose()
-  for (const [who, url] of [[email, '/hoje'], ['pro1.e2e@avadesk.local', '/pro'], ['admin.e2e@avadesk.local', '/admin/painel']]) {
+  for (const [who, url] of [[email, '/hoje'], ['pro1.e2e\u0040avadesk.local', '/pro'], ['admin.e2e\u0040avadesk.local', '/admin/painel']]) {
     const ctx = await browser.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin }, viewport: M, colorScheme: 'dark' })
     const u = (await (await ctx.request.post('/api/auth/login', { data: { email: who, password: PASS } })).json()).user
     await ctx.request.post('/api/me/theme', { data: { theme: 'dark' } })
@@ -34,7 +34,7 @@ test('logado (aluno, personal, admin): alterna e salva no servidor', async ({ br
 })
 test('aluno do personal não vê "Todos os programas" no Início', async ({ browser }) => {
   const p = await browser.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin } })
-  await p.request.post('/api/auth/login', { data: { email: 'pro1.e2e@avadesk.local', password: PASS } })
+  await p.request.post('/api/auth/login', { data: { email: 'pro1.e2e\u0040avadesk.local', password: PASS } })
   const email = `temacli.${Date.now()}@lock.test`, r = await (await p.request.post('/api/pro/clients', { data: { name: 'Aluno Tema', email } })).json(); await p.close()
   const ctx = await browser.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin }, viewport: M })
   await ctx.request.post('/api/auth/login', { data: { email, password: r.temp_password } })

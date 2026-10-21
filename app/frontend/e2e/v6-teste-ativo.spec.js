@@ -7,7 +7,7 @@ for (const width of [390, 1280]) test(`teste ativo aparece na assinatura (${widt
   await page.setViewportSize({ width, height: 900 })
   const rq = page.request, H = { Origin: baseURL }
   await rq.post('/api/test/rate-limit/reset').catch(() => {})
-  const adm = (await (await rq.post('/api/auth/login', { headers: H, data: { email: 'admin.e2e@avadesk.local', password: PASS } })).json()).token
+  const adm = (await (await rq.post('/api/auth/login', { headers: H, data: { email: 'admin.e2e\u0040avadesk.local', password: PASS } })).json()).token
   const A = { ...H, Authorization: 'Bearer ' + adm }
   const camp = (await (await rq.post('/api/adm/billing/campaigns', { headers: A, data: { name: 'E2E F8 ' + Date.now(), kind: 'oficial', benefit: 'trial', status: 'ativa' } })).json())
   const code = 'F8T' + Date.now().toString(36).toUpperCase().slice(-6)

@@ -5,7 +5,7 @@ const program = { id: 'p1', program_id: 'catalog1', title: 'Força A/B', weeks: 
 const workout = { id: 'w1', name: 'Treino A', exercises: [{ exercise_id: 'ex1', name: 'Agachamento', sets: 3, reps_min: 10, reps_max: 10, rest_sec: 60, suggestion: { weight: 10 } }] }
 const features = { programas_guiados: true, ranking: true, progresso: true, prescrever: true, convidar_alunos: true, construtor_treino: true }
 async function boot(page, profile = 'aluno', { scoped = false, fail = null } = {}) {
-  const user = { id: 'ui-' + profile, name: 'Conta de teste', email: 'ui@example.test', roles: [profile], capacities: [profile], context: profile, status: 'ativo', admin: profile === 'admin', pro: profile === 'profissional', client_locked: scoped, access_locked: false }
+  const user = { id: 'ui-' + profile, name: 'Conta de teste', email: 'ui\u0040example.test', roles: [profile], capacities: [profile], context: profile, status: 'ativo', admin: profile === 'admin', pro: profile === 'profissional', client_locked: scoped, access_locked: false }
   const errors = []
   page.on('pageerror', e => errors.push(e.message))
   await page.route('**/api/**', async route => {
@@ -32,7 +32,7 @@ async function boot(page, profile = 'aluno', { scoped = false, fail = null } = {
       '/api/pro/capacity': { active: 1,capacity:2,available:1,state:'ativo',limit:{plan_limit:2},requests:[] },
       '/api/community/feed': { posts: [] }, '/api/professionals': {professionals:[]},
       '/api/adm/management': {period:Number(url.searchParams.get('period') || 30),pending:{accounts:2,verifications:1,requests:0,overdue:0},indicators:{accounts:3,trainees:1,professionals:1,links:1,subscriptions:2},comparison:{signups:{current:3,previous:1,percent:200},sessions:{current:4,previous:2,percent:100}},series:{signups:[{day:'2026-10-15',n:3}],sessions:[{day:'2026-10-15',n:4}]},subscriptions:[],capacity:{finite_used:1,capacity:2,unlimited:0},occupancy:[],start_date:'2026-10-01',end_date:'2026-10-15',timezone:'America/Sao_Paulo',generated_at:now},
-      '/api/adm/users': {users:[{id:'s1',name:'Aluno da interface',email:'aluno@example.test',roles:['aluno'],status:'ativo',access_unlocked_at:now}]}, '/api/adm/professionals':{professionals:[]}
+      '/api/adm/users': {users:[{id:'s1',name:'Aluno da interface',email:'aluno\u0040example.test',roles:['aluno'],status:'ativo',access_unlocked_at:now}]}, '/api/adm/professionals':{professionals:[]}
     }
     return route.fulfill({ json: responses[p] || {} })
   })

@@ -14,7 +14,7 @@ async function ctxLogin(browser, email, password = PASS, vp = M) {
 test.describe.configure({ mode: 'serial' })
 let client = null
 test('personal cadastra aluno e vê a senha provisória uma vez', async ({ browser }) => {
-  const ctx = await ctxLogin(browser, 'pro1.e2e@avadesk.local'), page = await ctx.newPage()
+  const ctx = await ctxLogin(browser, 'pro1.e2e\u0040avadesk.local'), page = await ctx.newPage()
   await page.goto('/#/pro?tab=cadastrar')   // reorganização: Alunos → Adicionar aluno → Cadastrar
   const email = `aluno42.${Date.now()}@lock.test`
   await page.getByTestId('pc-name').fill('Aluna do Personal'); await page.getByTestId('pc-email').fill(email)
@@ -54,7 +54,7 @@ test('conta nova não liberada: vê tudo, ação travada com cadeado', async ({ 
   await ctx.close()
 })
 test('admin: liberação de contas', async ({ browser }) => {
-  const ctx = await ctxLogin(browser, 'admin.e2e@avadesk.local', PASS, { width: 1280, height: 900 }), page = await ctx.newPage()
+  const ctx = await ctxLogin(browser, 'admin.e2e\u0040avadesk.local', PASS, { width: 1280, height: 900 }), page = await ctx.newPage()
   await page.goto('/#/admin/painel?tab=liberacoes'); await expect(page.getByTestId('adm-liberacoes')).toBeVisible()
   await shot(page, '06-admin-liberacoes')
   await page.getByTestId('lib-aprovar').first().click(); await page.waitForTimeout(800)

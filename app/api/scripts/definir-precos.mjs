@@ -14,7 +14,8 @@ const args = process.argv.slice(2), apply = args.includes('--apply')
 const want = args.filter(a => /^[a-z_]+=\d+$/.test(a)).map(a => { const [id, c] = a.split('='); return [id, +c] })
 if (!want.length) { console.error('informe plano=centavos'); process.exit(2) }
 if (apply && !(args.includes('--backup-ok') && args[args.indexOf('--confirm') + 1] === 'PRECOS')) { console.error('--apply exige --confirm PRECOS --backup-ok (faca o pg_dump antes)'); process.exit(2) }
-const actor = (await q(`select id, tenant_id, email from users where lower(email)=lower($1) limit 1`, [process.env.ACTOR_EMAIL || 'admin@avagym.com.br'])).rows[0]
+if (!process.env.ACTOR_EMAIL) { console.error('defina ACTOR_EMAIL no .env'); process.exit(2) }
+const actor = (await q(`select id, tenant_id, email from users where lower(email)=lower($1) limit 1`, [process.env.ACTOR_EMAIL])).rows[0]
 if (!actor) { console.error('admin nao encontrado'); process.exit(2) }
 for (const [id, cents] of want) {
   const cur = (await q('select id, name, is_free, price_cents, sellable, trial_days, active from plans where id=$1', [id])).rows[0]

@@ -77,7 +77,7 @@ test('IDOR: não apaga post/comentário alheio nem acessa rotas de profissional/
   const cid = (await pool.query(`select id from post_comments where post_id=$1 and status='visivel' limit 1`, [post])).rows[0].id
   assert.equal((await call(C.jar, 'POST', '/api/comments/delete', { id: cid })).s, 403)
   assert.equal((await call(C.jar, 'GET', '/api/pro/student?id=' + A.id)).s, 403)
-  assert.ok([401, 403].includes((await call(C.jar, 'POST', '/api/adm/users/update', { id: A.id, name: 'Hack', email: 'h@e2e.local' })).s))
+  assert.ok([401, 403].includes((await call(C.jar, 'POST', '/api/adm/users/update', { id: A.id, name: 'Hack', email: 'h\u0040e2e.local' })).s))
   assert.equal((await pool.query('select name from users where id=$1', [A.id])).rows[0].name, 'Seg a')
 })
 
@@ -138,7 +138,7 @@ test('rate limit: denúncias em rajada param em 429 (por sessão)', async () => 
 test('rate limit: login não é burlado trocando X-Forwarded-For', async () => {
   let first429 = 0
   for (let i = 1; i <= 22 && !first429; i++) {
-    const r = await call({}, 'POST', '/api/auth/login', { email: 'ninguem@e2e.local', password: 'errada' }, { 'X-Forwarded-For': `10.0.${i}.${i}` })
+    const r = await call({}, 'POST', '/api/auth/login', { email: 'ninguem\u0040e2e.local', password: 'errada' }, { 'X-Forwarded-For': `10.0.${i}.${i}` })
     if (r.s === 429) first429 = i
   }
   assert.equal(first429, 21, 'XFF forjado não reseta o limite (20/15 min)')

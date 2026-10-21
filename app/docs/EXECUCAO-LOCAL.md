@@ -1,27 +1,23 @@
-# Execução local (Windows, sem Docker)
+# Projeto Vitor — execução local
 
-Pré-requisitos: Node 24 / npm 11 (já instalados). Docker Desktop está parado ("unable to start").
+Esta cópia trabalha no Windows em `F:\projetovitor\projetovitor`. Os comandos abaixo iniciam apenas o ambiente local; não publicam na VPS nem executam migrations.
 
-Instalação (lockfiles, uma vez): `cd api; npm ci` e `cd frontend; npm ci` (cache npm em `D:\open-gyn-saas\.npm-cache`).
+## Requisitos
 
-- Iniciar: `powershell -ExecutionPolicy Bypass -File scripts\dev-start.ps1`
-- Parar: `powershell -ExecutionPolicy Bypass -File scripts\dev-stop.ps1` (mata só os PIDs salvos em `D:\open-gyn-saas\runtime\pids.txt`)
-- URLs: app http://localhost:5551 (Vite, proxy `/api` → API) · API http://localhost:8787
-- Dados: `D:\open-gyn-saas\runtime\data` (fora do repo; contém `secret` e `vapid.json` — não versionar). Logs: `D:\open-gyn-saas\logs`.
-- Env usadas: `PORT=8787 DATA_DIR=... RP_ID=localhost ORIGIN=http://localhost:5551`.
+Node.js e npm compatíveis com `app/api/package.json` e `app/frontend/package.json`, PostgreSQL configurado para a API e dependências instaladas com `npm ci` nas duas pastas. Guarde credenciais somente em `app/api/.env`; não copie segredos para a documentação.
 
-## Resultados (2026-10-13)
-- `npm ci` api/frontend OK; `npm run build` OK (aviso de chunk >500 kB); `npm test` 196/196 OK.
-- API: `/api/health` 200, `/api/config` 200, `/api/login/options` 200, `/api/register/options` 200, `/api/me` e `/api/data` 401 sem sessão (esperado), `/api/push/public-key` 200.
-- SPA: `/`, `/home`, `/library`, `/plan`, `/history`, `/stats`, `/settings`, `/admin` → 200.
-- Login completo não testado (WebAuthn precisa de navegador no PC).
+## Iniciar e parar
 
-## Divergências do upstream
-- README cita `.env.example` e `web/Dockerfile`/`web/nginx.conf`, mas **não existem** no repo → `docker compose up --build` falharia no serviço `web`.
-- Mídia de exercícios (~140 MB, baixada pelo serviço `media` do compose) não existe no modo dev.
+Na pasta `app`, execute `powershell -ExecutionPolicy Bypass -File scripts/dev-start.ps1 -Root F:\projetovitor\projetovitor`. O script configura API na porta 8787 e Vite em `http://127.0.0.1:5551`; `/api` é encaminhado pelo proxy local. Para parar os processos do script, execute `powershell -ExecutionPolicy Bypass -File scripts/dev-stop.ps1 -Root F:\projetovitor\projetovitor`. O parâmetro `-Root` é obrigatório nesta cópia porque o valor padrão dos scripts ainda aponta para a pasta antiga.
 
-## Mídia de exercícios
-Baixada pelo mesmo mecanismo do serviço `media` do compose (git clone --depth 1 de hasaneyldrm/exercises-dataset, commit 7455efa — o mesmo fixado no CDN do código) em `D:\open-gyn-saas\runtime\exercises-dataset`, com cópia de `images/*.jpg` → `runtime\media\img` e `videos/*.gif` → `runtime\media\gif`. O `dev-start.ps1` define `OPENGYM_MEDIA_DIR`, `VITE_IMG_BASE=/img/` e `VITE_GIF_BASE=/gif/`; um plugin dev no `vite.config.js` serve os arquivos. Licença: código/dados/instruções MIT; mídia © Gym visual (redistribuída com permissão; manter atribuição; reuso sujeito aos termos da Gym visual).
+Confira `http://127.0.0.1:5551` e `http://127.0.0.1:8787/api/health`. O login, a cobrança e a avaliação postural dependem de banco e integrações configurados; HTTP 200 sozinho não prova essas jornadas.
 
-## Docker (não executado)
-`web/Dockerfile`, `web/nginx.conf` e `.env.example` foram recriados. Para usar: `copy .env.example .env` e `docker compose up -d --build`.
+## Verificações locais
+
+Em `app/frontend`, `npm test` executa testes unitários e `npm run build` verifica a compilação. Em `app/api`, há testes por módulo nos scripts do `package.json`. Testes de integração que escrevem no banco exigem um banco isolado; nunca aponte rotinas de reset para o banco de uso.
+
+Não execute `node db/migrate.js` no banco local de uso sem reconciliar as migrations pendentes e fazer backup. Em 21/10/2026, apenas a migration 073 foi aplicada pontualmente nesse banco após dump validado; 069–072 continuaram pendentes. A documentação oficial registra esse estado.
+
+## Limites do app móvel
+
+O frontend tem PWA e projetos Capacitor. A existência do shell Android/iOS não comprova que login, sincronização, pagamento e notificações tenham sido testados em aparelho. Faça validação específica antes de distribuir.

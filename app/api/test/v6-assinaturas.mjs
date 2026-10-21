@@ -30,7 +30,7 @@ let adm
 after(async () => { if (adm) await call(adm, 'POST', '/api/adm/billing/settings', { monetizacao_ativa: false, teste_so_cupom: true }); await pool.end() })
 
 test('preparacao: precos de teste no banco de teste, teste so por cupom, monetizacao desligada', async () => {
-  adm = await login('admin.e2e@avadesk.local'); assert.ok(adm)
+  adm = await login('admin.e2e\u0040avadesk.local'); assert.ok(adm)
   assert.equal((await call(adm, 'POST', '/api/adm/billing/settings', { monetizacao_ativa: false, teste_so_cupom: true })).s, 200)
   assert.equal((await call(adm, 'POST', '/api/adm/billing/plans', { id: 'individual', price_cents: 2990, trial_days: null, sellable: true })).s, 200)
   assert.equal((await call(adm, 'POST', '/api/adm/billing/plans', { id: 'pro', price_cents: 7990, trial_days: 7, sellable: true })).s, 200)

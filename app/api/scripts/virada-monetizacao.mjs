@@ -1,5 +1,5 @@
 // Monetizacao F10: VIRADA (liga a monetizacao e inicia a transicao dos usuarios do Gratis).
-// NAO RODAR EM PRODUCAO SEM O OK EXPLICITO DO LUCAS. Passo a passo e rollback: docs/sistema/22-virada-monetizacao.md
+// NAO RODAR EM PRODUCAO SEM O OK EXPLICITO DO RESPONSAVEL, backup validado e plano de rollback revisado.
 //
 //   node scripts/virada-monetizacao.mjs --dry-run            (padrao: so mostra quem receberia a transicao; nao grava nada)
 //   node scripts/virada-monetizacao.mjs --apply --confirm VIRAR [--no-switch]

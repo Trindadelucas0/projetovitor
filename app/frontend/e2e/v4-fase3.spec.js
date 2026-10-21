@@ -49,7 +49,7 @@ test('profissional cria rascunho e envia para avaliação', async ({ browser, pl
   await ctx.close()
 })
 test('admin avalia, aprova, publica e concede selo; aluno vê selos no catálogo', async ({ browser, playwright }) => {
-  const ctx = await asUser(browser, 'admin.e2e@avadesk.local'), page = await ctx.newPage()
+  const ctx = await asUser(browser, 'admin.e2e\u0040avadesk.local'), page = await ctx.newPage()
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/#/admin/programas')
   await page.getByTestId('ap-item').filter({ hasText: title }).click()

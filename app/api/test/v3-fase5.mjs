@@ -3,7 +3,7 @@
 import { check, summary, get, post, login, PASS, verifiedPro, cleanupDocs, q } from './v3-lib.mjs'
 import { pool } from '../db/pool.js'
 const RE = /^[A-HJ-NP-Z2-9]{8}$/
-const adm = await login('admin.e2e@avadesk.local')
+const adm = await login('admin.e2e\u0040avadesk.local')
 // cadastro direto, SEM chamar o admin
 async function raw(label, intent = 'aluno') {
   const terms = (await get(null, '/api/terms')).d.terms
@@ -17,9 +17,9 @@ const a = await raw('v3f5a')
 check(a.s === 200 && a.user.status === 'ativo', 'nova conta nasce ativa (sem aprovação do admin)')
 check((await get(a.tok, '/api/guided/state')).s === 200, 'acessa o app imediatamente')
 check((await q(`select count(*)::int n from users where status='pendente'`)).rows[0].n === 0, 'nenhuma conta presa em "pendente" após a migração')
-const t = (await q(`select status from users where lower(email) in ('teste@gmail.com')`)).rows
-check(t.every(x => x.status === 'ativo'), 'conta teste@gmail.com continua ativa')
-check((await post(null, '/api/auth/login', { email: 'admin.e2e@avadesk.local', password: PASS })).s === 200, 'admin continua entrando')
+const t = (await q(`select status from users where lower(email) in ('teste\u0040gmail.com')`)).rows
+check(t.every(x => x.status === 'ativo'), 'conta teste\u0040gmail.com continua ativa')
+check((await post(null, '/api/auth/login', { email: 'admin.e2e\u0040avadesk.local', password: PASS })).s === 200, 'admin continua entrando')
 
 console.log('Código público do aluno')
 const code = (await get(a.tok, '/api/me/code')).d.code

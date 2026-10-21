@@ -1,4 +1,4 @@
-// Regressao dos bugs QA (docs/bugs): BUG-001 (termos pedidos 2x) e BUG-002 (AD-27 liberacao fica na fila).
+// Regressao dos bugs QA historicos: BUG-001 (termos pedidos 2x) e BUG-002 (AD-27 liberacao fica na fila).
 // SOMENTE no banco de TESTE: API=http://localhost:8797 DB_NAME=avagym_test node --test test/qa-regressao.mjs
 import test, { after } from 'node:test'
 import assert from 'node:assert/strict'
@@ -60,7 +60,7 @@ test('fluxo antigo: pedido pendente e encerrado sem criar nova fila de liberacao
 })
 
 test('BUG-012 (QA): aluno criado pelo personal (travado, senha provisoria) aceita os termos por /api/legal/accept', async () => {
-  const p1 = (await call({}, 'POST', '/api/auth/login', { email: 'pro1.e2e@avadesk.local', password: PASS })).d.token
+  const p1 = (await call({}, 'POST', '/api/auth/login', { email: 'pro1.e2e\u0040avadesk.local', password: PASS })).d.token
   const bear = async (tok, method, p, body) => { const r = await fetch(B + p, { method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }, body: body ? JSON.stringify(body) : undefined }); let d = {}; try { d = await r.json() } catch { /* */ } return { s: r.status, d } }
   const ce = `qa.cli.${Date.now()}@e2e.local`
   const c = await bear(p1, 'POST', '/api/pro/clients', { name: 'Cliente QA', email: ce }); assert.equal(c.s, 201, JSON.stringify(c.d))

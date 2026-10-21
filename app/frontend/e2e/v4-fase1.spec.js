@@ -130,7 +130,7 @@ test('movimento reduzido respeitado', async ({ browser }) => {
 
 test('construtor: voltar com alteração não salva pergunta "Sair sem salvar?" e não salva sozinho', async ({ browser }) => {
   const ctx = await browser.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin } })
-  const r = await ctx.request.post('/api/auth/login', { data: { email: 'pro1.e2e@avadesk.local', password: PASS } })
+  const r = await ctx.request.post('/api/auth/login', { data: { email: 'pro1.e2e\u0040avadesk.local', password: PASS } })
   expect(r.ok()).toBeTruthy()
   const u = (await r.json()).user
   await ctx.addInitScript(x => localStorage.setItem('gym_user', JSON.stringify(x)), u)

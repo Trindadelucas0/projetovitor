@@ -376,7 +376,10 @@ export function posturalRoutes({ json, readBody }) {
       await q(`update posture_assessments set status='enviada', submitted_at=now(), student_notes=$2, updated_at=now() where id=$1`, [a.id, notes])
       await event(u.tenant_id, a.id, u.id, 'avaliacao.enviada', { etapas: done })
       await audit(u.tenant_id, u.id, 'avaliacao_postural.enviada', 'posture_assessment', a.id, { etapas: done })
-      if (a.professional_id) await notify(a.professional_id, 'avaliacao', 'Avaliação postural recebida', `${u.name} enviou a avaliação postural com ${done} etapa(s).`, '/admin/painel?tab=avaliacao', 'postural-enviada:' + a.id)
+      if (a.professional_id) {
+        const adm = (await q("select 1 from user_roles where user_id=$1 and tenant_id=$2 and role_id='admin'", [a.professional_id, u.tenant_id])).rowCount > 0
+        await notify(a.professional_id, 'avaliacao', 'Avaliação postural recebida', `${u.name} enviou a avaliação postural com ${done} etapa(s).`, adm ? '/admin/painel?tab=avaliacao' : '/pro?tab=avaliacao', 'postural-enviada:' + a.id)
+      }
       else await notifyAdmins(u.tenant_id, 'avaliacao', 'Avaliação postural recebida', `${u.name} enviou uma avaliação postural sem profissional responsável.`, '/admin/painel?tab=avaliacao')
       json(res, 200, { assessment: publicAssessment(await mine(a.id, u)) })
     },

@@ -1,4 +1,4 @@
-// Escolha do provedor so por variavel de ambiente (ver docs/v5/MONETIZACAO-V5.md):
+// Escolha do provedor so por variavel de ambiente; ver app/DOCUMENTACAO-SISTEMA.md.
 //   BILLING_PROVIDER=simulado | asaas   (padrao: asaas se ASAAS_API_KEY existir, senao simulado)
 import { simulado } from './simulado.js'
 import { asaas, asaasConfig } from './asaas.js'

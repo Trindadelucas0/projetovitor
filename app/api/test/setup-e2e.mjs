@@ -7,7 +7,7 @@ if (process.env.NODE_ENV === 'production') { console.error('não rode em produç
 const pass = process.env.E2E_PASSWORD || 'e2e-Avadesk-2026'
 const t = (await q(`select id from tenants where slug=$1`, [process.env.DEFAULT_TENANT || 'avadesk'])).rows[0].id
 const hash = await bcrypt.hash(pass, 10)
-for (const [email, name, roles] of [['admin.e2e@avadesk.local', 'Admin E2E', ['admin']], ['pro1.e2e@avadesk.local', 'Profa. Ana E2E', ['profissional']], ['pro2.e2e@avadesk.local', 'Prof. Bruno E2E', ['profissional']]]) {
+for (const [email, name, roles] of [['admin.e2e\u0040avadesk.local', 'Admin E2E', ['admin']], ['pro1.e2e\u0040avadesk.local', 'Profa. Ana E2E', ['profissional']], ['pro2.e2e\u0040avadesk.local', 'Prof. Bruno E2E', ['profissional']]]) {
   const u = (await q(`insert into users(tenant_id,name,email,password_hash,status) values($1,$2,$3,$4,'ativo') on conflict (lower(email)) do update set password_hash=excluded.password_hash, status='ativo' returning id`, [t, name, email, hash])).rows[0]
   for (const r of roles) await q('insert into user_roles values($1,$2,$3) on conflict do nothing', [u.id, t, r])
   // contas fixas liberadas (banco de teste novo nasce com tudo travado)
