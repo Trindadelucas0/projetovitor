@@ -33,7 +33,7 @@ async function userColumns() {
 // FK para users(id), e sem isto ele devolveria o caminho interno das fotos corporais.
 const SENSITIVE = /password_hash|token_hash|media_key|upload_token|reference_media_key|demo_media_key/
 // tabelas de dados pessoais apagadas na exclusão; o restante (atendimento, publicações, auditoria) é mantido vinculado à conta anonimizada
-const PERSONAL = new Set(['post_likes', 'follows', 'notifications', 'ranking_prefs', 'ranking_pref_history', 'password_resets', 'user_access_plans', 'body_goals',
+const PERSONAL = new Set(['post_likes', 'follows', 'notifications', 'password_resets', 'user_access_plans', 'body_goals',
   // V5 (segurança/LGPD): identidade social, avatar, seguidores e curtidas em comentários
   'social_profiles', 'user_avatar', 'social_follows', 'comment_likes',
   // V5: contato e endereco
@@ -85,7 +85,7 @@ export async function buildExport(u) {
 }
 
 let _legacyErase = null
-// Exclusão = anonimização: apaga dados pessoais, mantém sessões/ranking/auditoria sem identificação; encerra vínculos; remove posts
+// Exclusão = anonimização: apaga dados pessoais, mantém sessões/auditoria sem identificação; encerra vínculos; remove posts
 export async function anonymizeUser(uid) {
   const removed = {}
   removed.arquivos_midia = await purgeMedia(uid).catch(e => { console.error('lgpd.purgeMedia', e && e.message); return 0 })

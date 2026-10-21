@@ -11,15 +11,13 @@ async function setup(page, role, theme) {
     else if (u.pathname === '/api/feed/categories') data = {can_publish:role !== 'aluno',can_comment:true,categories:[{id:'training',name_pt:'Treinamento'},{id:'technique',name_pt:'Técnica de execução'},{id:'education',name_pt:'Educação e qualidade de vida'}]}
     else if (u.pathname === '/api/guided/programs') data = {programs:[]}
     else if (u.pathname === '/api/guided/progress') data = {weeks:[],totals:{n:0,secs:0,vol:0},records:[],history:[]}
-    else if (u.pathname === '/api/groups') data = {groups:[]}
-    else if (u.pathname === '/api/challenges') data = {challenges:[]}
     else if (u.pathname === '/api/pro/prescriptions') data = {prescriptions:[]}
     else if (u.pathname === '/api/pro/library') data = {exercises:[]}
     else if (u.pathname === '/api/pro/templates') data = {templates:[]}
     else if (u.pathname === '/api/pro/students') data = {students:[]}
     else if (u.pathname === '/api/feed') data = {posts:[]}
     else if (u.pathname === '/api/adm/community/editorial') data = {posts:[{id:'official-1',title:'Conteúdo programado',body:'Texto oficial',category:'comunicados',state:'agendado',status:'publicado',publish_at:'2026-10-25T12:00:00.000Z',likes:0,comments:0}]}
-    else if (u.pathname.includes('subscriptions')) data = {subscriptions:{aluno:{active:true,features:{ranking:true,progresso:true,programas_guiados:true}}}}
+    else if (u.pathname.includes('subscriptions')) data = {subscriptions:{aluno:{active:true,features:{progresso:true,programas_guiados:true}}}}
     else if (u.pathname.includes('tours')) data = {tours:{}}
     else if (u.pathname.includes('theme')) data = {theme}
     return route.fulfill({json:data})
@@ -52,13 +50,9 @@ for (const role of ['aluno','profissional','admin']) for (const width of [320,39
     await page.getByRole('button',{name:'Todos',exact:true}).click()
     await expect(page.getByRole('button',{name:'Todos',exact:true})).toHaveAttribute('aria-pressed','true')
     await fit(page)
-    await page.getByRole('tab',{name:'Desafios',exact:true}).click()
-    await expect(page.getByRole('tab',{name:'Criados por mim',exact:true})).toBeVisible()
-    await fit(page)
-    await page.getByRole('tab',{name:'Grupos',exact:true}).click()
-    await expect(page.getByRole('tab',{name:'Meus grupos',exact:true})).toBeVisible()
-    await fit(page)
-    if (width === 390 && role === 'aluno') await page.screenshot({path:'test-artifacts/navigation-tests/grupos-'+theme+'.png'})
+    await expect(page.getByRole('tab',{name:'Desafios',exact:true})).toHaveCount(0)
+    await expect(page.getByRole('tab',{name:'Grupos',exact:true})).toHaveCount(0)
+    await expect(page.getByRole('tab',{name:'Ranking',exact:true})).toHaveCount(0)
     if (role === 'aluno') {
       await page.goto('/#/programas')
       await expect(page.getByRole('combobox',{name:'Objetivo',exact:true})).toBeVisible()
@@ -67,7 +61,7 @@ for (const role of ['aluno','profissional','admin']) for (const width of [320,39
       await expect(page.locator('[role=option][data-value="rehab"]')).toHaveCount(0)
       await fit(page)
       await page.goto('/#/progresso')
-      await expect(page.getByTestId('progress-trophies')).toBeVisible()   // V4.3: layout de d8c2591, sem abas
+      await expect(page.getByTestId('progress-trophies')).toHaveCount(0)
       await fit(page)
       await expect(page.getByRole('heading',{name:'Histórico',exact:true})).toBeVisible()
     }

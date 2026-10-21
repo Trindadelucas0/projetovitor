@@ -73,7 +73,7 @@ export function ScopeGate({ title, children }) {
   return <div className="ag g-page" data-testid="scope-gate">
     <span className="g-ico" style={{ color: 'var(--ag-acc)' }}><Icon name="lock" /></span>
     <h1 className="g-h1">{title || 'Área travada'}</h1>
-    <p className="g-mut">O plano PRO do seu personal cobre as fichas, a comunidade e os desafios disponibilizados por ele. Para usar esta área, contrate o plano Individual.</p>
+    <p className="g-mut">O plano do seu personal cobre as fichas e a comunidade. Para usar esta área, contrate o plano Individual.</p>
     <a className="g-btn g-block" href="#/assinatura" data-testid="scope-subscribe">Contratar plano Individual</a>
     <button className="g-btn g-ghost g-block" style={{ marginTop: 10 }} onClick={() => nav('/treinos')}>Ver minhas fichas</button>
   </div>

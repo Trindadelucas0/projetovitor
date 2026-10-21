@@ -59,17 +59,11 @@ test('aluno: foco no treino, preferências, histórico e notificações', async 
   await expect(page.getByText('Notificação antiga')).toBeVisible()
   expect(errors).toEqual([])
 })
-test('aluno do personal: recursos ocultos e link antigo com explicação', async ({page}) => {
+test('comunidade: link antigo de grupo volta para Publicações', async ({page}) => {
   const errors = await boot(page,'aluno',{scoped:true})
-  await page.goto('/#/hoje')
-  await expect(page.getByTestId('start-pro-plan')).toBeVisible()
-  await page.goto('/#/treinos')
-  await expect(page.getByTestId('plan-start')).toBeVisible()
-  await expect(page.getByText('Explorar programas',{exact:true})).toHaveCount(0)
-  await page.goto('/#/library')
-  await expect(page).toHaveURL(/#\/treinos/)
   await page.goto('/#/comunidade?tab=grupos')
-  await expect(page.getByTestId('scope-gate')).toBeVisible()
+  await expect(page).toHaveURL(/#\/comunidade$/)
+  await expect(page.getByRole('heading',{name:'Publicações',exact:true})).toBeVisible()
   expect(errors).toEqual([])
 })
 test('preparação preserva cargas e só inicia sessão após confirmar',async({page})=>{

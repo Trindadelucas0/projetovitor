@@ -20,16 +20,11 @@ import { tapagoRoutes } from './tapago.js';
 import { posturalRoutes } from './postural.js';
 import { posturalProRoutes } from './postural-pro.js';
 import { posturalAdminRoutes } from './postural-adm.js';
-import { rankingRoutes } from './ranking.js';
 import { lgpdRoutes, termsStatus } from './lgpd.js';
 import { legalRoutes } from './legal.js';
 import { exerciseMediaRoutes } from './exmedia.js';
 import { portalRoutes } from './portal.js';
 import { adminCrudRoutes } from './admcrud.js';
-import { groupRoutes } from './groups.js';
-import { challengeRoutes } from './challenges.js';
-import { challengeFeedRoutes } from './challenge-feed.js';
-import { prizeRoutes } from './prizes.js';
 import { identityRoutes } from './identity.js';
 import { entitlementRoutes, entitlementGate } from './entitlements.js';
 import { monetizationGate, accessRoutes } from './access.js';
@@ -420,14 +415,9 @@ Object.assign(routes, posturalProRoutes({ json, readBody }));  // Avaliação Po
 Object.assign(routes, posturalAdminRoutes({ json, readBody }));  // Avaliação Postural: catálogo, versões, termo, indicadores e retenção
 Object.assign(routes, lgpdRoutes({ json, readBody, legacyState: readState, legacyErase: uid => { eraseStatePg(uid).catch(() => {}); try { fs.unlinkSync(stateFile(uid)) } catch {} db.users = db.users.filter(x => x.id !== uid); saveDb() } }));
 Object.assign(routes, legalRoutes({ json, readBody }));  // dados da empresa + aceite dos documentos legais
-Object.assign(routes, rankingRoutes({ json, readBody }));
 Object.assign(routes, exerciseMediaRoutes({ json, readBody }));
-Object.assign(routes, portalRoutes({ json, readBody }));   // AVAGYM PRO + central de solicitações + KPIs   // vídeos e fotos extras dos exercícios (admin)    // ranking semanal/mensal        // profissionais, vínculos, atendimento, admin   // treino guiado (onboarding, programas, sessões)
+Object.assign(routes, portalRoutes({ json, readBody }));   // central de solicitações, KPIs, profissionais, vínculos e atendimento
 Object.assign(routes, adminCrudRoutes({ json, readBody }));  // admin gestor: editar/excluir tudo
-Object.assign(routes, groupRoutes({ json, readBody }));  // V5: grupos
-Object.assign(routes, challengeRoutes({ json, readBody }));  // V5: desafios
-Object.assign(routes, challengeFeedRoutes({ json, readBody }));  // V5-C: feed do desafio, comprovantes
-Object.assign(routes, prizeRoutes({ json, readBody }));  // V5-E: troféus e premiações
 Object.assign(routes, identityRoutes({ json, readBody }));  // V3 F2: identidade global, contexto, verificação profissional
 Object.assign(routes, entitlementRoutes({ json, readBody, requireAuth, requireRole }));
 Object.assign(routes, accessRoutes({ json, requireAuth, readBody }));
@@ -463,11 +453,10 @@ const RL_RULES = {
   'POST /api/auth/password': [10, 15 * 60e3],
   // Segurança: ações de escrita sensíveis (por sessão quando autenticado; academia com Wi-Fi compartilhado não trava todos)
   'POST /api/posts': [30, 10 * 60e3], 'POST /api/comments': [60, 10 * 60e3], 'POST /api/messages': [60, 10 * 60e3],
-  'POST /api/posts/like': [300, 10 * 60e3], 'POST /api/comments/like': [300, 10 * 60e3], 'POST /api/challenges/posts/like': [300, 10 * 60e3],
+  'POST /api/posts/like': [300, 10 * 60e3], 'POST /api/comments/like': [300, 10 * 60e3],
   'POST /api/reports': [20, 60 * 60e3], 'POST /api/follows': [60, 10 * 60e3], 'POST /api/social/follow': [60, 10 * 60e3],
-  'POST /api/uploads': [30, 10 * 60e3], 'POST /api/me/avatar': [20, 60 * 60e3], 'POST /api/challenges/media': [30, 10 * 60e3],
-  'POST /api/challenges/media/stream': [30, 10 * 60e3], 'POST /api/challenges/posts': [30, 10 * 60e3], 'POST /api/challenges/posts/comment': [60, 10 * 60e3],
-  'POST /api/challenges/proofs': [30, 60 * 60e3], 'POST /api/pro/verification/document': [20, 60 * 60e3],
+  'POST /api/uploads': [30, 10 * 60e3], 'POST /api/me/avatar': [20, 60 * 60e3],
+  'POST /api/pro/verification/document': [20, 60 * 60e3],
   // Avaliacao postural: 18 etapas com retentativa por arquivo, entao o teto do upload e generoso de proposito
   'POST /api/avaliacao-postural/captura/init': [200, 60 * 60e3], 'POST /api/avaliacao-postural/captura/upload': [120, 60 * 60e3],
   'POST /api/avaliacao-postural/captura/confirm': [120, 60 * 60e3], 'POST /api/avaliacao-postural/submit': [20, 60 * 60e3],

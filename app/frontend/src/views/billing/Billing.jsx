@@ -16,7 +16,7 @@ export const FEAT = {
   receber_ficha_profissional: 'Treinos do seu personal',
   prescrever: 'Prescrever treinos para alunos', convidar_alunos: 'Convidar alunos', construtor_treino: 'Construtor de treinos',
   fichas_publicas: 'Publicar fichas na biblioteca pública',
-  treino_pessoal: 'Treino pessoal e treino livre', programas_guiados: 'Programas guiados', execucao: 'Execução guiada com cronômetro', progresso: 'Progresso e histórico', ranking: 'Ranking', desafios_oficiais: 'Desafios oficiais'
+  treino_pessoal: 'Treino pessoal e treino livre', programas_guiados: 'Programas guiados', execucao: 'Execução guiada com cronômetro', progresso: 'Progresso e histórico'
 }
 const FOR = { aluno: 'Para alunos', profissional: 'Para personal trainers' }
 // 3 planos no catalogo: Gratis (um por tipo de conta), Individual (aluno) e PRO (profissional)

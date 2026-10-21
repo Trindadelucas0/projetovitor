@@ -1,7 +1,7 @@
 // ORNY — tipos de conta, acesso comercial e suspensão administrativa.
 // • Usuário normal / profissional: cadastro aberto; pagamento, teste ou concessao liberam o uso conforme o plano.
 // • Aluno do personal: criado pelo personal com link de definição de senha por e-mail;
-//   incluso no plano do personal: só fichas, comunidade e desafios DO personal. O restante exige plano Individual.
+//   incluso no plano do personal: fichas e comunidade. O restante exige plano Individual.
 // • Pagamento: ponto de extensão PAYMENT (sem gateway hoje).
 import { clientIp } from './clientip.js'   // BUG-044
 import crypto from 'node:crypto'
@@ -32,12 +32,12 @@ const ALLOW_LOCKED = [ /^(POST|DELETE) \/api\/me\/(social|avatar)$/,/^POST \/api
   /^POST \/api\/notifications\/read$/, /^POST \/api\/notification-prefs$/, /^POST \/api\/guided\/onboarding$/, /^POST \/api\/me\/onboarding\/skip$/, /^PUT \/api\/data$/,
   // Conta suspensa ainda pode regularizar pagamento e administrar a propria conta; a suspensao continua prevalecendo no uso.
   /^POST \/api\/billing\/(cards|subscribe|coupon\/(validate|redeem)|pay-now|change-card|pix\/(regenerate|confirm-test))$/,
-  /^POST \/api\/logout(\/all)?$/, /^POST \/api\/activity$/, /^POST \/api\/push\//, /^POST \/api\/me\/trophies\/show$/, /^POST \/api\/pro\/verification(\/document)?$/]
-// ações do aluno do personal DENTRO do escopo do plano do personal (fichas, atendimento, comunidade, desafios do personal)
+  /^POST \/api\/logout(\/all)?$/, /^POST \/api\/activity$/, /^POST \/api\/push\//, /^POST \/api\/pro\/verification(\/document)?$/]
+// ações do aluno do personal DENTRO do escopo do plano do personal (fichas, atendimento e comunidade)
 const CLIENT_SCOPE = [/^POST \/api\/guided\/sessions/, /^POST \/api\/active-training/, /^POST \/api\/(occurrences|threads|messages)$/, /^(POST|PUT) \/api\/me\/live-session/,
-  /^POST \/api\/posts\/like$/, /^POST \/api\/posts\/comment/, /^POST \/api\/comments/, /^POST \/api\/challenges\/(join|leave|optout|proofs|proofs\/replace|proofs\/appeal|posts|posts\/like|posts\/comment|media|media\/stream)$/]
+  /^POST \/api\/posts\/like$/, /^POST \/api\/posts\/comment/, /^POST \/api\/comments/]
 // GETs fora do escopo do aluno do personal (catálogo do sistema e áreas gerais)
-const CLIENT_GET_BLOCK = [/^GET \/api\/guided\/(programs|program|recommendations)$/, /^GET \/api\/ranking/, /^GET \/api\/groups?$/]
+const CLIENT_GET_BLOCK = [/^GET \/api\/guided\/(programs|program|recommendations)$/]
 
 // R6: aluno coberto pelo personal cujo personal NÃO está em dia (e sem mensalidade própria) → só visualiza
 export const coachPending = u => isScopedClient(u) && !u.coach_has_access

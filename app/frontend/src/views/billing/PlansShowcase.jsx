@@ -14,7 +14,7 @@ const PITCH = { individual: 'Seu treino com o seu personal, do primeiro dia ao r
 const BEN = {
   individual: [['clipboard', 'Fichas montadas pelo seu personal', 'receber_ficha_profissional'], ['dumbbell', 'Programas guiados para o seu objetivo', 'programas_guiados'],
     ['timer', 'Execução guiada com cronômetro de descanso', 'execucao'], ['chart', 'Progresso, histórico e recordes pessoais', 'progresso'],
-    ['trophy', 'Comunidade, desafios e ranking', null], ['heart', 'Treino adaptado a dores e restrições', null]]
+    ['users', 'Comunidade com publicações', null], ['heart', 'Treino adaptado a dores e restrições', null]]
 }
 const money = c => (c / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -62,7 +62,7 @@ const FAQ = [
   ['Cupom libera o acesso?', 'Não. Cupons podem conceder desconto na contratação, mas somente o pagamento confirmado libera o sistema.'],
   ['Posso cancelar quando quiser?', 'Sim. O cancelamento é feito no app e o acesso continua até o fim do período já pago.'],
   ['O que acontece com meus dados se eu não assinar?', 'Nada se perde: treinos, histórico e progresso ficam guardados e voltam quando você assinar.'],
-  ['O que está incluído na assinatura?', 'As fichas que o seu personal monta para você, os programas guiados, a execução com cronômetro, o progresso com recordes e a comunidade com desafios e ranking.']
+  ['O que está incluído na assinatura?', 'As fichas que o seu personal monta para você, os programas guiados, a execução com cronômetro, o progresso com recordes e a comunidade com publicações.']
 ]
 export function Faq() {
   return <section className="pl-faq" data-testid="plans-faq"><h2>Perguntas frequentes</h2>

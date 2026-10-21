@@ -247,56 +247,19 @@ export function guidedRoutes({ json, readBody }) {
     },
     'GET /api/guided/programs': async (req, res) => {
       const u = await requireTrainee(req, res, json); if (!u) return
-      const goal = qs(req).get('goal')
-      const r = await q(LIST_SQL + ` and p.status='publicado' and p.archived_at is null` + (GOALS.includes(goal) ? ` and p.goal=$2` : '') + ' order by p.is_rehab, p.goal, p.level, p.days_per_week', GOALS.includes(goal) ? [u.tenant_id, goal] : [u.tenant_id])
-      json(res, 200, { programs: r.rows })
+      json(res, 410, { error: 'O catálogo de programas foi desativado. Use a ficha criada pelo seu personal.', code: 'SYSTEM_PROGRAMS_RETIRED' })
     },
     'GET /api/guided/program': async (req, res) => {
       const u = await requireTrainee(req, res, json); if (!u) return
-      const id = qs(req).get('id'); if (!isUuid(id)) return json(res, 400, { error: 'id inválido' })
-      // V4: o aluno vê o publicado; arquivado/revogado só se já aderiu (rascunho/revisão nunca)
-      const mine = (await q(`select x.revision_id from user_programs up left join user_program_revisions x on x.user_program_id=up.id where up.user_id=$1 and up.program_id=$2 order by up.started_at desc limit 1`, [u.id, id])).rows[0]
-      const p = await programFull(id, u.tenant_id, mine?.revision_id || null); if (!p) return json(res, 404, { error: 'Programa não encontrado' })
-      if (p.status !== 'publicado' && !(mine && ['arquivado', 'revogado'].includes(p.status))) return json(res, 404, { error: 'Programa não encontrado' })
-      json(res, 200, { program: p })
+      json(res, 410, { error: 'Os programas do sistema foram retirados. O histórico de treinos continua disponível.', code: 'SYSTEM_PROGRAMS_RETIRED' })
     },
     'POST /api/guided/start': async (req, res) => {
       const u = await requireTrainee(req, res, json); if (!u) return
-      const b = await readBody(req); if (!isUuid(b.program_id)) return json(res, 400, { error: 'id inválido' })
-      const p = await q(`select id, published_revision_id from programs p where id=$1 and status='publicado' and ${tenantScope('p', 2)}`, [b.program_id, u.tenant_id])
-      if (!p.rowCount) return json(res, 404, { error: 'Programa não encontrado' })
-      // V4.1: uma ficha por vez — aluno com ficha de profissional não escolhe programa avulso; quem tem programa precisa desvincular antes
-      { const at = await activeTrainingOf(u.id)
-        if (at.locked_to_pro) return json(res, 409, at.can_detach ? { error: 'Você tem uma ficha do personal ativa. Desvincule a ficha primeiro para ativar um programa do sistema (só um treino por vez).', code: 'MUST_DETACH' } : { error: 'Você treina com a ficha do seu personal. Programas do sistema ficam travados enquanto a sua conta for coberta por ele.', code: 'COACH_LOCKED' })
-        if (at.kind === 'sistema') { if (at.program.program_id === b.program_id) return json(res, 200, { user_program_id: at.program.id, already: true })
-          return json(res, 409, { error: 'Desvincule seu programa atual antes de escolher outro.', code: 'MUST_DETACH' }) } }
-      const r = await q(`insert into user_programs(tenant_id,user_id,program_id,start_date,status,started_at,schedule) values($1,$2,$3,current_date,'active',now(),'{}') returning id`, [u.tenant_id, u.id, b.program_id])
-      // V4: a adesão fica presa à revisão publicada agora (nova versão não troca o programa do aluno sozinha)
-      if (p.rows[0].published_revision_id) await q('insert into user_program_revisions(user_program_id, revision_id) values($1,$2) on conflict do nothing', [r.rows[0].id, p.rows[0].published_revision_id])
-      await setActiveSystem(u, r.rows[0].id)   // V4.1: um treino ativo — a ficha do profissional fica inativa (não apagada)
-      json(res, 200, { user_program_id: r.rows[0].id })
+      json(res, 410, { error: 'Os programas do sistema foram desativados. Aguarde a ficha criada pelo seu personal.', code: 'SYSTEM_PROGRAMS_RETIRED' })
     },
     'POST /api/guided/start-recommended': async (req, res) => {
       const u = await requireTrainee(req, res, json); if (!u) return
-      const profile = await profileOf(u.id)
-      if (!profile) return json(res, 400, { error: 'Responda o questionário antes de ativar sua ficha.', code: 'PROFILE_INCOMPLETE' })
-      const list = (await q(LIST_SQL + ` and p.status='publicado' and p.archived_at is null`, [u.tenant_id])).rows
-      const pick = recommendedProgram(list, profile)
-      if (!pick) return json(res, 409, { error: 'Não encontramos uma ficha compatível com seu perfil e equipamentos.', code: 'NO_COMPATIBLE_PROGRAM' })
-      const program = list.find(p => p.id === pick.id)
-      if (!program) return json(res, 409, { error: 'A recomendação não está mais disponível.', code: 'RECOMMENDATION_UNAVAILABLE' })
-      const at = await activeTrainingOf(u.id)
-      if (at.locked_to_pro) return json(res, 409, at.can_detach
-        ? { error: 'Você tem uma ficha do personal ativa. Desvincule essa ficha antes de ativar a recomendação.', code: 'MUST_DETACH' }
-        : { error: 'Você treina com a ficha do seu personal. Os programas do sistema ficam travados enquanto ela estiver ativa.', code: 'COACH_LOCKED' })
-      if (at.kind === 'sistema') {
-        if (at.program.program_id === program.id) return json(res, 200, { user_program_id: at.program.id, program_id: program.id, already: true })
-        return json(res, 409, { error: 'Desvincule seu programa atual antes de ativar a recomendação.', code: 'MUST_DETACH' })
-      }
-      const row = await q(`insert into user_programs(tenant_id,user_id,program_id,start_date,status,started_at,schedule) values($1,$2,$3,current_date,'active',now(),'{}') returning id`, [u.tenant_id, u.id, program.id])
-      if (program.published_revision_id) await q('insert into user_program_revisions(user_program_id, revision_id) values($1,$2) on conflict do nothing', [row.rows[0].id, program.published_revision_id])
-      await setActiveSystem(u, row.rows[0].id, 'confirmou a ficha recomendada')
-      json(res, 200, { user_program_id: row.rows[0].id, program_id: program.id })
+      json(res, 410, { error: 'As recomendações automáticas foram desativadas. O seu personal criará sua ficha de treino.', code: 'SYSTEM_PROGRAMS_RETIRED' })
     },
     'POST /api/guided/abandon': async (req, res) => {
       const u = await requireTrainee(req, res, json); if (!u) return
@@ -308,6 +271,9 @@ export function guidedRoutes({ json, readBody }) {
     'GET /api/guided/today': async (req, res) => {
       const u = await requireTrainee(req, res, json); if (!u) return
       const a = await activeOf(u); if (!a) return json(res, 200, { active: null })
+      // Defesa para instalações que ainda não executaram a migration 070.
+      await q(`update user_programs set status='ended', ended_at=coalesce(ended_at,now()), end_reason=coalesce(end_reason,'programa do sistema encerrado: treino passa a ser ficha do personal') where id=$1 and user_id=$2 and tenant_id=$3 and status='active'`, [a.id, u.id, u.tenant_id])
+      return json(res, 200, { active: null, retired: true })
       const p = await programFull(a.program_id, u.tenant_id, a.revision_id)
       // V4: programa revogado não executa mais (histórico preservado); arquivado: quem já aderiu termina
       if (p.status === 'revogado') return json(res, 200, { active: { ...a, revoked: true, revoke_reason: p.revoke_reason }, workout: null, revoked: true })

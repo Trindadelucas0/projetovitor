@@ -137,12 +137,9 @@ function StartHere({ profile, at, care, coaches }) {
     </div></div>
       : <div className="g-hero"><div className="g-in" style={{ maxWidth: '100%' }}>
         <span className="g-eyebrow">Comece por aqui</span>
-        {(() => { const cs = coachContextState({ coaches, hasProPlan: false, scoped: !!useStore.getState().user?.client_locked }); return cs === 'A' || cs === 'B' ? <><h2 style={{ marginTop: 6 }}>Aguardando sua ficha</h2>
-        <CoachContext state={cs} coaches={coaches} testid="client-wait" />
-        {cs === 'B' && can('programas') && <><p className="g-mut g-sm" style={{ marginTop: 8 }}>Enquanto isso, você pode seguir um programa do ORNY.</p><button className="g-btn g-ghost" style={{ marginTop: 8 }} onClick={() => nav(profile ? '/programas' : '/onboarding')} data-testid="start-choose">VER PROGRAMAS</button></>}</> : <>
-        <h2 style={{ marginTop: 6 }}>Escolha seu treino</h2>
-        <p className="g-mut g-sm">Programas publicados pelo ORNY e por profissionais verificados.</p>
-        {can('programas') ? <button className="g-btn" style={{ marginTop: 12 }} onClick={() => nav(profile ? '/programas' : '/onboarding')} data-testid="start-choose">ESCOLHER MEU TREINO</button> : <button className="g-link" onClick={() => nav('/planos')}>Consultar meu acesso</button>}</> })()}
+        <h2 style={{ marginTop: 6 }}>Aguardando sua ficha</h2>
+        <p className="g-mut g-sm">Seu personal ainda não adicionou sua ficha de treino. Quando ela for publicada, aparecerá aqui.</p>
+        <button className="g-btn g-ghost" style={{ marginTop: 8 }} onClick={() => nav('/treinos')}>VER TREINOS</button>
       </div></div>}
 
   </section>

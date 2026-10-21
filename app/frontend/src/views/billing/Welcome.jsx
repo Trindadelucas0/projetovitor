@@ -11,11 +11,10 @@ import './premium.css'
 export const UNLOCKED = {
   aluno: [
     ['dumbbell', 'Treino guiado', 'Passo a passo, com cronômetro de descanso e carga sugerida.', '/hoje'],
-    ['clipboard', 'Programas para o seu objetivo', 'Escolha um programa do ORNY ou siga a ficha do seu personal.', '/programas'],
+    ['clipboard', 'Sua ficha de treino', 'Siga a ficha criada pelo seu personal.', '/treinos'],
     ['person', 'Músculos trabalhados', 'Mapa do corpo, frente e costas, com o que você treinou.', '/progresso'],
     ['chart', 'Estatísticas detalhadas', 'Volume, frequência, 1RM estimado, recordes e consistência.', '/estatisticas'],
-    ['users', 'Comunidade e desafios', 'Publicações, grupos e desafios com outros alunos.', '/comunidade'],
-    ['trophy', 'Ranking e troféus', 'Some pontos a cada treino e acompanhe sua posição.', '/ranking']
+    ['users', 'Comunidade', 'Publicações de profissionais e da equipe ORNY.', '/comunidade']
   ],
   profissional: [
     ['house', 'Painel do personal', 'Seus alunos, pendências e atendimentos num só lugar.', '/pro'],
@@ -60,7 +59,7 @@ export function WelcomeModal({ w, name, onClose, onGo, onShown }) {
       <ul className="wl-list">{items.map(([icon, t, d, to]) => <li key={to}>
         <button onClick={() => onGo(to)} data-testid={'welcome-go-' + to.replace(/[^a-z]/g, '')}><span className="wl-ico"><Icon name={icon} /></span>
           <span className="wl-t"><b>{t}</b><small>{d}</small></span><span className="wl-arrow" aria-hidden="true">›</span></button></li>)}</ul>
-      <button className="wl-main" onClick={() => onGo(w.audience === 'profissional' ? '/pro' : '/recomendados')} data-testid="welcome-start">{w.audience === 'profissional' ? 'Começar agora' : 'Encontrar minha ficha'}</button>
+      <button className="wl-main" onClick={() => onGo(w.audience === 'profissional' ? '/pro' : '/treinos')} data-testid="welcome-start">{w.audience === 'profissional' ? 'Começar agora' : 'Ver minha ficha'}</button>
       <button className="wl-later" onClick={onClose} data-testid="welcome-close">Fechar</button>
     </div>
   </div>

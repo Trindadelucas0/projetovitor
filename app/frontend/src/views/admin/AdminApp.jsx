@@ -2,8 +2,6 @@ import Brand from '../../components/Brand.jsx'
 // Central administrativa AVADESK (desktop-first, funciona no celular): barra lateral, KPIs com gráficos,
 // tabelas com busca/filtro/ordenação/paginação/CSV e gavetas de detalhe. O admin é quem decide vínculos, capacidade e liberações.
 import { AdmLiberacoes } from '../v3/V42.jsx'
-import { GR } from '../../lib/groups.js'
-import { CH, CAT, CF, TR, PZ, CRIT_PT, PRIZE_PT, PROOF_PT, STATUS_PT } from '../../lib/challenges.js'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Icon from '../../components/Icon.jsx'
@@ -85,33 +83,34 @@ function Usuarios({ pendingOnly = false }) {
 // A assinatura de R$ 39,90 continua sendo contratada pelo próprio aluno; criar a conta
 // pelo painel não libera o acesso aos treinos.
 function NovoUsuario({ onClose, onDone }) {
-  const [f, setF] = useState({ name: '', email: '', password: '' })
+  const [f, setF] = useState({ type: 'aluno', name: '', email: '', password: '' })
   const [errs, setErrs] = useState({}), [msg, setMsg] = useState(''), [busy, setBusy] = useState(false), [res, setRes] = useState(null)
   const set = k => e => setF(x => ({ ...x, [k]: e.target.value }))
   const err = k => errs[k] && <span className="g-warn g-xs" role="alert">{errs[k]}</span>
   const submit = async e => {
     e.preventDefault(); setBusy(true); setErrs({}); setMsg('')
-    try { const r = await C.createUser({ type: 'aluno', name: f.name, email: f.email, password: f.password || undefined }); setRes(r); onDone && onDone() }
+    try { const r = await C.createUser({ type: f.type, name: f.name, email: f.email, password: f.password || undefined }); setRes(r); onDone && onDone() }
     catch (x) { setErrs(x.errors || {}); setMsg(x.message) } finally { setBusy(false) }
   }
-  if (res) return <Drawer title="Aluno cadastrado" onClose={onClose}>
-    <div data-testid="nu-done"><p><b>{res.email}</b> foi cadastrado como aluno.</p>
+  if (res) return <Drawer title="Conta cadastrada" onClose={onClose}>
+    <div data-testid="nu-done"><p><b>{res.email}</b> foi cadastrado como {res.type === 'profissional' ? 'personal interno' : 'aluno'}.</p>
       {res.temp_password ? <><p>Senha temporária (aparece só agora; copie e entregue ao aluno):</p><p className="adm-card" style={{ fontFamily: 'monospace', fontSize: 18, userSelect: 'all' }} data-testid="nu-pass">{res.temp_password}</p></> : <p>Senha: a que você definiu.</p>}
-      {res.link?.ok ? <p>O aluno já está vinculado a você e aparece na lista.</p>
+      {res.type === 'profissional' ? <p>Agora vincule alunos a este personal pela tela de vínculos.</p> : res.link?.ok ? <p>O aluno já está vinculado a você e aparece na lista.</p>
         : <p className="g-warn">A conta foi criada, mas o vínculo não: {res.link?.error || 'o personal do ambiente não está configurado'}. Crie o vínculo em Convites.</p>}
       <p className="g-mut g-xs">No primeiro acesso o aluno aceita os termos e contrata a assinatura. Os treinos só liberam depois do pagamento confirmado.</p>
-      <div className="adm-tools"><button className="adm-btn" onClick={() => { setRes(null); setF({ name: '', email: '', password: '' }) }}>Cadastrar outro</button><button className="adm-btn ghost" onClick={onClose}>Fechar</button></div></div>
+      <div className="adm-tools"><button className="adm-btn" onClick={() => { setRes(null); setF({ type: 'aluno', name: '', email: '', password: '' }) }}>Cadastrar outro</button><button className="adm-btn ghost" onClick={onClose}>Fechar</button></div></div>
   </Drawer>
   const L = (l, el, k) => <label className="adm-field" style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}><span className="g-xs">{l}</span>{el}{k && err(k)}</label>
-  return <Drawer title="Novo aluno" onClose={onClose}>
+  return <Drawer title="Nova conta" onClose={onClose}>
     <form onSubmit={submit} data-testid="nu-form" noValidate>
+      {L('Tipo de conta', <select className="adm-in" value={f.type} onChange={set('type')}><option value="aluno">Aluno</option><option value="profissional">Personal interno</option></select>, 'type')}
       {L('Nome', <input className="adm-in" value={f.name} onChange={set('name')} required data-testid="nu-name" />, 'name')}
       {L('E-mail', <input className="adm-in" type="email" value={f.email} onChange={set('email')} required data-testid="nu-email" />, 'email')}
       {L('Senha temporária (vazio = gerar automaticamente)', <input className="adm-in" type="text" autoComplete="new-password" value={f.password} onChange={set('password')} data-testid="nu-pass-in" />, 'password')}
       {err('type')}
       {msg && <p className="g-warn" role="alert">{msg}</p>}
-      <div className="adm-tools"><button className="adm-btn" disabled={busy} data-testid="nu-submit">{busy ? 'Cadastrando…' : 'Cadastrar aluno'}</button><button type="button" className="adm-btn ghost" onClick={onClose}>Cancelar</button></div>
-      <p className="g-mut g-xs">Não há limite de alunos: você é o personal do app.</p>
+      <div className="adm-tools"><button className="adm-btn" disabled={busy} data-testid="nu-submit">{busy ? 'Cadastrando…' : f.type === 'profissional' ? 'Cadastrar personal' : 'Cadastrar aluno'}</button><button type="button" className="adm-btn ghost" onClick={onClose}>Cancelar</button></div>
+      <p className="g-mut g-xs">Alunos entram no personal principal. Personais internos recebem alunos somente por transferência da administração.</p>
     </form>
   </Drawer>
 }
@@ -147,106 +146,6 @@ function Solicitacoes() {
   </>
 }
 
-function AdmDesafios() {
-  const nav = useNavigate(), [st, setSt] = useState(''), [d, err, reload] = useLoad(() => CH.adm(st), [st]), [why, setWhy] = useState(null), [msg, setMsg] = useState('')
-  const rows = d?.challenges || [], k = s => rows.filter(r => r.status === s).length
-  const cols = [{ k: 'name', l: 'Desafio' }, { k: 'official', l: 'Oficial', r: r => r.official ? 'Sim' : '—', csv: r => r.official ? 'sim' : '' }, { k: 'creator', l: 'Criador' }, { k: 'status', l: 'Status', r: r => STATUS_PT[r.status] }, { k: 'participants', l: 'Participantes' },
-    { k: 'starts_at', l: 'Início', r: r => new Date(r.starts_at).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) }, { k: 'status_reason', l: 'Motivo' },
-    { k: 'acao', l: '', csv: () => '', r: r => r.status === 'suspenso' ? <button className="adm-btn ghost" onClick={e => { e.stopPropagation(); setWhy({ ...r, restore: true, reason: '' }) }}>Reativar</button> : !['concluido', 'cancelado', 'rascunho'].includes(r.status) && <button className="adm-btn ghost danger" onClick={e => { e.stopPropagation(); setWhy({ ...r, reason: '' }) }} data-testid="c-suspend">Suspender</button> }]
-  return <>
-    <div className="adm-grid">{[['em_andamento', 'Em andamento'], ['inscricoes_abertas', 'Inscrições abertas'], ['apurando', 'Em apuração'], ['suspenso', 'Suspensos']].map(([s, l]) => <button key={s} className="adm-card adm-k" style={{ textAlign: 'left', color: 'inherit' }} onClick={() => setSt(s)}><b>{k(s)}</b><span>{l}</span></button>)}</div>
-    <div className="adm-tools"><button className="adm-btn" onClick={() => nav('/desafios/criar')} data-testid="c-official">+ Criar desafio oficial</button>{[['', 'Todos'], ['em_andamento', 'Em andamento'], ['suspenso', 'Suspensos'], ['concluido', 'Concluídos']].map(([s, l]) => <button key={s} className={'adm-btn ' + (st === s ? '' : 'ghost')} onClick={() => setSt(s)}>{l}</button>)}</div>
-    {msg && <p className="g-warn">{msg}</p>}
-    {err ? <p className="g-warn">{err}</p> : <DataTable name="desafios" cols={cols} rows={rows} onRow={r => nav('/desafio/' + r.id)} />}
-    <AdmPremios challenges={rows} />
-    <AdmComprovantes />
-    <AdmTrofeus />
-    <AdmCategorias />
-    {why && <Drawer title={(why.restore ? 'Reativar ' : 'Suspender ') + why.name} onClose={() => setWhy(null)}><p className="g-sm">Informe o motivo (fica na auditoria e o organizador é avisado).</p>
-      <textarea className="adm-in" rows={3} value={why.reason} onChange={e => setWhy({ ...why, reason: e.target.value })} />
-      <div className="adm-tools"><button className="adm-btn danger" disabled={why.reason.trim().length < 3} onClick={async () => { try { await CH.transition(why.restore ? { id: why.id, restore: true, reason: why.reason } : { id: why.id, to: 'suspenso', reason: why.reason }); setWhy(null); reload() } catch (e) { setMsg(e.message) } }}>Confirmar</button></div></Drawer>}
-  </>
-}
-const PZ0 = { challenge_id: '', name: '', description: '', image_url: '', quantity: 1, criterion: 'primeiro', eligibility: '', availability: '', owner: '', delivery_deadline: '', logistics: '', rules: '' }
-function AdmPremios({ challenges }) {
-  const [d, err, reload] = useLoad(() => PZ.adm()), [ed, setEd] = useState(null), [msg, setMsg] = useState(''), [ask, setAsk] = useState(null)
-  const act = fn => async () => { setMsg(''); try { await fn(); reload() } catch (e) { setMsg(e.message) } }
-  const off = (challenges || []).filter(c => c.official && !['concluido', 'cancelado'].includes(c.status))
-  const homolog = (cid, extra = {}) => act(async () => { try { await PZ.homologate({ id: cid, ...extra }); setMsg('Resultado homologado. Vencedores avisados.') } catch (e) { if (e.message && /Empate|pendentes/.test(e.message)) setAsk({ cid, msg: e.message, extra: /Empate/.test(e.message) ? { ...extra, confirm_ties: true } : { ...extra, confirm_pending: true } }); else throw e } })()
-  const cols = [{ k: 'name', l: 'Prêmio' }, { k: 'challenge', l: 'Desafio' }, { k: 'criterion', l: 'Critério', r: r => CRIT_PT[r.criterion] }, { k: 'quantity', l: 'Qtd.' }, { k: 'status', l: 'Status', r: r => PRIZE_PT[r.status] }, { k: 'owner', l: 'Responsável' },
-    { k: 'delivery_deadline', l: 'Prazo', r: r => r.delivery_deadline ? new Date(r.delivery_deadline).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '' }, { k: 'pending_delivery', l: 'A entregar' },
-    { k: 'acao', l: '', csv: () => '', r: r => <span onClick={e => e.stopPropagation()}>
-      {r.status === 'configurado' && <button className="adm-btn ghost" onClick={act(() => PZ.transition(r.id, 'publicado'))} data-testid="pz-publish">Publicar</button>}
-      {r.status === 'aguardando_homologacao' && r.challenge_status === 'concluido' && <button className="adm-btn" onClick={() => homolog(r.challenge_id)} data-testid="pz-homolog">Homologar</button>}
-      {!['entregue', 'cancelado'].includes(r.status) && <button className="adm-btn ghost danger" onClick={() => setAsk({ cancel: r.id, msg: 'Cancelar "' + r.name + '"? Informe a justificativa.', reason: '' })}>Cancelar</button>}</span> }]
-  return <div className="adm-card" data-testid="adm-prizes"><h3>Premiações oficiais</h3><p className="g-mut g-sm">Só em desafios oficiais. Sem sorteio e sem dinheiro. Entrega só depois do resultado homologado.</p>
-    {msg && <p className="g-warn" role="status">{msg}</p>}
-    <div className="adm-tools"><button className="adm-btn" disabled={!off.length} onClick={() => setEd({ ...PZ0, challenge_id: off[0]?.id || '' })} data-testid="pz-new">+ Novo prêmio</button>{!off.length && <span className="g-mut g-sm">Crie um desafio oficial primeiro.</span>}</div>
-    {err ? <p className="g-warn">{err}</p> : <DataTable name="premios" cols={cols} rows={d?.prizes} onRow={r => setEd({ ...r, delivery_deadline: r.delivery_deadline ? String(r.delivery_deadline).slice(0, 10) : '' })} />}
-    {(d?.prizes || []).filter(p => p.winners.length).map(p => <div key={p.id} className="adm-card" style={{ marginTop: 8 }}><b>Vencedores · {p.name}</b>
-      {p.winners.map(w => <div key={w.id} className="adm-tools"><span style={{ flex: 1 }}>{w.position ? w.position + 'º · ' : ''}{w.name} · {w.email}</span><span>{w.status === 'entregue' ? 'Entregue ' + new Date(w.delivered_at).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + (w.note ? ' — ' + w.note : '') : w.status}</span>
-        {w.status === 'pendente' && p.status === 'entrega_pendente' && <button className="adm-btn" onClick={() => setAsk({ deliver: w.id, msg: 'Registrar entrega para ' + w.name + ': como foi entregue?', reason: '' })} data-testid="pz-deliver">Registrar entrega</button>}</div>)}</div>)}
-    {ed && <Drawer title={ed.id ? 'Editar prêmio' : 'Novo prêmio'} onClose={() => setEd(null)}>
-      {!ed.id && <label className="g-field"><span>Desafio oficial</span><select className="adm-in" value={ed.challenge_id} onChange={e => setEd({ ...ed, challenge_id: e.target.value })}>{off.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>}
-      {[['name', 'Nome'], ['description', 'Descrição'], ['image_url', 'Imagem (https)'], ['eligibility', 'Elegibilidade'], ['availability', 'Disponibilidade'], ['owner', 'Responsável pela entrega'], ['logistics', 'Logística de entrega'], ['rules', 'Regras']].map(([k, l]) =>
-        <label key={k} className="g-field"><span>{l}</span><input className="adm-in" value={ed[k] || ''} onChange={e => setEd({ ...ed, [k]: e.target.value })} data-testid={'pz-' + k} /></label>)}
-      <label className="g-field"><span>Critério</span><select className="adm-in" value={ed.criterion} onChange={e => setEd({ ...ed, criterion: e.target.value })}>{['primeiro', 'segundo', 'terceiro', 'top3', 'meta_atingida', 'equipe_vencedora'].map(k => <option key={k} value={k}>{CRIT_PT[k]}</option>)}</select></label>
-      <label className="g-field"><span>Quantidade</span><input className="adm-in" type="number" min={1} value={ed.quantity} onChange={e => setEd({ ...ed, quantity: e.target.value })} /></label>
-      <label className="g-field"><span>Prazo de entrega</span><input className="adm-in" type="date" value={ed.delivery_deadline || ''} onChange={e => setEd({ ...ed, delivery_deadline: e.target.value })} data-testid="pz-deadline" /></label>
-      {ed.id && ed.status !== 'configurado' && <label className="g-field"><span>Justificativa da alteração</span><input className="adm-in" value={ed.reason || ''} onChange={e => setEd({ ...ed, reason: e.target.value })} /></label>}
-      <div className="adm-tools"><button className="adm-btn" onClick={act(async () => { await PZ.save({ ...ed, quantity: +ed.quantity }); setEd(null) })} data-testid="pz-save">Salvar</button></div></Drawer>}
-    {ask && <Drawer title="Confirmar" onClose={() => setAsk(null)}><p className="g-sm">{ask.msg}</p>
-      {(ask.cancel || ask.deliver) && <textarea className="adm-in" rows={3} value={ask.reason} onChange={e => setAsk({ ...ask, reason: e.target.value })} data-testid="pz-reason" />}
-      <div className="adm-tools"><button className="adm-btn" disabled={(ask.cancel || ask.deliver) && ask.reason.trim().length < 3} onClick={async () => { const a = ask; setAsk(null); if (a.cancel) await act(() => PZ.transition(a.cancel, 'cancelado', a.reason))(); else if (a.deliver) await act(() => PZ.deliver(a.deliver, a.reason))(); else homolog(a.cid, a.extra) }} data-testid="pz-confirm">Confirmar</button></div></Drawer>}
-  </div>
-}
-function AdmTrofeus() {
-  const [d, err, reload] = useLoad(() => TR.admPending()), [msg, setMsg] = useState('')
-  if (err) return null
-  return <div className="adm-card" data-testid="adm-trophies"><h3>Troféus personalizados em moderação ({d?.trophies?.length ?? '…'})</h3>{msg && <p className="g-warn">{msg}</p>}
-    {(d?.trophies || []).map(t => <div key={t.id} className="adm-tools"><span style={{ flex: 1 }}>{t.icon} <b>{t.name}</b> · {CRIT_PT[t.criterion]} · por {t.author}</span>
-      <button className="adm-btn" onClick={async () => { await TR.decide(t.id, true); reload() }}>Aprovar</button>
-      <button className="adm-btn ghost danger" onClick={async () => { try { await TR.decide(t.id, false, 'Nome não adequado'); reload() } catch (e) { setMsg(e.message) } }}>Recusar</button></div>)}
-    {d && !d.trophies.length && <p className="g-mut g-sm">Nada para moderar.</p>}</div>
-}
-function AdmComprovantes() {
-  const nav = useNavigate(), [d, err, reload] = useLoad(() => CF.admProofs()), [rv, , reloadR] = useLoad(() => CF.reviewers()), [email, setEmail] = useState(''), [msg, setMsg] = useState('')
-  const act = fn => async () => { setMsg(''); try { await fn(); reload(); reloadR() } catch (e) { setMsg(e.message) } }
-  const cols = [{ k: 'challenge', l: 'Desafio' }, { k: 'official', l: 'Oficial', r: r => r.official ? 'Sim' : '—' }, { k: 'author', l: 'Participante' }, { k: 'status', l: 'Status', r: r => PROOF_PT[r.status] },
-    { k: 'motivo', l: 'Origem', r: r => r.status === 'recurso' ? 'Recurso: ' + (r.appeal_text || '') : r.routed_to_admin ? 'Sem outro revisor (organizador é participante)' : 'Desafio oficial' },
-    { k: 'created_at', l: 'Enviado', r: r => new Date(r.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) }]
-  return <div className="adm-card" data-testid="adm-proofs"><h3>Comprovantes pendentes ({d?.proofs?.length ?? '…'})</h3>
-    {msg && <p className="g-warn">{msg}</p>}
-    {err ? <p className="g-warn">{err}</p> : <DataTable name="comprovantes" cols={cols} rows={d?.proofs} onRow={r => nav('/desafio/' + r.challenge_id + '?aba=comprovantes')} />}
-    <h3 style={{ marginTop: 16 }}>Revisores de desafios oficiais</h3><p className="g-mut g-sm">Revisam comprovantes dos desafios oficiais junto com o admin. Nunca revisam os próprios.</p>
-    <div className="adm-tools"><input className="adm-in" style={{ maxWidth: 280 }} placeholder="E-mail do revisor" value={email} onChange={e => setEmail(e.target.value)} /><button className="adm-btn" disabled={!email.includes('@')} onClick={act(async () => { await CF.setReviewer(email, true); setEmail('') })}>Designar</button></div>
-    {(rv?.reviewers || []).map(r => <div key={r.user_id} className="adm-tools"><span style={{ flex: 1 }}>{r.name} · {r.email}</span><button className="adm-btn ghost danger" onClick={act(() => CF.setReviewer(r.email, false))}>Remover</button></div>)}
-  </div>
-}
-function AdmCategorias() {
-  const [d, err, reload] = useLoad(() => CAT.list()), [ed, setEd] = useState({}), [msg, setMsg] = useState('')
-  if (err) return <p className="g-warn">{err}</p>
-  const rows = d?.categories || []
-  return <div className="adm-card"><h3>Limites de duração por categoria</h3><p className="g-mut g-sm">Padrão: 7 a 90 dias. Vale para novos desafios; os publicados mantêm as regras congeladas.</p>
-    {msg && <p className="g-warn" role="status">{msg}</p>}
-    <table style={{ width: "100%", borderCollapse: "collapse" }}><thead><tr><th>Categoria</th><th>Mínimo (dias)</th><th>Máximo (dias)</th><th /></tr></thead><tbody>{rows.map(c => { const v = ed[c.id] || c; return <tr key={c.id}><td>{c.name_pt}</td>
-      <td><input className="adm-in" type="number" min={1} max={365} style={{ width: 90 }} value={v.min_days} onChange={e => setEd({ ...ed, [c.id]: { ...v, min_days: e.target.value } })} data-testid={'cat-min-' + c.id} /></td>
-      <td><input className="adm-in" type="number" min={1} max={365} style={{ width: 90 }} value={v.max_days} onChange={e => setEd({ ...ed, [c.id]: { ...v, max_days: e.target.value } })} data-testid={'cat-max-' + c.id} /></td>
-      <td><button className="adm-btn" disabled={!ed[c.id]} onClick={async () => { try { await CAT.save({ id: c.id, min_days: +v.min_days, max_days: +v.max_days }); setMsg('Limites de ' + c.name_pt + ' salvos'); setEd(x => { const n = { ...x }; delete n[c.id]; return n }); reload() } catch (e) { setMsg(e.message) } }} data-testid={'cat-save-' + c.id}>Salvar</button></td></tr> })}</tbody></table></div>
-}
-function AdmGrupos() {
-  const [st, setSt] = useState(''), [d, err, reload] = useLoad(() => GR.admList(st), [st]), [msg, setMsg] = useState(''), [why, setWhy] = useState(null)
-  const cols = [{ k: 'name', l: 'Grupo' }, { k: 'owner', l: 'Dono' }, { k: 'privacy', l: 'Privacidade' }, { k: 'members', l: 'Membros' }, { k: 'status', l: 'Status', r: r => <Pill v={r.status} map={ST} /> }, { k: 'status_reason', l: 'Motivo' },
-    { k: 'acao', l: '', csv: () => '', r: r => r.status === 'ativo' ? <button className="adm-btn ghost danger" onClick={e => { e.stopPropagation(); setWhy({ id: r.id, name: r.name, reason: '' }) }} data-testid="g-suspend">Suspender</button> : <button className="adm-btn ghost" onClick={async e => { e.stopPropagation(); await GR.admStatus(r.id, 'ativo'); reload() }}>Reativar</button> }]
-  return <>
-    <div className="adm-tools">{[['', 'Todos'], ['ativo', 'Ativos'], ['suspenso', 'Suspensos'], ['arquivado', 'Arquivados']].map(([k, l]) => <button key={k} className={'adm-btn ' + (st === k ? '' : 'ghost')} onClick={() => setSt(k)}>{l}</button>)}</div>
-    {msg && <p className="g-warn">{msg}</p>}
-    {err ? <p className="g-warn">{err}</p> : <DataTable name="grupos" cols={cols} rows={d?.groups} />}
-    {why && <Drawer title={'Suspender ' + why.name} onClose={() => setWhy(null)}><p className="g-sm">O grupo some da busca e fica congelado. O dono é avisado. Informe o motivo (fica na auditoria).</p>
-      <textarea className="g-in" rows={3} value={why.reason} onChange={e => setWhy({ ...why, reason: e.target.value })} data-testid="g-reason" />
-      <div className="adm-tools"><button className="adm-btn danger" disabled={why.reason.trim().length < 3} onClick={async () => { try { await GR.admStatus(why.id, 'suspenso', why.reason); setWhy(null); reload() } catch (e) { setMsg(e.message) } }} data-testid="g-confirm">Suspender grupo</button></div></Drawer>}
-  </>
-}
 function Modelos() {
   const [d, err, reload] = useLoad(() => P.admTemplates()), [ed, setEd] = useState(null)
   const nav = useNavigate()
@@ -340,11 +239,11 @@ const NAV = [
  ['Visão geral', [['dashboard','Visão geral','chart']]],
  ['Meus alunos', [['usuarios','Alunos','person'],['vinculos','Convites','users'],['filas','Dúvidas e atendimentos','bell']]],
  ['Treinos', [['modelos','Modelos de ficha','pencil'],['exercicios','Exercícios e vídeos','dumbbell'],['programas','Programas','clipboard']]],
- ['Comunidade', [['publicacoes','Publicações e moderação','chat'],['grupos','Grupos e desafios','users'],['ranking','Ranking','sparkles'],['tapago','Campanha #TáPago','sparkles']]],
+ ['Comunidade', [['publicacoes','Publicações e moderação','chat'],['tapago','Campanha #TáPago','sparkles']]],
  ['Assinaturas', [['cobranca','Cobrança, preços e cupons','sparkles'],['assinaturas','Assinaturas','sparkles'],['monetizacao','Monetização','shield']]],
  ['Sistema', [['perfil','Meu perfil de personal','person'],['empresa','Dados da empresa','list'],['lgpd','Privacidade e termos','lock'],['auditoria','Logs e auditoria','list'],['config','Configurações','gear']]]]
 const TITLE=Object.fromEntries(NAV.flatMap(([,items])=>items.map(([k,l])=>[k,l])))
-const OLD_TABS={alunos:['usuarios','contas'],liberacoes:['usuarios','liberacoes'],verificacoes:['usuarios','contas'],profissionais:['usuarios','contas'],planos:['usuarios','contas'],solicitacoes:['usuarios','contas'],moderacao:['publicacoes','moderacao'],desafios:['grupos','desafios'],termos:['lgpd','termos'],visao:['dashboard','']}
+const OLD_TABS={alunos:['usuarios','contas'],liberacoes:['usuarios','liberacoes'],verificacoes:['usuarios','contas'],profissionais:['usuarios','contas'],planos:['usuarios','contas'],solicitacoes:['usuarios','contas'],moderacao:['publicacoes','moderacao'],desafios:['publicacoes','publicacoes'],grupos:['publicacoes','publicacoes'],ranking:['publicacoes','publicacoes'],termos:['lgpd','termos'],visao:['dashboard','']}
 function SubTabs({items,current,onChange}) { return <div className="mg-subtabs" role="tablist">{items.map(([k,l])=><button key={k} role="tab" aria-selected={current===k} className={'adm-btn '+(current===k?'':'ghost')} onClick={()=>onChange(k)}>{l}</button>)}</div> }
 function ExtraSection({name}) { const Component=EXTRA[name]; return Component?<Wrap><Component/></Wrap>:<p>Indisponível.</p> }
 function AdminInvites() {
@@ -406,7 +305,7 @@ export default function AdminApp() {
   const [sp, setSp] = useSearchParams(), nav = useNavigate(), [open, setOpen] = useState(false)
   const old=Object.hasOwn(OLD_TABS,sp.get('tab')) ? OLD_TABS[sp.get('tab')] : null
   const tab=old?.[0] || (Object.hasOwn(TITLE,sp.get('tab')) ? sp.get('tab') : 'dashboard')
-  const defaults={usuarios:'contas',vinculos:'vinculos',publicacoes:'publicacoes',grupos:'grupos',lgpd:'lgpd'}
+  const defaults={usuarios:'contas',vinculos:'vinculos',publicacoes:'publicacoes',lgpd:'lgpd'}
   const sub=old?.[1] || sp.get('secao') || defaults[tab]
   const go=value=>{const [t,section]=value.split(':');setSp({tab:t,...(section?{secao:section}:{})});setOpen(false)}
   const setSub=section=>go(tab+':'+section)
@@ -436,10 +335,8 @@ export default function AdminApp() {
       {tab === 'perfil' && <MeuPerfilPersonal />}
       {tab === 'modelos' && <Modelos />}
       {tab === 'programas' && <Wrap><AdminPrograms/></Wrap>}
- {tab === 'grupos' && <><SubTabs items={[['grupos','Grupos'],['desafios','Desafios']]} current={sub} onChange={setSub}/>{sub==='desafios'?<AdmDesafios/>:<AdmGrupos/>}</>}
-
       {tab === 'exercicios' && <Exercicios />}
-      {['moderacao', 'ranking'].includes(tab) && (X ? <Wrap><X /></Wrap> : <p className="g-mut">Indisponível.</p>)}
+      {tab === 'moderacao' && (X ? <Wrap><X /></Wrap> : <p className="g-mut">Indisponível.</p>)}
       {tab === 'auditoria' && <AdminLogs />}
       {tab === 'lgpd' && <><SubTabs items={[["lgpd","Privacidade e pedidos"],["termos","Termos de uso"]]} current={sub} onChange={setSub}/>{sub==='termos'?<Termos/>:<Lgpd/>}</>}
       {tab === 'config' && <Wrap><Config /></Wrap>}

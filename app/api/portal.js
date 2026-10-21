@@ -371,7 +371,7 @@ export function portalRoutes({ json, readBody }) {
       const u = await admin(req, res, json); if (!u) return
       const t = u.tenant_id
       const one = async (sql, p = [t]) => (await q(sql, p)).rows
-      const [users, pros, cap, links, reqs, occ, th, comm, rank, signups, sess, posts, overdue] = await Promise.all([
+      const [users, pros, cap, links, reqs, occ, th, comm, signups, sess, posts, overdue] = await Promise.all([
         one(`select status, count(*)::int n from users where tenant_id=$1 group by 1`),
         one(`select pp.state, count(*)::int n from professional_profiles pp where tenant_id=$1 group by 1`),
         professionalOccupancy({ query: q }, t).then(pros => [summarizeCapacity(pros)]),
@@ -382,12 +382,11 @@ export function portalRoutes({ json, readBody }) {
         one(`select (select count(*)::int from posts where tenant_id=$1 and status='publicado' and created_at > now()-interval '30 days') posts30,
               (select count(*)::int from post_likes l join posts p on p.id=l.post_id where p.tenant_id=$1 and l.created_at > now()-interval '30 days') likes30,
               (select count(*)::int from content_reports r where r.tenant_id=$1 and r.status='pendente') reports`).catch(() => [{}]),
-        one(`select count(*)::int participants from ranking_prefs rp join users x on x.id=rp.user_id where x.tenant_id=$1 and rp.public`),
         one(`select date_trunc('week', created_at)::date wk, count(*)::int n from users where tenant_id=$1 and created_at > now()-interval '12 weeks' group by 1 order by 1`),
         one(`select date_trunc('week', started_at)::date wk, count(*)::int n from sessions s where tenant_id=$1 and ${countsInMetrics('s')} and started_at > now()-interval '12 weeks' group by 1 order by 1`),
         one(`select date_trunc('week', created_at)::date wk, count(*)::int n from posts where tenant_id=$1 and status='publicado' and created_at > now()-interval '12 weeks' group by 1 order by 1`),
         one(`select (select count(*)::int from occurrences where tenant_id=$1 and status<>'encerrada' and due_at < now()) occ, (select count(*)::int from threads where tenant_id=$1 and status='aguardando' and due_at < now()) th`)])
-      json(res, 200, { users, pros, capacity: cap[0], links, requests: reqs, occurrences: occ, threads: th, community: comm[0], ranking: rank[0], overdue: overdue[0],
+      json(res, 200, { users, pros, capacity: cap[0], links, requests: reqs, occurrences: occ, threads: th, community: comm[0], overdue: overdue[0],
         series: { signups, sessions: sess, posts } })
     }
   }

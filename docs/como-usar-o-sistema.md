@@ -83,22 +83,22 @@ As fichas antigas de teste não aparecem para novas adesões após a migration 0
 6. Em Assinaturas, acompanhe plano, pagamento e recursos do aluno. Você é o personal do app e não tem limite de alunos.
 7. Em Convites, acompanhe os convites enviados. Todo aluno que se cadastra já entra vinculado a você; o convite serve para casos manuais.
 8. Programas fica em Treinos. Modelos de ficha e Exercícios e vídeos continuam separados.
-9. Publicações/moderação, grupos/desafios e privacidade/termos estão agrupados em abas. As funções atuais continuam disponíveis.
+9. Publicações e moderação ficam em Comunidade. Grupos, desafios, ranking e troféus não fazem mais parte do sistema.
 
 Nos gráficos, passe sobre os pontos ou abra Ver valores por dia. Base anterior zero deixa a variação indisponível. Se falhar o carregamento, use Tentar novamente; Atualizar busca uma nova apuração.
 
 Os registros usados na validação são de uma base isolada. A entrega local não confirma publicação.
 
 ## Navegação no celular (15/10/2026)
-As opções internas aparecem em linhas, sem precisar arrastar botões para os lados. Na administração, abra Menu para consultar a lista de áreas e toque no destino. Na Comunidade, use os botões de modo e o campo Assunto; Todos os assuntos remove apenas o assunto, enquanto Todos limpa os filtros do feed. Em Programas, use Objetivo. No editor, todos os dias e Adicionar dia ficam disponíveis em linhas.
+As opções internas aparecem em linhas, sem precisar arrastar botões para os lados. Na administração, abra Menu para consultar a lista de áreas e toque no destino. Na Comunidade, use **Todos** ou **Seguindo** e o campo Assunto; Todos os assuntos remove apenas o assunto, enquanto Todos limpa os filtros do feed. Em Programas, use Objetivo. No editor, todos os dias e Adicionar dia ficam disponíveis em linhas.
 
 ## Aluno: onde encontrar cada função
 1. Início permite começar/continuar o treino; abaixo ficam Minha semana e Acompanhamento, com ocorrências em aberto quando houver.
 2. Treinos mostra a ficha ativa. Abra Fichas anteriores ou Rotinas antigas — consulta para rever registros. Explorar programas aparece conforme acesso.
 3. Antes de um treino novo, confirme os pesos; 0 significa sem carga. O cronômetro começa após Confirmar pesos e iniciar treino. A retomada preserva o andamento.
-4. Progresso reúne Resumo, Histórico, Recordes, Músculos e Troféus. Corpo 3D fica em Músculos.
+4. Progresso reúne o resumo, histórico, recordes e músculos. Corpo 3D aparece conforme o acesso.
 5. Acompanhamento reúne as conversas, dúvidas e relatos com o seu personal; Ocorrências fica recolhido.
-6. Comunidade reúne Publicações, Grupos, Desafios e Ranking. Dentro do desafio, consulte Regras separadamente da Gestão.
+6. Comunidade reúne somente Publicações. Use Todos ou Seguindo, selecione um Assunto e use Nova publicação quando o botão estiver disponível.
 7. Perfil → Preferências: aparência, idioma e treino. Perfil → Conta: identificação, código e convites. Privacidade e segurança: senha, aparelhos e pedidos de dados.
 8. Meu plano mostra os recursos e a contratação do plano de R$ 39,90.
 8.1. No exercício, quando o personal colocou um vídeo, use ▶/⏸, −10 s, +10 s e a velocidade (0,5× / 0,75× / 1×). **Tenho uma dúvida neste vídeo** manda a sua pergunta para ele, com o trecho do vídeo, e não pausa o treino.

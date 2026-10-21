@@ -19,7 +19,7 @@ Você pode consultar seus dados, pedir correção, exportação ou exclusão e r
 
 1.2. Aplica-se a alunos, profissionais, administradores e visitantes, conforme os serviços utilizados.
 
-1.3. [razão social] é **controladora** dos dados tratados para operar a plataforma: contas, autenticação, segurança, comunidade, desafios, ranking, notificações, assinaturas e suporte.
+1.3. [razão social] é **controladora** dos dados tratados para operar a plataforma: contas, autenticação, segurança, comunidade, notificações, assinaturas e suporte.
 
 1.4. O profissional (personal) é **controlador independente** dos dados do aluno que utiliza para prescrever e acompanhar o treino (fichas, cargas, relatos de dor, avaliação física e observações técnicas). Ele decide como usa esses dados na sua atuação profissional e responde por isso perante o aluno e o seu conselho profissional.
 
@@ -37,9 +37,9 @@ Você pode consultar seus dados, pedir correção, exportação ou exclusão e r
 
 2.5. **Dados relacionados à saúde (sensíveis):** informações sobre dor, desconforto, limitações, lesões, condições relevantes para o exercício, avaliações físicas, medidas corporais, IMC, respostas do questionário de aptidão (PAR-Q) e fotos de evolução corporal.
 
-2.6. **Dados de imagem:** fotografia de perfil, fotos publicadas, imagens de desafios, comprovantes e cartões compartilháveis.
+2.6. **Dados de imagem:** fotografia de perfil, fotos publicadas e cartões compartilháveis.
 
-2.7. **Dados sociais:** publicações, comentários, interações, grupos, desafios, ranking e denúncias.
+2.7. **Dados sociais:** publicações, comentários, interações, perfis seguidos e denúncias.
 
 2.8. **Dados técnicos:** endereço IP, eventos de segurança, navegador, identificadores de sessão, data e horário de acesso.
 
@@ -78,13 +78,13 @@ Quando você se cadastra pelo link ou cupom de indicação de outra pessoa (por 
 
 ## 6. Comunidade e conteúdo público
 
-6.1. Publicações, comentários, desafios e ranking podem ser vistos por outros usuários conforme as configurações de privacidade escolhidas.
+6.1. Publicações, comentários e perfis públicos podem ser vistos por outros usuários conforme as configurações de privacidade escolhidas.
 
 6.2. Dados de saúde nunca são exibidos no perfil público.
 
 ## 7. Decisões automatizadas
 
-7.1. Rankings e recomendações de programas usam regras automáticas. O usuário pode pedir revisão de decisões unicamente automatizadas que afetem seus interesses.
+7.1. Recomendações de programas usam regras automáticas. O usuário pode pedir revisão de decisões unicamente automatizadas que afetem seus interesses.
 
 ## 8. Não venda de dados
 

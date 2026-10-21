@@ -13,7 +13,7 @@ A comunidade do ORNY existe para motivar e trocar experiências sobre treino com
 
 ## 1. Objetivo
 
-1.1. Estas Regras valem para posts, comentários, enquetes, grupos, desafios, comprovantes, ranking e perfis públicos.
+1.1. Estas Regras valem para publicações, comentários, interações e perfis públicos.
 
 ## 2. Princípios
 
@@ -51,25 +51,11 @@ h) viole direitos autorais, de marca ou de imagem.
 
 6.1. O conteúdo continua sendo seu. Você concede ao ORNY a licença prevista nos Termos de Uso apenas para exibi-lo na plataforma.
 
-## 7. Desafios e ranking
+## 7. Perfis e interações
 
-7.1. Os desafios têm regras próprias, informadas antes da participação.
+7.1. É proibido criar contas falsas, simular pessoas ou manipular curtidas e comentários.
 
-7.2. Comprovantes devem ser autênticos e do próprio participante.
-
-7.3. Comprovantes podem ser revisados por organizadores, revisores ou pela moderação.
-
-7.4. Resultados podem ser corrigidos em caso de erro.
-
-7.5. É proibido criar contas falsas ou combinar resultados.
-
-7.6. Prêmios só existem com regulamento próprio e as autorizações legais aplicáveis.
-
-7.7. Fraude, comprovante falso ou violação das regras podem levar à desclassificação do desafio e à remoção do ranking, com aviso ao participante e possibilidade de contestação nos termos da seção 11.
-
-## 8. Grupos
-
-8.1. Donos e moderadores de grupos devem seguir estas Regras e podem remover conteúdo do próprio grupo; a moderação do ORNY pode intervir a qualquer momento.
+7.2. Seguir um perfil serve apenas para organizar o feed e não cria vínculo profissional ou autorização para acessar dados privados.
 
 ## 9. Denúncias
 
@@ -81,7 +67,7 @@ h) viole direitos autorais, de marca ou de imagem.
 
 ## 10. Medidas de moderação
 
-10.1. Conforme a gravidade e a reincidência, poderão ser aplicadas, de forma proporcional: remoção do conteúdo, aviso, restrição temporária de funções (publicar, comentar, participar de desafios), suspensão da conta ou banimento.
+10.1. Conforme a gravidade e a reincidência, poderão ser aplicadas, de forma proporcional: remoção do conteúdo, aviso, restrição temporária de publicação ou comentário, suspensão da conta ou banimento.
 
 10.2. Casos graves (conteúdo ilegal, imagens íntimas, ameaças) podem levar à remoção imediata e ao banimento sem aviso prévio.
 

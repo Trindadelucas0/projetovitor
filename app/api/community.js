@@ -8,17 +8,24 @@ import { fileURLToPath } from 'node:url'
 import { q } from './db/pool.js'
 import { requireAuth, audit } from './auth.js'
 import { getSettings, notify } from './pro.js'
-import { extTarget, extDecide } from './challenge-feed.js'
 
 import { UPLOADS_DIR as UP, uploadFile } from './storage/index.js'   // QA BUG-013: midia no DATA_DIR (backup/redeploy), leitura com fallback da pasta antiga
 const qs = req => new URL(req.url, 'http://x').searchParams
 const isUuid = s => /^[0-9a-f-]{36}$/i.test(String(s || ''))
 const has = (u, r) => u.roles.includes(r)
 const txt = (s, n = 2000) => String(s ?? '').trim().slice(0, n)
-const EXT = ['ch_post', 'ch_comment', 'challenge', 'group', 'user', 'proof']
+const EXT = ['user']
 const REASONS = ['ofensivo', 'prejudicial', 'privado', 'spam', 'outro']
 const PAIN_RE = /\b(dor|doendo|doeu|dói|lesão|lesionei|machuquei|desconforto|inchad)/i
 const POST_LIMIT_DAY = 5
+async function extTarget(type, id, tid) {
+  if (type !== 'user') return null
+  return (await q('select id, id author_id, name body from users where id::text=$1 and tenant_id=$2', [String(id), tid])).rows[0]
+}
+async function extDecide(type, target, decision, reason, actor) {
+  if (type !== 'user' || !target || decision !== 'restringir') return
+  await q(`update professional_profiles set publication_suspended_at=now(), publication_suspended_by=$2, publication_suspension_reason=$3 where user_id=$1`, [target.id, actor.id, reason])
+}
 // Segurança (V5): post geral (fora de comunidade) de autor com perfil privado só é visível para o próprio autor,
 // seguidores ativos e admin. Posts de comunidade continuam regidos por canSee (escopo do personal).
 const PRIV_SQL = (a, uid) => `(${a}.scope_pro_id is not null or ${a}.author_id=${uid} or not exists(select 1 from social_profiles s where s.user_id=${a}.author_id and s.is_private) or exists(select 1 from social_follows f where f.follower_id=${uid} and f.followee_id=${a}.author_id and f.status='ativo'))`

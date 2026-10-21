@@ -542,21 +542,18 @@ export function proRoutes({ json, readBody }) {
       json(res, 200, { ok: true })
     },
     // registro (só para auditoria) de que duas contas pertencem à mesma pessoa; nenhum dado é compartilhado
-    // Admin cria conta já liberada: aluno OU profissional (contas separadas, um papel por conta)
+    // Admin cria aluno ou personal interno. Personais internos não compram plano PRO;
+    // eles só recebem os alunos que a administração transferir para eles.
     'POST /api/adm/users/create': async (req, res) => {
       const u = await guard('admin')(req, res, json); if (!u) return
       const b = await readBody(req), errors = {}
       const name = txt(b.name, 120), email = String(b.email || '').trim().toLowerCase()
-      // Plano único (20/10/2026): o painel cria aluno. Quem atende é o próprio personal
-      // (o administrador), e não há mais conta de profissional para criar aqui.
-      const type = 'aluno'
+      const type = b.type === 'profissional' ? 'profissional' : 'aluno'
       let password = String(b.password || ''), generated = false
       if (name.length < 2) errors.name = 'Informe o nome'
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 200) errors.email = 'E-mail inválido'
-      if (b.type && b.type !== 'aluno') errors.type = 'O app cria apenas contas de aluno.'
       if (!password) { password = genPassword(); generated = true } else if (password.length < 8) errors.password = 'A senha deve ter pelo menos 8 caracteres'
-      // O aluno criado pelo painel nasce com o plano de acesso padrão e vinculado ao
-      // personal do ambiente, do mesmo jeito que no cadastro público.
+      // Somente o aluno nasce com plano de acesso e vínculo automático ao personal principal.
       const plan = (await q(`select * from access_plans where id='personal_unico' and active`)).rows[0]
         || (await q(`select * from access_plans where active order by max_professionals, id limit 1`)).rows[0]
       if (Object.keys(errors).length) return json(res, 400, { error: Object.values(errors)[0], errors })
@@ -566,16 +563,17 @@ export function proRoutes({ json, readBody }) {
         await c.query('begin')
         id = (await c.query(`insert into users(tenant_id,name,email,password_hash,status) values($1,$2,$3,$4,'ativo') returning id`, [u.tenant_id, name, email, await bcrypt.hash(password, 12)])).rows[0].id
         await c.query('insert into user_roles values($1,$2,$3)', [id, u.tenant_id, type])
-        if (plan) {
+        if (type === 'aluno' && plan) {
           await c.query('insert into user_access_plans(user_id,plan_id,assigned_by) values($1,$2,$3)', [id, plan.id, u.id])
           await c.query('insert into access_plan_history(plan_id,user_id,action,actor_id) values($1,$2,$3,$4)', [plan.id, id, 'atribuido', u.id])
         }
+        if (type === 'profissional') await c.query(`insert into professional_profiles(user_id,tenant_id,display_name,state,can_publish) values($1,$2,$3,'ativo',true)`, [id, u.tenant_id, name])
         await c.query('commit')
       } catch (e) { await c.query('rollback'); c.release(); if (e.code === '23505') return json(res, 409, { error: 'Este e-mail já tem conta. Peça para a pessoa entrar e informar o código dela.', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } }); throw e }
       c.release()
       await audit(u.tenant_id, u.id, 'usuario.criado_admin', 'user', id, { type, plan: plan?.id || null })
       let link = null
-      try { const linkId = await linkToTenantPersonal(u.tenant_id, id); link = linkId ? { ok: true, id: linkId } : null }
+      if (type === 'aluno') try { const linkId = await linkToTenantPersonal(u.tenant_id, id); link = linkId ? { ok: true, id: linkId } : null }
       catch (e) { link = { ok: false, error: e.message } }
       json(res, 201, { id, email, type, temp_password: generated ? password : undefined, link })
     },

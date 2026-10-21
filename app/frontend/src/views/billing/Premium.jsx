@@ -57,7 +57,7 @@ export function PremiumLock({ title, desc, feature, preview, compact, cta = 'Ver
   </section>
 }
 // pagina inteira travada (rotas premium)
-const PAGE_ITEMS = [['dumbbell', 'Treinos guiados e fichas do seu personal'], ['chart', 'Progresso, músculos trabalhados e estatísticas'], ['users', 'Comunidade, desafios e ranking'], ['trophy', 'Recordes e troféus']]
+const PAGE_ITEMS = [['dumbbell', 'Treinos guiados e fichas do seu personal'], ['chart', 'Progresso, músculos trabalhados e estatísticas'], ['users', 'Comunidade com publicações'], ['trophy', 'Recordes pessoais']]
 export function PremiumPage({ title }) {
   return <div className="ag" data-testid="premium-page"><span className="g-eyebrow">{title}</span><h1>{title}</h1>
     <PremiumLock title={`${title} é um recurso premium`} feature={title} />

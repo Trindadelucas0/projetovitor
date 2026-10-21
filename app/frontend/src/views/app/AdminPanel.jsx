@@ -169,8 +169,6 @@ export function Config() {
     <Field label="Prazo de resposta para ocorrências (horas)"><input className="g-in" type="number" min="1" value={v.prazo_ocorrencia_horas} onChange={set('prazo_ocorrencia_horas')} data-testid="cfg-occ" /></Field>
     <Field label="Prazo de resposta para mensagens (horas)"><input className="g-in" type="number" min="1" value={v.prazo_mensagem_horas} onChange={set('prazo_mensagem_horas')} /></Field>
     <label className="g-row" style={{ marginTop: 12, minHeight: 44 }}><input type="checkbox" checked={!!v.comentarios_alunos} onChange={set('comentarios_alunos')} /> Alunos podem comentar nas publicações</label>
-    <Field label="Ranking: % mínimo de exercícios concluídos para validar a sessão"><input className="g-in" type="number" min="50" max="100" value={v.ranking_percentual_sessao} onChange={set('ranking_percentual_sessao')} /></Field>
-    <Field label="Fuso horário oficial (semanas e meses do ranking)"><input className="g-in" value={v.fuso_horario} onChange={set('fuso_horario')} /></Field>
     <Field label="Limite de publicações por profissional a cada 24 h"><input className="g-in" type="number" min="1" max="50" value={v.limite_publicacoes_dia ?? 5} onChange={set('limite_publicacoes_dia')} data-testid="cfg-postlimit" /></Field>
     <Field label="Previsão de análise das liberações (exibida ao usuário; deixe vazio se não houver prazo)"><input className="g-in" maxLength={160} value={v.liberacao_prazo_texto ?? ''} onChange={set('liberacao_prazo_texto')} placeholder="Ex.: até 2 dias úteis" data-testid="cfg-sla" /></Field>
     <Field label="Nome da comunidade (tenant)"><input className="g-in" value={v.tenant_name || ''} onChange={set('tenant_name')} data-testid="cfg-tenant" /></Field>
@@ -178,8 +176,8 @@ export function Config() {
     {ok && <p className="g-acc g-sm" style={{ marginTop: 8 }}>{ok}</p>}
   </div>
 }
-export const ADMIN_TABS = [['visao', 'Visão'], ['alunos', 'Alunos'], ['profissionais', 'Profissionais'], ['planos', 'Planos'], ['vinculos', 'Vínculos'], ['filas', 'Filas'], ['moderacao', 'Moderação'], ['ranking', 'Ranking'], ['auditoria', 'Auditoria'], ['config', 'Config.']]
-export const EXTRA = {}   // abas preenchidas por outros módulos (comunidade, ranking)
+export const ADMIN_TABS = [['visao', 'Visão'], ['alunos', 'Alunos'], ['profissionais', 'Profissionais'], ['planos', 'Planos'], ['vinculos', 'Vínculos'], ['filas', 'Filas'], ['moderacao', 'Moderação'], ['auditoria', 'Auditoria'], ['config', 'Config.']]
+export const EXTRA = {}   // abas preenchidas por outros módulos
 export default function AdminPanel() {
   const [sp, setSp] = useSearchParams()
   const tab = sp.get('tab') || 'visao', go = t => setSp({ tab: t })
@@ -190,7 +188,7 @@ export default function AdminPanel() {
     <div style={{ marginTop: 12 }}>
       {tab === 'visao' && <Visao go={go} />}{tab === 'alunos' && <Alunos />}{tab === 'profissionais' && <Profissionais />}{tab === 'planos' && <Planos />}
       {tab === 'vinculos' && <Vinculos />}{tab === 'filas' && <Filas />}{tab === 'auditoria' && <Auditoria />}{tab === 'config' && <Config />}
-      {X ? <X /> : ['moderacao', 'ranking'].includes(tab) && <Empty>Disponível na próxima fase.</Empty>}
+      {X ? <X /> : tab === 'moderacao' && <Empty>Disponível na próxima fase.</Empty>}
     </div>
   </div>
 }

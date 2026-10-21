@@ -1,11 +1,39 @@
 # ORNY — Documentação do sistema
 
-Fonte oficial de comportamento. Versão frontend: 2.0.1; API: 2.0.1. Atualização: 21/10/2026 — Progresso e Estatísticas com comparações objetivas.
+Fonte oficial de comportamento. Versão frontend: 2.0.1; API: 2.0.1. Atualização: 21/10/2026 — fichas individuais, Progresso e Comunidade somente com publicações.
 O inventário em `docs/INVENTARIO-FUNCIONAL.md` preserva o levantamento histórico e seus limites de validação; este documento consolida os fluxos atualizados.
+
+## Comunidade somente com publicações — 21/10/2026
+
+A área **Comunidade** contém somente o feed de publicações. O usuário pode alternar entre **Todos** e **Seguindo**, filtrar por **Assunto** e, quando autorizado, usar **Nova publicação**. O filtro **Minhas publicações** foi retirado. No painel do personal, a comunidade mantém **Publicações e moderação** e **Campanha #TáPago**.
+
+**Grupos, Desafios, Ranking, troféus e premiações de desafios foram encerrados.** As rotas antigas levam de volta à Comunidade, as APIs deixaram de ser registradas e os recursos não aparecem em menus, planos, progresso ou contratos legais. A migration `api/db/migrations/071_remover_grupos_desafios_ranking.sql` apaga os dados dessas áreas e suas concessões comerciais; por ser destrutiva, deve ser aplicada somente com backup confirmado. Antes dela, `api/scripts/remover-midias-desafios.mjs` pode listar em modo seguro e, com confirmação explícita, remover arquivos de comprovantes e publicações de desafios.
+
+### Como usar
+
+1. Abra **Comunidade**.
+2. Use **Todos** para ver o feed geral ou **Seguindo** para ver somente perfis acompanhados.
+3. Se quiser, escolha um **Assunto**; **Todos os assuntos** remove apenas esse filtro.
+4. Use **Nova publicação** somente quando o botão estiver disponível para sua conta.
+
+## Fichas individuais e personal responsável — 21/10/2026
+
+O ORNY não oferece mais programas prontos, catálogo, recomendação automática ou questionário para escolher treino. Cada aluno usa somente uma **ficha de treino** criada pelo personal responsável. Sem ficha ativa, a tela **Treinos** informa que o aluno está aguardando o personal; não há ação alternativa para iniciar programa do sistema.
+
+Todo aluno novo, inclusive cadastrado pelo painel administrativo, é vinculado automaticamente ao **personal principal** configurado no ambiente. O administrador também pode criar contas de **personal interno** sem assinatura PRO e transferir um aluno para elas. A transferência encerra o vínculo anterior, arquiva a ficha anterior para consulta e deixa o novo personal como único responsável por criar a próxima ficha. Sessões, cargas, fichas e programas antigos não são apagados.
+
+Na transição, programas ativos do sistema são encerrados e todo catálogo é arquivado. Chamadas antigas ao catálogo, recomendação ou ativação retornam que o recurso foi retirado; assim, aplicativo em cache não cria novos programas. Onde olhar no código: proteção das rotas em `api/guided.js`, transição em `api/db/migrations/070_somente_fichas_personal.sql`, criação/transferência em `api/pro.js` e tela do aluno em `frontend/src/views/app/Treinos.jsx`.
+
+### Como usar
+
+1. Administração: em **Alunos**, cadastre o aluno; ele entra no personal principal automaticamente.
+2. Personal: abra **Alunos**, escolha a pessoa e use **Nova ficha de treino** para montar e publicar a ficha dela.
+3. Aluno: abra **Treinos** e execute a ficha liberada. Se a tela informar que está aguardando, o personal ainda não publicou a ficha.
+4. Para mudar o responsável, a administração usa a transferência de vínculo; o novo personal cria a nova ficha.
 
 ## Progresso e Estatísticas detalhadas — versão 2.0.1 (21/10/2026)
 
-**Progresso** é o resumo da situação atual. A primeira seção mostra a meta semanal, quantos treinos faltam e os totais de treino, tempo e volume da semana comparados à semana anterior. Destaques de 30 dias aparecem somente quando há base real: recorde superado, evolução positiva de 1RM estimado ou grupo muscular com séries efetivas. A tela mantém #TáPago, acesso às Estatísticas, Corpo 3D quando permitido, três treinos recentes e troféus; registros antigos saem do resumo e continuam disponíveis nas rotas históricas.
+**Progresso** é o resumo da situação atual. A primeira seção mostra a meta semanal, quantos treinos faltam e os totais de treino, tempo e volume da semana comparados à semana anterior. Destaques de 30 dias aparecem somente quando há base real: recorde superado, evolução positiva de 1RM estimado ou grupo muscular com séries efetivas. A tela mantém #TáPago, acesso às Estatísticas, Corpo 3D quando permitido e três treinos recentes; registros antigos saem do resumo e continuam disponíveis nas rotas históricas.
 
 **Estatísticas detalhadas** mantém os períodos de 7, 30, 90, 180 e 365 dias ou todo o histórico. Para períodos fechados, compara treinos, volume, tempo e dias ativos com o intervalo imediatamente anterior de igual tamanho. Sem valor anterior, mostra **Sem base anterior** e não fabrica percentual; **Tudo** não possui comparação. O gráfico principal alterna Frequência, Volume e Tempo. Força por exercício apresenta melhor, primeira e última marca do recorte e a variação percentual. Distribuição muscular e consistência permanecem, com a explicação dos cálculos recolhida sob demanda.
 
@@ -67,8 +95,8 @@ profissional, no dia em que o app abrir para vários personais, continua sujeito
 
 A central administrativa virou o painel do personal, com cinco grupos: **Meus alunos**
 (Alunos, Convites, Dúvidas e atendimentos), **Treinos** (Modelos de ficha, Exercícios e
-vídeos, Programas), **Comunidade** (Publicações e moderação, Grupos e desafios, Ranking,
-Campanha #TáPago), **Assinaturas** (Cobrança, Assinaturas, Monetização) e **Sistema** (Meu
+vídeos, Programas), **Comunidade** (Publicações e moderação, Campanha #TáPago),
+**Assinaturas** (Cobrança, Assinaturas, Monetização) e **Sistema** (Meu
 perfil de personal, Dados da empresa, Privacidade e termos, Logs, Configurações).
 
 Saíram do menu as telas de marketplace — Profissionais e verificação, Limites de
@@ -494,6 +522,7 @@ Conferir que esperar na preparação não cria sessão; campos vazios/negativos 
 O início utiliza `startRemote`, que preserva a autorização existente e a continuidade offline. Nenhuma alteração de permissão ou banco nesta versão.
 
 ## Histórico
+- 2.0.1 (21/10/2026): Comunidade concentrada em Publicações (Todos e Seguindo); retirada de Minhas publicações, Grupos, Desafios, Ranking, troféus e premiações. Migration destrutiva 071 preparada, ainda não aplicada em banco.
 - 2.0.0 (21/10/2026): plano único de R$ 39,90, cadastro só de aluno, central administrativa convertida em painel do personal, aluno vinculado automaticamente, dia da semana na ficha, vídeo do personal por exercício com velocidade e dúvida no próprio exercício. Migrations 068 e 069 ainda não aplicadas em banco.
 - 1.9.0 (20/10/2026): publicação opcional e confirmada do card #TáPago na Comunidade, vinculada à sessão concluída e limitada a uma por treino.
 - 1.7.9 (19/10/2026): validade insere `/` após o mês; erro de permissão de tokenização Asaas recebe mensagem operacional clara, com encaminhamento para habilitação da conta.
@@ -528,7 +557,7 @@ Público: alunos independentes, alunos de personal e profissionais/personal. Aca
 - Pessoas: Contas (Contas, Pendências, Suspensões de acesso); Profissionais e verificação (Perfis e habilitações, Verificação profissional); Vínculos e convites (Vínculos, Convites).
 - Planos e capacidade: Assinaturas, Limites de acompanhamento, Solicitações de vagas (Pedidos de vagas e Histórico).
 - Treinos: Programas guiados, Modelos de treino, Biblioteca e mídia.
-- Comunidade: Publicações e moderação (Publicações e comentários, Moderação), Grupos e desafios (Grupos, Desafios), Ranking.
+- Comunidade: Publicações e moderação (Publicações e comentários, Moderação) e Campanha #TáPago.
 - Operação: Atendimentos e prazos. Sistema: Privacidade e termos (Privacidade e pedidos, Termos de uso), Auditoria, Configurações.
 - Composição: `frontend/src/views/admin/AdminApp.jsx`; formulários existentes são reaproveitados. `?tab=alunos|liberacoes|verificacoes|moderacao|desafios|termos|visao` redirecionam para o grupo/aba equivalente. O administrador que acessa `#/admin/programas` é direcionado ao novo menu; o acesso do profissional continua independente.
 
@@ -567,14 +596,14 @@ Verificação de 15/10/2026: 35 verificações de integração passaram na base 
 
 As abas internas e os filtros curtos se acomodam em linhas, com rótulos completos e seleção destacada. Os menus principais e as regras de acesso de aluno, profissional e administrador são preservados. O menu administrativo continua agrupado e abre como lista vertical no celular.
 
-- Comunidade: Publicações, Desafios, Grupos e Ranking continuam condicionados ao acesso da conta. Os atalhos duplicados do feed foram removidos. Todos limpa os filtros do feed; Seguindo e Minhas publicações (quando autorizado) mantêm o comportamento de alternância. O campo Assunto mostra a seleção atual; Todos os assuntos remove somente a categoria e preserva o modo escolhido. Nova publicação fica após os filtros, quando permitido.
+- Comunidade: somente Publicações continuam condicionadas ao acesso da conta. Todos limpa os filtros do feed; Seguindo mantém o comportamento de alternância. O campo Assunto mostra a seleção atual; Todos os assuntos remove somente a categoria e preserva o modo escolhido. Nova publicação fica após os filtros, quando permitido.
 - Programas: Objetivo é um campo de seleção, com Todos os objetivos para remover o filtro. Biblioteca de exercícios e a janela de adicionar exercícios usam seletores de Grupo muscular e Equipamento; a criação de exercício também usa Grupo muscular.
 - Progresso, grupos, desafios, área profissional e administração: abas e filtros curtos ficam visíveis em linhas; a seleção e os destinos existentes são mantidos.
 - Editor de treinos: os dias e o botão de adicionar dia se acomodam em linhas, sem faixa horizontal.
 - Os componentes usam as cores dos temas existentes. Não há mudança de API, banco, autorização ou registros gravados. Rolagem de tabelas e conteúdos de mídia não representa navegação ou filtro.
 
 ### Como usar / Guia de navegação
-Abra a área pelo menu principal. Toque no botão da seção desejada; no celular as opções podem ocupar mais de uma linha. Na Comunidade, escolha Todos, Seguindo ou Minhas publicações e depois selecione um Assunto. Escolher Todos os assuntos mantém o modo; Todos limpa ambos. Em Programas, escolha Objetivo. Na administração, toque em Menu e escolha uma área na lista vertical; o menu fecha ao selecionar o destino.
+Abra a área pelo menu principal. Toque no botão da seção desejada; no celular as opções podem ocupar mais de uma linha. Na Comunidade, escolha Todos ou Seguindo e depois selecione um Assunto. Escolher Todos os assuntos mantém o modo; Todos limpa ambos. Em Programas, escolha Objetivo. Na administração, toque em Menu e escolha uma área na lista vertical; o menu fecha ao selecionar o destino.
 
 ### Onde olhar no código
 O padrão visual fica em frontend/src/styles/organization.css, carregado após os estilos anteriores em frontend/src/main.jsx. As abas são compostas por Tabs em frontend/src/views/app/kit.jsx. Os filtros específicos ficam em frontend/src/views/app/Comunidade.jsx e frontend/src/views/guided/Programs.jsx. Dias do editor: frontend/src/views/builder/builder.css.
@@ -593,11 +622,9 @@ A reorganização preserva identidade, dados e regras. Ocultar um recurso no men
 - Catálogo e recomendados continuam nas rotas anteriores, acessados por Treinos → Explorar programas. Perguntas e equipamentos ficam em Perfil → Preferências. Bloqueios para iniciar programas com ficha do profissional são mantidos.
 - Preparação e execução (/treinar): Defina os pesos → Confirmar pesos e iniciar treino, preservando o início e a retomada documentados acima. Nome do exercício antes da demonstração; mídias extras em Como fazer. Pausa, relato de dor, série, descanso e conclusão usam os mesmos registros.
 - Conclusão (/concluido): resumo, sensação, dor e salvamento, preservando sincronização e histórico.
-- Progresso (/progresso?aba=resumo|historico|recordes|musculos|trofeus): frequência semanal, sessões, recordes, músculos e troféus em abas. Corpo 3D em Músculos; estatísticas e histórico antigos no Resumo como consulta.
+- Progresso: frequência semanal, sessões, recordes e músculos. Corpo 3D fica disponível conforme o acesso; estatísticas e histórico permanecem para consulta.
 - Acompanhamento (/acompanhamento): responsáveis, conversas e ocorrências recolhidas. Encontrar profissional aparece quando permitido. /comunidade?tab=profissionais encaminha o aluno para esse diretório; no contexto profissional/admin o acesso anterior permanece válido.
-- Comunidade: Publicações, Grupos, Desafios e Ranking conforme acesso. Grupos e desafios mantêm a seleção de Comunidade na navegação; links diretos restritos mostram a explicação existente.
-- Desafios: Meu progresso/Resumo, Regras e Classificação/Progresso separam consulta e participação das ferramentas de Gestão. Comprovação e gestão continuam dependendo de fase, participação e permissão.
-- Ranking: posição e classificação primeiro; Como pontua recolhido. Privacidade continua em painel próprio.
+- Comunidade: somente Publicações conforme acesso, com Todos, Seguindo, Assunto e Nova publicação quando autorizado. Links antigos de grupos, desafios e ranking retornam à Comunidade.
 - Perfil (/perfil): identificação e contexto, Conta, Preferências, Meu plano, Privacidade e segurança, Notificações, Ajuda e Sair. Subpáginas: ?secao=dados|preferencias|privacidade|ajuda. Código e convites em Conta; senha, aparelhos e pedidos de dados em Privacidade e segurança; reiniciar tour em Ajuda. O fluxo de solicitação de liberação foi retirado.
 - Notificações (/avisos): Não lidas/Todas; marcar todas como lidas preservado.
 - Meu plano (/planos): assinatura, pagamento, recursos atuais e catálogo. Somente pagamento confirmado libera o uso automaticamente em produção.

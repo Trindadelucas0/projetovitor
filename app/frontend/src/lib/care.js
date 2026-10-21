@@ -48,7 +48,7 @@ export const CAT_PT = { dor: 'Dor', desconforto: 'Desconforto', dificuldade: 'Di
 export const OCC_ST = { aberta: 'Aguardando avaliação', orientada: 'Orientação registrada', encerrada: 'Encerrada' }
 export const dt = d => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''
 export const initials = n => (n || '?').split(' ').filter(Boolean).slice(0, 2).map(x => x[0].toUpperCase()).join('')
-// comunidade e ranking
+// comunidade
 export const F = {
   cats: () => api('/api/feed/categories'), feed: p => api('/api/feed?' + new URLSearchParams(p || {})), post: id => api('/api/post?id=' + id),
   save: b => post('/api/posts', b), del: id => post('/api/posts/delete', { id }), like: (id, on) => post('/api/posts/like', { id, on }),
@@ -56,8 +56,6 @@ export const F = {
   comment: (post_id, body, parent_id) => post('/api/comments', { post_id, body, parent_id }), likeComment: (id, on) => post('/api/comments/like', { id, on }), delComment: id => post('/api/comments/delete', { id }),
   report: b => post('/api/reports', b), follow: (professional_id, on) => post('/api/follows', { professional_id, on }), upload: data => post('/api/uploads', { data }),
   reports: st => api('/api/adm/reports?status=' + st), decide: b => post('/api/adm/reports/decide', b),
-  ranking: period => api('/api/ranking?period=' + period), rankHist: () => api('/api/ranking/history'), rankPrefs: b => post('/api/ranking/prefs', b),
-  admRanking: period => api('/api/adm/ranking?period=' + period), invalidate: (session_id, reason) => post('/api/adm/ranking/invalidate', { session_id, reason })
 }
 export const REPORT_PT = { ofensivo: 'Conteúdo ofensivo', prejudicial: 'Informação inadequada ou potencialmente prejudicial', privado: 'Divulgação de informações privadas', spam: 'Spam ou propaganda não autorizada', outro: 'Outro motivo' }
 

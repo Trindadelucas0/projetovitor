@@ -3,28 +3,28 @@ import { api } from './api.js'
 const S = (target, title, text) => ({ target, title, text })
 const M = (target, title, text) => ({ target, title, text, reveal: 'adm-menu' })   // admin: abre o menu lateral no celular se preciso
 const common = {
-  progresso: [S('progress', 'Seu progresso', 'Treinos por semana, músculos trabalhados, recordes e histórico, tudo nesta tela.'), S('progress-trophies', 'Troféus', 'Suas conquistas aparecem no fim da tela.')],
+  progresso: [S('progress', 'Seu progresso', 'Treinos por semana, músculos trabalhados, recordes e histórico, tudo nesta tela.')],
   perfil: [S('profile-preferences', 'Preferências', 'Aparência, idioma e preferências de treino ficam aqui.'), S('profile-security', 'Privacidade e segurança', 'Troque a senha, confira aparelhos e solicite seus dados.')]
 }
 export const TOURS = {
   normal: {
     welcome: [S(null, 'Bem-vindo ao ORNY', 'Um minuto para conhecer o app. Você pode pular quando quiser.'),
       S('week-ring', 'Minha semana', 'Aqui você vê quantos treinos fez nesta semana e o que falta para a meta.'),
-      S('bell', 'Notificações', 'Avisos do personal, desafios e lembretes chegam aqui.'),
+      S('bell', 'Notificações', 'Avisos do personal e lembretes chegam aqui.'),
       S('tab-treinos', 'Treinos', 'Treino ativo, fichas anteriores, rotinas antigas (consulta) e Explorar programas. Só um treino fica ativo por vez.'),
       S('tab-perfil', 'Perfil', 'Preferências, privacidade e segurança ficam separados. Para rever as dicas, abra Ajuda.')],
     treinos: [S('active-training', 'Treino ativo', 'Seu único treino ativo fica em destaque. Toque no botão grande para começar.'), S('tab-historico', 'Para consulta', 'Fichas anteriores, rotinas antigas e o histórico ficam aqui, só para leitura. Explorar programas aparece acima quando disponível.')],
-    comunidade: [S('comunidade', 'Comunidade', 'Publicações, grupos, desafios e ranking ficam nesta área.'), S('com-tabs', 'Publicações, grupos, desafios e ranking', 'Troque de área pelas abas. Grupos: pedidos, convites e edição só aparecem para quem administra o grupo.')],
+    comunidade: [S('comunidade', 'Comunidade', 'Veja todas as publicações ou somente as de perfis que você segue.')],
     ...common
   },
   client: {
-    welcome: [S(null, 'Bem-vindo! Seu personal criou sua conta', 'Você treina com as fichas dele, participa da comunidade e dos desafios dele.'),
+    welcome: [S(null, 'Bem-vindo! Seu personal criou sua conta', 'Você treina com as fichas dele e participa da comunidade.'),
       S(['start-pro-card', 'client-wait'], 'Sua ficha', 'A ficha do personal aparece aqui. Uma ficha nova substitui a anterior.'),
       S('lock-banner', 'Áreas do plano Individual', 'Algumas áreas ficam fora do plano do seu personal. Abra Planos para contratar o acesso Individual.'),
       S('tab-treinos', 'Treinos', 'Ficha ativa e fichas anteriores (só para consulta).'),
       S('tab-perfil', 'Perfil', 'Tema, senha, seus dados e "Rever orientações".')],
     treinos: [S('active-training', 'Ficha ativa', 'Aqui fica a ficha que o seu personal enviou. Só um treino fica ativo por vez.'), S('tab-historico', 'Fichas anteriores', 'As fichas anteriores e o histórico ficam aqui, só para leitura.')],
-    comunidade: [S('comunidade', 'Comunidade do seu personal', 'Acompanhe publicações, colegas e desafios do seu personal.')],
+    comunidade: [S('comunidade', 'Comunidade', 'Acompanhe todas as publicações ou somente os perfis que você segue.')],
     ...common
   },
   pro: {

@@ -1,18 +1,13 @@
 // Comunidade AVADESK: feed cronológico de profissionais autorizados, curtidas, comentários conforme regra do admin,
 // seguir profissionais, denúncias. Alunos não publicam. Publicações não criam vínculo nem substituem orientação individual.
-import { Grupos } from './Grupos.jsx'
-import { Desafios } from './Desafios.jsx'
-import { useNavigationAccess } from '../../components/NavigationAccess.jsx'
 import { isNonTrainee } from '../../lib/accounts.js'
-import { ScopeGate } from '../v3/V42.jsx'
 import { Navigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Icon from '../../components/Icon.jsx'
 import { useStore } from '../../store/useStore.js'
 import { C, F, REPORT_PT, dt } from '../../lib/care.js'
-import { Av, Empty, Load, Err, useLoad, Sheet, Field, Tabs } from './kit.jsx'
-import Ranking from './Ranking.jsx'
+import { Av, Empty, Load, Err, useLoad, Sheet, Field } from './kit.jsx'
 import { buildThreads, visibleCount, REPLIES_PREVIEW } from '../../lib/commentTree.js'
 import GSelect from '../../components/GSelect.jsx'
 import './comments.css'
@@ -120,7 +115,7 @@ function Feed() {
   const [sp, setSp] = useSearchParams()
   const cat = sp.get('cat') || '', mode = sp.get('modo') || ''
   const [meta] = useLoad(() => F.cats())
-  const [d, err, reload] = useLoad(() => F.feed({ ...(cat ? { cat } : {}), ...(mode === 'seguindo' ? { following: '1' } : mode === 'minhas' ? { mine: '1' } : {}) }), [cat, mode])
+  const [d, err, reload] = useLoad(() => F.feed({ ...(cat ? { cat } : {}), ...(mode === 'seguindo' ? { following: '1' } : {}) }), [cat, mode])
   const [comp, setComp] = useState(false)
   const set = (k, v) => { const n = new URLSearchParams(sp); v ? n.set(k, v) : n.delete(k); setSp(n) }
   return <div className="com-feed">
@@ -128,7 +123,6 @@ function Feed() {
     <div className="g-filters" role="group" aria-label="Filtrar publicações">
       <button className={'g-chipbtn' + (!cat && !mode ? ' g-on' : '')} aria-pressed={!cat && !mode} onClick={() => setSp({})}>Todos</button>
       <button className={'g-chipbtn' + (mode === 'seguindo' ? ' g-on' : '')} aria-pressed={mode === 'seguindo'} onClick={() => set('modo', mode === 'seguindo' ? '' : 'seguindo')}>Seguindo</button>
-      {meta?.can_publish && <button className={'g-chipbtn' + (mode === 'minhas' ? ' g-on' : '')} aria-pressed={mode === 'minhas'} onClick={() => set('modo', mode === 'minhas' ? '' : 'minhas')}>Minhas publicações</button>}
     </div>
     <div className="com-feed-tools">
       <label className="g-filter-field">Assunto
@@ -153,16 +147,14 @@ export function Profissionais() {
     {p.following && <span className="g-pill g-ok" style={{ marginLeft: 'auto' }}>seguindo</span>}</button>) : <Empty icon="users">Nenhum profissional ativo ainda.</Empty>}</div>
 }
 export default function Comunidade() {
-  const can = useNavigationAccess()
-  const [sp, setSp] = useSearchParams()
+  const [sp] = useSearchParams()
   const user = useStore(s => s.user)
   const tab = sp.get('tab') || 'feed'
-  const isStudent = user?.roles?.includes('aluno')
   if (tab === 'profissionais' && !isNonTrainee(user)) return <Navigate to="/acompanhamento?aba=profissionais" replace />
+  if (tab !== 'feed' && tab !== 'profissionais') return <Navigate to="/comunidade" replace />
   return <div className="ag" data-testid="comunidade">
     <span className="g-eyebrow">Comunidade</span><h1>Comunidade</h1>
-    <div data-testid="com-tabs"><Tabs cur={tab} set={t => setSp({ tab: t })} tabs={[['feed', 'Publicações'], ['desafios', 'Desafios'], ...(can('grupos') ? [['grupos', 'Grupos']] : []), ...((isStudent || user?.admin) && can('ranking') ? [['ranking', 'Ranking']] : [])]} /></div>
-    {tab === 'feed' && <Feed />}{tab === 'profissionais' && <Profissionais />}{tab === 'ranking' && <ScopeGate title="Ranking"><Ranking embedded /></ScopeGate>}{tab === 'grupos' && <ScopeGate title="Grupos"><Grupos /></ScopeGate>}{tab === 'desafios' && <Desafios />}
+    {tab === 'feed' && <Feed />}{tab === 'profissionais' && <Profissionais />}
   </div>
 }
 export function PostPage() {

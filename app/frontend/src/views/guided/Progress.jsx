@@ -6,7 +6,6 @@ import Icon from '../../components/Icon.jsx'
 import { G, fmtMin, fmtKg } from '../../lib/guided.js'
 import { Spin } from './Programs.jsx'
 import { groupPt } from './HomeWidgets.jsx'
-import { MyTrophies } from '../app/Trofeus.jsx'
 import { useNavigationAccess } from '../../components/NavigationAccess.jsx'
 import { usePremium, PremiumLock } from '../billing/Premium.jsx'
 import BodyMap from '../../components/BodyMap.jsx'
@@ -22,7 +21,7 @@ export function ProgressLocked() {
     <p className="g-mut" style={{ marginTop: 6 }}>Assine ou ative um cupom válido para acompanhar sua evolução.</p>
     <h2>Músculos trabalhados</h2><PremiumLock title="Músculos trabalhados" feature="musculos" desc="Veja no mapa do corpo, frente e costas, quais músculos você treinou e quanto." preview={<BodyMap load={DEMO} body={body} />} />
     <h2>Estatísticas</h2><PremiumLock compact title="Estatísticas detalhadas: volume, 1RM e consistência" feature="estatisticas" />
-    <PremiumLock compact title="Corpo 3D" feature="corpo-3d" /><PremiumLock compact title="Recordes, histórico e troféus" feature="recordes" />
+    <PremiumLock compact title="Corpo 3D" feature="corpo-3d" /><PremiumLock compact title="Recordes e histórico" feature="recordes" />
   </div>
 }
 
@@ -59,6 +58,5 @@ export default function Progress() {
     {!!highlights.length && <section aria-labelledby="pr-highlights"><div className="pr-section-head"><h2 id="pr-highlights">Destaques recentes</h2><span className="g-mut g-xs">Últimos 30 dias</span></div><div className="pr-highlights">{highlights.map(x => <div className="pr-highlight" key={x.label}><span className="g-ico"><Icon name={x.icon} /></span><div><span>{x.label}</span><b>{x.value}</b></div></div>)}</div></section>}
     <section aria-labelledby="pr-analysis"><h2 id="pr-analysis">Análises</h2><div className="pr-actions"><button className="g-card pr-action" onClick={() => nav('/estatisticas')} data-testid="open-estatisticas"><span className="g-ico"><Icon name="chart" /></span><span><b>Estatísticas detalhadas</b><small>Compare frequência, volume, força e consistência</small></span><Icon name="chevronRight" /></button>{can('musculos') && <button className="g-card pr-action" onClick={() => nav('/muscles')} data-testid="open-3d"><span className="g-ico"><Icon name="person" /></span><span><b>Corpo 3D</b><small>Veja os músculos trabalhados</small></span><Icon name="chevronRight" /></button>}</div></section>
     <section aria-labelledby="pr-history"><div className="pr-section-head"><h2 id="pr-history">Treinos recentes</h2>{p.history.length > 3 && <button className="g-link" onClick={() => nav('/history')}>Ver histórico</button>}</div><div className="g-card g-list">{p.history.length ? p.history.slice(0, 3).map(item => <div key={item.id} className="g-li pr-history-row"><span className="g-ico"><Icon name="check" /></span><span style={{ minWidth: 0 }}><b>{item.workout_name}</b><br /><span className="g-mut g-xs">{new Date(item.started_at).toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })} · {fmtMin(item.corrected && item.manual_sec != null ? item.manual_sec : item.duration_sec)} · {item.sets_count} séries{item.pain ? ' · dor registrada' : ''}{item.counts_in_metrics === false ? ' · fora das métricas' : ''}</span>{item.timing && !item.corrected && <><br /><TimingSummary t={item.timing} compact /></>}</span><span className="g-mut g-sm pr-history-volume">{fmtKg(item.volume)}</span></div>) : <><p className="g-mut g-sm">Nenhum treino concluído ainda.</p><button className="g-btn" style={{ marginTop: 10 }} onClick={() => nav('/hoje')}>Começar primeiro treino</button></>}</div></section>
-    <section aria-labelledby="pr-trophies"><h2 id="pr-trophies">Conquistas</h2><div className="g-card" data-testid="progress-trophies"><MyTrophies /></div></section>
   </div>
 }

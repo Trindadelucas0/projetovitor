@@ -1,5 +1,5 @@
 // AVAGYM V4 — "Treino ainda em aberto" e "Ajustar tempo" (decisões do Lucas: lembrete a cada 1h; correção manual sem mín/máx,
-// mas a sessão corrigida fica fora de TODAS as métricas — ranking, desafios, progresso e indicadores).
+// mas a sessão corrigida fica fora das métricas de progresso e indicadores).
 import { useState } from 'react'
 import Icon from '../../components/Icon.jsx'
 import { fmtMin } from '../../lib/guided.js'
@@ -40,7 +40,7 @@ export function TimeFix({ initialMin, onConfirm, onCancel, busy }) {
     <b className="g-sm" style={{ display: 'block', marginTop: 14 }}>Motivo</b>
     <div className="g-chips" style={{ margin: '8px 0 12px' }}>{REASONS.map(([v, l]) => <button key={v} className={'g-chipbtn' + (reason === v ? ' g-on' : '')} onClick={() => setReason(v)} data-testid={'fix-reason-' + v}>{l}</button>)}</div>
     <textarea className="g-in" placeholder="Observação (opcional)" value={note} onChange={e => setNote(e.target.value)} maxLength={300} />
-    <p className="g-note" style={{ marginTop: 12 }} data-testid="fix-warning">Treino com tempo corrigido fica no seu histórico, mas não conta para ranking, desafios, prêmios nem para os números do seu progresso.</p>
+    <p className="g-note" style={{ marginTop: 12 }} data-testid="fix-warning">Treino com tempo corrigido fica no seu histórico, mas não conta para os números do seu progresso.</p>
     <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
       <button className="g-btn g-xl" disabled={!ok || busy} onClick={() => onConfirm({ manual_sec: Math.round(val * 60), reason, note: note.trim() || null })} data-testid="fix-confirm">{busy ? 'Salvando…' : 'CORRIGIR E FINALIZAR'}</button>
       <button className="g-btn g-ghost" disabled={busy} onClick={onCancel}>Voltar</button>

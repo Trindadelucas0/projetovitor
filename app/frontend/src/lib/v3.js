@@ -25,7 +25,7 @@ export const readFileAsDataURL = f => new Promise((ok, no) => { const r = new Fi
 export const SUB_PT = { ativa: 'Ativa', trial: 'Teste', suspensa: 'Suspensa', inadimplente: 'Inadimplente', cancelada: 'Cancelada' }
 export const AUD_PT = { aluno: 'Treino (aluno)', profissional: 'Área profissional' }
 export const METRIC_PT = { alunos_ativos: 'Alunos ativos' }
-export const FEAT_PT = { treino_pessoal: 'Treino pessoal', programas_guiados: 'Programas guiados', execucao: 'Execução com cronômetro', progresso: 'Progresso', ranking: 'Ranking', desafios_oficiais: 'Desafios oficiais', receber_ficha_profissional: 'Receber ficha do profissional', prescrever: 'Prescrever treinos', convidar_alunos: 'Convidar alunos', construtor_treino: 'Construtor de treino' }
+export const FEAT_PT = { treino_pessoal: 'Treino pessoal', programas_guiados: 'Programas guiados', execucao: 'Execução com cronômetro', progresso: 'Progresso', receber_ficha_profissional: 'Receber ficha do profissional', prescrever: 'Prescrever treinos', convidar_alunos: 'Convidar alunos', construtor_treino: 'Construtor de treino' }
 // erros comerciais padronizados abrem a tela de upgrade/regularização (ver PlanErrorHost)
 export const PLAN_CODES = ['LIMIT_REACHED', 'FEATURE_NOT_INCLUDED', 'SUBSCRIPTION_INACTIVE']
 export const INV_PT = { pendente: 'Pendente', aceito: 'Aceito', recusado: 'Recusado', cancelado: 'Cancelado', expirado: 'Expirado' }

@@ -30,7 +30,7 @@ import ShareCard from './views/guided/ShareCard.jsx'
 import Settings from './views/Settings.jsx'
 const MuscleMap = lazy(() => import('./views/MuscleMap.jsx'))
 // treino guiado (AVAGYM)
-import GuidedTabBar, { isAdminAccount } from './views/guided/TabBar.jsx'
+import GuidedTabBar, { isAdminAccount, isProAccount } from './views/guided/TabBar.jsx'
 import Onboarding from './views/guided/Onboarding.jsx'
 import Today from './views/guided/Today.jsx'
 import { Recommendations, Library as ProgramLibrary, ProgramDetail } from './views/guided/Programs.jsx'
@@ -44,18 +44,16 @@ import AdminPrograms from './views/guided/AdminPrograms.jsx'
 // AVAGYM
 import Treinos from './views/app/Treinos.jsx'
 import Comunidade, { PostPage, ProfessionalPage } from './views/app/Comunidade.jsx'
-import Ranking from './views/app/Ranking.jsx'
 import './views/app/AdminCommunity.jsx'
 import Gate from './views/app/Locked.jsx'
 import Acompanhamento, { Conversa } from './views/app/Acompanhamento.jsx'
 import Avisos from './views/app/Avisos.jsx'
 import AdminApp from './views/admin/AdminApp.jsx'
+import ProApp from './views/app/Pro.jsx'
 import { LegalGate, LegalPage } from './views/app/Legal.jsx'
 /* Plano unico: o portal do profissional (views/pro/Portal.jsx, views/pro/MyPrograms.jsx)
    e a assinatura PRO (views/billing/ProSubscription.jsx) saem das rotas. Os arquivos
    continuam no projeto para quando o app abrir para varios personais. */
-import { GroupPage } from './views/app/Grupos.jsx'
-import { ChallengePage, ChallengeWizard } from './views/app/Desafios.jsx'
 import Builder from './views/builder/WorkoutBuilder.jsx'
 import PlanErrorHost from './views/v3/PlanErrorHost.jsx'
 import { AccessHost } from './views/billing/Access.jsx'   // Monetizacao F8
@@ -127,9 +125,10 @@ function Shell() {
               <Route path="/library" element={<Library />} />
               <Route path="/admin/programas" element={<Navigate to="/admin/painel?tab=programas" replace />} />
               <Route path="/comunidade" element={<Gate title="Comunidade"><Comunidade /></Gate>} />
-              <Route path="/grupo/:id" element={<Gate title="Comunidade"><GroupPage /></Gate>} />
-              <Route path="/desafio/:id" element={<Gate title="Comunidade"><ChallengePage /></Gate>} />
-              <Route path="/desafios/criar" element={<Gate title="Comunidade"><ChallengeWizard /></Gate>} />
+              <Route path="/grupo/:id" element={<Navigate to="/comunidade" replace />} />
+              <Route path="/desafio/:id" element={<Navigate to="/comunidade" replace />} />
+              <Route path="/desafios/criar" element={<Navigate to="/comunidade" replace />} />
+              <Route path="/ranking" element={<Navigate to="/comunidade" replace />} />
               <Route path="/post/:id" element={<Gate title="Comunidade"><PostPage /></Gate>} />
               <Route path="/profissional/:id" element={<Gate title="Comunidade"><ProfessionalPage /></Gate>} />
               <Route path="/conversa/:id" element={<Gate title="Conversa"><Conversa /></Gate>} />
@@ -145,28 +144,28 @@ function Shell() {
                Nao existe mais shell de profissional; conta legada com esse papel entra como
                aluno e as rotas /pro* levam ao treino. */
             <Routes>
-              <Route path="/pro/treino" element={user?.admin ? <Builder /> : <Navigate to="/hoje" replace />} />
+              <Route path="/pro/treino" element={(user?.admin || isProAccount(user)) ? <Builder /> : <Navigate to="/hoje" replace />} />
               <Route path="/hoje" element={<Gate title="Início"><Today /></Gate>} />
               <Route path="/treinos" element={<Gate title="Treinos"><Treinos /></Gate>} />
               <Route path="/comunidade" element={<Gate title="Comunidade"><Comunidade /></Gate>} />
               <Route path="/acompanhamento" element={<Gate title="Acompanhamento"><Acompanhamento /></Gate>} />
               <Route path="/conversa/:id" element={<Gate title="Conversa"><Conversa /></Gate>} />
               <Route path="/avisos" element={<Avisos />} />
-              <Route path="/grupo/:id" element={<ScopeGate title="Grupos"><Gate title="Comunidade"><GroupPage /></Gate></ScopeGate>} />
-              <Route path="/desafio/:id" element={<Gate title="Comunidade"><ChallengePage /></Gate>} />
-              <Route path="/desafios/criar" element={<Gate title="Comunidade"><ChallengeWizard /></Gate>} />
+              <Route path="/grupo/:id" element={<Navigate to="/comunidade" replace />} />
+              <Route path="/desafio/:id" element={<Navigate to="/comunidade" replace />} />
+              <Route path="/desafios/criar" element={<Navigate to="/comunidade" replace />} />
               <Route path="/post/:id" element={<Gate title="Comunidade"><PostPage /></Gate>} />
               <Route path="/profissional/:id" element={<Gate title="Comunidade"><ProfessionalPage /></Gate>} />
-              <Route path="/ranking" element={<ScopeGate title="Ranking"><Gate title="Ranking"><Ranking /></Gate></ScopeGate>} />
-              <Route path="/pro" element={<Navigate to={user?.admin ? '/admin/painel?tab=usuarios' : '/hoje'} replace />} />
+              <Route path="/ranking" element={<Navigate to="/comunidade" replace />} />
+              <Route path="/pro" element={isProAccount(user) ? <ProApp /> : <Navigate to={user?.admin ? '/admin/painel?tab=usuarios' : '/hoje'} replace />} />
               <Route path="/pro/programas" element={<Navigate to={user?.admin ? '/admin/painel?tab=modelos' : '/hoje'} replace />} />
               <Route path="/pro/assinatura" element={<Navigate to="/assinatura" replace />} />
               <Route path="/admin/painel" element={user?.admin ? <AdminApp /> : <Navigate to="/hoje" replace state={{ noOnboarding: true }} />} />{/* QA AD-40/43: sem permissao -> Inicio, sem cair no questionario */}
-              <Route path="/onboarding" element={<Gate title="Treinos"><Onboarding /></Gate>} />
-              <Route path="/recomendados" element={<ScopeGate title="Recomendados"><Gate title="Recomendados"><Recommendations /></Gate></ScopeGate>} />
-              <Route path="/programas" element={<ScopeGate title="Programas"><Gate title="Programas"><ProgramLibrary /></Gate></ScopeGate>} />
-              <Route path="/programa/:id" element={<ScopeGate title="Programa"><Gate title="Programa"><ProgramDetail /></Gate></ScopeGate>} />
-              <Route path="/meu-programa" element={<ScopeGate title="Meu programa"><Gate title="Meu programa"><MyProgram /></Gate></ScopeGate>} />
+              <Route path="/onboarding" element={<Navigate to="/treinos" replace />} />
+              <Route path="/recomendados" element={<Navigate to="/treinos" replace />} />
+              <Route path="/programas" element={<Navigate to="/treinos" replace />} />
+              <Route path="/programa/:id" element={<Navigate to="/treinos" replace />} />
+              <Route path="/meu-programa" element={<Navigate to="/treinos" replace />} />
               <Route path="/treinar" element={<Gate title="Treinos"><Train /></Gate>} />
               <Route path="/concluido" element={<Gate title="Treinos"><Done /></Gate>} />
           <Route path="/compartilhar" element={<Gate title="Progresso"><ShareCard /></Gate>} />
@@ -189,13 +188,13 @@ function Shell() {
               <Route path="/muscles" element={<ScopeGate title="Músculos"><Gate title="Músculos trabalhados"><Suspense fallback={null}><MuscleMap /></Suspense></Gate></ScopeGate>} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={<Navigate to={user?.admin ? '/admin/painel' : '/hoje'} replace />} />
-              <Route path="*" element={<Navigate to="/hoje" replace />} />
+              <Route path="*" element={<Navigate to={isProAccount(user) ? '/pro' : '/hoje'} replace />} />
             </Routes>
           )}
         </ErrorBoundary>
       </div>
       {/* barra principal = treino guiado; a antiga só aparece no treino manual em execução */}
-      {authed && !user?.needs_terms && !user?.must_change_password && !isAdminAccount(user) && !loc.pathname.startsWith('/admin/painel') && !loc.pathname.startsWith('/pro/treino') && <GuidedTabBar />}
+      {authed && !user?.needs_terms && !user?.must_change_password && !isAdminAccount(user) && !isProAccount(user) && !loc.pathname.startsWith('/admin/painel') && !loc.pathname.startsWith('/pro/treino') && <GuidedTabBar />}
       {authed && isAdminAccount(user) && !user?.needs_terms && !loc.pathname.startsWith('/admin/painel') && !loc.pathname.startsWith('/pro/treino') && <button className="adm-btn" style={{ position: 'fixed', left: 12, bottom: 12, minHeight: 44, zIndex: 50 }} onClick={() => navigate('/admin/painel')} data-testid="back-admin">← Painel admin</button>}
       <RestTimer />
       <Modals />

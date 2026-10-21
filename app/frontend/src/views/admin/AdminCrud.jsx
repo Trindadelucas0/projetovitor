@@ -42,7 +42,7 @@ export function UserEdit({ u, onChanged, onDeleted }) {
     <F l="E-mail" err={errs.email}><input className="adm-in" value={f.email} onChange={set('email')} data-testid="ue-email" /></F>
     {msg && <p className="g-sm" role="status">{msg}</p>}
     <div className="adm-tools"><Save busy={busy} onClick={() => run(async () => { await C.updUser({ id: u.id, ...f }); onChanged && onChanged() })} data-testid="ue-save" />
-      <button className="adm-btn danger" onClick={() => confirmDel({ title: 'Excluir conta', text: `A conta de ${u.name} será anonimizada: dados pessoais apagados, vínculos encerrados e publicações removidas. Sessões, ranking e auditoria ficam sem identificação. Não dá para desfazer.`, needReason: false, onConfirm: async reason => { await C.delUser({ id: u.id, confirm: 'EXCLUIR', reason }); onDeleted && onDeleted() } })} data-testid="ue-delete">Excluir conta</button></div>
+      <button className="adm-btn danger" onClick={() => confirmDel({ title: 'Excluir conta', text: `A conta de ${u.name} será anonimizada: dados pessoais apagados, vínculos encerrados e publicações removidas. Sessões e auditoria ficam sem identificação. Não dá para desfazer.`, needReason: false, onConfirm: async reason => { await C.delUser({ id: u.id, confirm: 'EXCLUIR', reason }); onDeleted && onDeleted() } })} data-testid="ue-delete">Excluir conta</button></div>
     {dlg}</div>
 }
 
@@ -145,7 +145,7 @@ export function StudentTraining({ u, pros }) {
       {!d.programs.length && <p className="g-mut g-xs">Nenhum programa.</p>}</div>
     <div className="adm-card" style={{ marginTop: 12 }}><h3>Sessões (últimas 50)</h3>
       {d.sessions.map(s => <div key={s.id} className="adm-tools" style={{ marginTop: 6 }}><span style={{ flex: 1 }}>{fmt(s.started_at)} · {s.workout_name || 'Treino'} · {s.status}{s.voided_at ? ` · anulada (${s.void_reason})` : ''}{s.timing && <><br /><TimingSummary t={s.timing} compact /></>}</span>
-        {!s.voided_at && <button className="adm-btn danger" onClick={() => confirmDel({ title: 'Anular sessão', text: 'A sessão fica no histórico marcada como anulada e deixa de pontuar no ranking.', needReason: true, onConfirm: async reason => { await C.voidSession({ id: s.id, confirm: 'EXCLUIR', reason }); reload() } })}>Anular</button>}</div>)}
+        {!s.voided_at && <button className="adm-btn danger" onClick={() => confirmDel({ title: 'Anular sessão', text: 'A sessão fica no histórico marcada como anulada e deixa de entrar nas métricas.', needReason: true, onConfirm: async reason => { await C.voidSession({ id: s.id, confirm: 'EXCLUIR', reason }); reload() } })}>Anular</button>}</div>)}
       {!d.sessions.length && <p className="g-mut g-xs">Nenhuma sessão.</p>}</div>
     <div className="adm-card" style={{ marginTop: 12 }}><h3>Vínculos</h3>
       {d.links.map(l => <div key={l.id} className="adm-tools" style={{ marginTop: 6 }}><span style={{ flex: 1 }}>{l.coach} · {l.area || '—'} · {l.status}</span>

@@ -58,19 +58,15 @@ O ORNY é uma plataforma digital de treinos, acompanhamento físico e interaçã
 
 5.5. Antes de iniciar treinos, o usuário deverá preencher e aceitar, em etapa separada destes Termos, a declaração de aptidão para atividade física (questionário PAR-Q). Respostas que indiquem risco recomendarão avaliação médica antes do treino.
 
-## 6. Comunidade, desafios e ranking
+## 6. Comunidade
 
 6.1. O uso da comunidade segue as Regras da Comunidade e Política de Moderação.
 
 6.2. O usuário é responsável pelo conteúdo que publicar.
 
-6.3. Comprovantes de desafios podem ser revisados e recusados se forem incompatíveis com as regras do desafio.
+6.3. Publicações e comentários podem ser moderados quando violarem as Regras da Comunidade.
 
-6.4. Rankings têm finalidade motivacional e podem ser ajustados para corrigir fraude ou erro.
-
-6.5. O usuário pode configurar a exibição de seu perfil e participação no ranking quando a funcionalidade permitir.
-
-6.6. Prêmios, sorteios ou recompensas de valor econômico somente existirão quando houver regulamento próprio publicado e, quando exigidas, as autorizações legais aplicáveis (por exemplo, regras de promoção comercial e Lei 14.790/2023).
+6.4. O usuário pode configurar a exibição do seu perfil quando a funcionalidade permitir.
 
 ## 7. Conduta proibida
 

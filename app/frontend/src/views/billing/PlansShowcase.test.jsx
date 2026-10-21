@@ -16,7 +16,7 @@ describe('catálogo de plano único', () => {
     const features = { receber_ficha_profissional: true, programas_guiados: true, execucao: true, progresso: true }
     const texts = benefitsOf({ id: 'individual', features }).map(([, text]) => text)
     expect(texts[0]).toBe('Fichas montadas pelo seu personal')
-    expect(texts).toContain('Comunidade, desafios e ranking')
+    expect(texts).toContain('Comunidade com publicações')
   })
 
   it('omite o benefício quando o recurso está desligado no plano', () => {
