@@ -139,7 +139,7 @@ function StartHere({ profile, at, care, coaches }) {
       <p className="g-mut g-sm">{p.owner_name} · {p.exercises.length} exercícios{multi ? ' · ' + p.days.length + ' dias' : ''}</p>
       <button className="g-btn" style={{ marginTop: 12 }} onClick={() => nav(multi ? '/treinos?aba=profissionais' : '/treinar?plan=' + p.id)} data-testid="start-pro-plan"><Icon name="dumbbell" /> {multi ? 'Escolher o treino do dia' : 'Começar treino'}</button>
     </div></div>
-      : <div className="g-hero"><div className="g-in" style={{ maxWidth: '100%' }}>
+      : <div className="g-hero" data-testid="client-wait"><div className="g-in" style={{ maxWidth: '100%' }}>
         <span className="g-eyebrow">Comece por aqui</span>
         <h2 style={{ marginTop: 6 }}>Aguardando sua ficha</h2>
         <p className="g-mut g-sm">Seu personal ainda não adicionou sua ficha de treino. Quando ela for publicada, aparecerá aqui.</p>

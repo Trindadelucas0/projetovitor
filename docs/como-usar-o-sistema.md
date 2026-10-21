@@ -6,6 +6,12 @@ Este guia descreve as ações do aplicativo de um personal e seus alunos. O nome
 
 A base local começa com **zero alunos** e duas contas separadas. O administrador entra com a conta definida em `ADMIN_EMAIL` e abre somente o painel administrativo. O personal principal entra com a conta definida em `PERSONAL_PRINCIPAL_EMAIL`, troca a senha provisória no primeiro acesso e abre a área profissional em `/pro`. Esses valores ficam somente no `.env`. A publicação na VPS e a contratação do plano exigem validação própria antes de receber alunos reais.
 
+## Acesso interno à instalação na VPS
+
+Na máquina de uso, abra um terminal e mantenha `ssh -N -L 4461:127.0.0.1:4461 root@187.127.3.250` conectado. Depois abra `http://localhost:4461` no navegador. O administrador usa `admin@avagym.com.br` e o personal usa `personal.principal@orny.local`; ambos criam uma senha nova no primeiro acesso. O responsável pela VPS pode consultar as credenciais provisórias diretamente nos arquivos protegidos `/opt/projetovitor-runtime/credentials/admin.txt` e `/opt/projetovitor-runtime/credentials/personal.txt`, sem enviá-las por chat. Fechar o terminal encerra apenas o túnel local; os serviços continuam no PM2.
+
+Esta instalação interna usa cobrança simulada e não tem endereço público. A abertura da página e o login inicial foram verificados, mas o cadastro e pagamento de alunos reais dependem de configuração comercial, legal e validação própria antes da liberação.
+
 ## Aluno: começar
 
 1. Abra o cadastro, preencha **Acesso**, **Seus dados**, **Assinatura** e **Confirmação** e aceite os documentos obrigatórios.
@@ -19,11 +25,12 @@ A base local começa com **zero alunos** e duas contas separadas. O administrado
 ## Personal principal: atender
 
 1. Entre com a conta do personal e abra **Alunos**. Use **Adicionar aluno** para cadastrar uma conta nova ou enviar convite para uma conta existente.
-2. Abra o aluno e use **Criar treino**. Nomeie dias, escolha os exercícios, ajuste séries, repetições, descanso e orientações. Inclua o vídeo do exercício quando houver.
-3. Revise e use **Enviar para aluno**. A ficha anterior deve permanecer no histórico. Confirme na conta do aluno antes de considerar a entrega validada.
-4. Em **Atendimentos**, responda mensagens, ocorrências e propostas. Dor e desconforto exigem orientação antes da retomada do exercício afetado.
-5. Em **Avaliações**, abra **Nova solicitação**, escolha aluno e protocolo e defina prazo ou repetição. Depois do envio do aluno, revise cada captura, peça recaptura com motivo quando necessário e publique a devolutiva escrita.
-6. O personal não entra nas telas administrativas de usuários, cobrança, configurações ou governança dos protocolos.
+2. Abra o aluno e use **Criar treino**. Em **Dados da ficha**, confira o aluno, dê um nome à ficha e preencha objetivo e orientação geral. Toque em **Continuar**.
+3. Em **Dias e exercícios**, nomeie os treinos, marque um dia da semana ou deixe **Livre**, escolha os exercícios na biblioteca e ajuste séries, repetições, descanso, carga, vídeo e orientações. Use **Continuar** para abrir **Revisar e enviar**.
+4. Confira o resumo de cada dia. Use **Editar** se precisar corrigir um treino; quando estiver certo, use **Enviar para aluno** ou **Salvar e enviar nova versão**. A ficha anterior deve permanecer no histórico. Confirme na conta do aluno antes de considerar a entrega validada. Modelos antigos ficam guardados, mas não aparecem mais no painel nem na criação da ficha.
+5. Em **Atendimentos**, responda mensagens, ocorrências e propostas. Dor e desconforto exigem orientação antes da retomada do exercício afetado.
+6. Em **Avaliações**, abra **Nova solicitação**, escolha aluno e protocolo e defina prazo ou repetição. Depois do envio do aluno, revise cada captura, peça recaptura com motivo quando necessário e publique a devolutiva escrita.
+7. O personal não entra nas telas administrativas de usuários, cobrança, configurações ou governança dos protocolos.
 
 ## Administrador: governar o sistema
 

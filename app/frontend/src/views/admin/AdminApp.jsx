@@ -241,13 +241,13 @@ function Wrap({ children }) { return <div className="ag">{children}</div> }
 const NAV = [
  ['Visão geral', [['dashboard','Visão geral','chart']]],
  ['Meus alunos', [['usuarios','Alunos','person'],['vinculos','Convites','users'],['filas','Dúvidas e atendimentos','bell']]],
- ['Treinos', [['modelos','Modelos de ficha','pencil'],['exercicios','Exercícios e vídeos','dumbbell'],['programas','Programas','clipboard']]],
+ ['Treinos', [['exercicios','Exercícios e vídeos','dumbbell'],['programas','Programas','clipboard']]],
  ['Avaliação postural', [['avaliacao','Fila e análise','clipboard'],['avaliacao-adm','Protocolos e indicadores','list']]],
  ['Comunidade', [['publicacoes','Publicações e moderação','chat'],['tapago','Campanha #TáPago','sparkles']]],
  ['Assinaturas', [['cobranca','Cobrança, preços e cupons','sparkles'],['assinaturas','Assinaturas','sparkles'],['monetizacao','Monetização','shield']]],
  ['Sistema', [['perfil','Meu perfil de personal','person'],['empresa','Dados da empresa','list'],['lgpd','Privacidade e termos','lock'],['auditoria','Logs e auditoria','list'],['config','Configurações','gear']]]]
 const TITLE=Object.fromEntries(NAV.flatMap(([,items])=>items.map(([k,l])=>[k,l])))
-const OLD_TABS={alunos:['usuarios','contas'],liberacoes:['usuarios','liberacoes'],verificacoes:['usuarios','contas'],profissionais:['usuarios','contas'],planos:['usuarios','contas'],solicitacoes:['usuarios','contas'],moderacao:['publicacoes','moderacao'],desafios:['publicacoes','publicacoes'],grupos:['publicacoes','publicacoes'],ranking:['publicacoes','publicacoes'],termos:['lgpd','termos'],visao:['dashboard','']}
+const OLD_TABS={alunos:['usuarios','contas'],liberacoes:['usuarios','liberacoes'],verificacoes:['usuarios','contas'],profissionais:['usuarios','contas'],planos:['usuarios','contas'],solicitacoes:['usuarios','contas'],modelos:['usuarios','contas'],moderacao:['publicacoes','moderacao'],desafios:['publicacoes','publicacoes'],grupos:['publicacoes','publicacoes'],ranking:['publicacoes','publicacoes'],termos:['lgpd','termos'],visao:['dashboard','']}
 function SubTabs({items,current,onChange}) { return <div className="mg-subtabs" role="tablist">{items.map(([k,l])=><button key={k} role="tab" aria-selected={current===k} className={'adm-btn '+(current===k?'':'ghost')} onClick={()=>onChange(k)}>{l}</button>)}</div> }
 function ExtraSection({name}) { const Component=EXTRA[name]; return Component?<Wrap><Component/></Wrap>:<p>Indisponível.</p> }
 function AdminInvites() {

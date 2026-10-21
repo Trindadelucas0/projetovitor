@@ -36,20 +36,18 @@ const weekdayClash = days => {
 export default function WorkoutBuilder() {
   const nav = useNavigate(), [sp] = useSearchParams(), user = useStore(s => s.user), isAdmin = !!user?.admin
   const [w, setW] = useState({ title: '', specialty: '', goal: '', description: '', days: [blankDay(0)] })
-  const [meta, setMeta] = useState({ planId: sp.get('id') || sp.get('plan') || null, templateId: sp.get('template') || null, templateScope: sp.get('scope') || (isAdmin ? 'global' : 'pessoal'), student: sp.get('student') || '' })
+  const [meta, setMeta] = useState({ planId: sp.get('id') || sp.get('plan') || null, student: sp.get('student') || '' })
+  const [step, setStep] = useState(0)
   const [day, setDay] = useState(0), [sel, setSel] = useState(new Set()), [msg, setMsg] = useState(null), [busy, setBusy] = useState(''), [libOpen, setLibOpen] = useState(false)
   const [dlg, setDlg] = useState(null)
   const ask = (title, text, onOk, input) => setDlg({ title, text, onOk, input, val: input ?? '' })
-  const [students, setStudents] = useState([]), [templates, setTemplates] = useState([])
-  // carrega ficha, modelo, alunos e modelos disponíveis
+  const [students, setStudents] = useState([])
+  // Carrega a ficha em edição e os alunos disponíveis.
   useEffect(() => {
     (isAdmin ? C.users('ativo', '').then(r => r.users.filter(u => u.roles.includes('aluno'))) : P.students('todos').then(r => r.students)).then(setStudents).catch(() => {})
-    ;(isAdmin ? P.admTemplates() : P.templates()).then(r => setTemplates(r.templates.filter(t => t.status !== 'arquivado'))).catch(() => {})
     const load = p => setW({ title: p.title || '', specialty: p.specialty || '', goal: p.goal || '', description: p.description || '', days: (p.days?.length ? p.days : [{ ...blankDay(0), exercises: p.exercises || [] }]).map(d => ({ ...d, description: d.description || '', weekday: d.weekday == null ? null : +d.weekday, exercises: (d.exercises || []).map(fromSaved) })) })
     if (meta.planId) (isAdmin ? api('/api/adm/plan?id=' + meta.planId) : P.get(meta.planId)).then(r => { const p = r.plan || r.prescription || r; load(p); setMeta(m => ({ ...m, student: p.student_id || m.student })) }).catch(e => setMsg({ bad: true, t: e.message }))
   }, []) // eslint-disable-line
-  useEffect(() => { if (meta.templateId && templates.length && !meta.planId && !w.title) { const t = templates.find(x => x.id === meta.templateId); if (t) useTemplate(t) } }, [templates]) // eslint-disable-line
-  const useTemplate = t => setW({ title: t.title, specialty: t.specialty || '', goal: t.goal || '', description: t.description || '', days: (t.days || []).map(d => ({ ...d, description: d.description || '', weekday: d.weekday == null ? null : +d.weekday, exercises: d.exercises.map(fromSaved) })) })
   const D = w.days[day] || w.days[0]
   const setD = fn => setW(x => ({ ...x, days: x.days.map((d, i) => i === day ? fn(d) : d) }))
   const setEx = (i, patch) => setD(d => ({ ...d, exercises: d.exercises.map((e, k) => k === i ? { ...e, ...patch } : e) }))
@@ -84,17 +82,14 @@ export default function WorkoutBuilder() {
   // salvar
   const body = () => ({ title: w.title, specialty: w.specialty, goal: w.goal, description: w.description, days: clean(w.days) })
   const fail = e => setMsg({ bad: true, t: e.problems ? 'Não foi salvo: ' + e.problems.join(' · ') : 'Não foi salvo: ' + e.message })
-  const saveTemplate = async () => { const wd = weekdayClash(w.days); if (wd) return setMsg({ bad: true, t: wd }); setBusy('tpl'); setMsg(null); try {
-    const r = isAdmin ? await P.saveTemplate({ id: meta.templateScope === 'global' ? meta.templateId || undefined : undefined, ...body() }) : await api('/api/pro/templates', { method: 'POST', body: JSON.stringify({ id: meta.templateScope === 'pessoal' ? meta.templateId || undefined : undefined, ...body() }) })
-    setMeta(m => ({ ...m, templateId: r.id, templateScope: isAdmin ? 'global' : 'pessoal' })); markSaved(); setMsg({ t: isAdmin ? 'Modelo salvo: disponível para todos os profissionais' : 'Modelo pessoal salvo' }) } catch (e) { fail(e) } finally { setBusy('') } }
   const send = async () => {
     if (!meta.student) return setMsg({ bad: true, t: 'Escolha o aluno que vai receber o treino' })
     const wd = weekdayClash(w.days); if (wd) return setMsg({ bad: true, t: wd })
     setBusy('send'); setMsg(null)
     try {
-      if (isAdmin) { const r = await C.admSavePlan({ id: meta.planId || undefined, student_id: meta.student, template_id: meta.templateId || undefined, status: 'ativo', ...body() }); setMeta(m => ({ ...m, planId: r.id })) }
+      if (isAdmin) { const r = await C.admSavePlan({ id: meta.planId || undefined, student_id: meta.student, status: 'ativo', ...body() }); setMeta(m => ({ ...m, planId: r.id })) }
       else {
-        const r = await P.save({ id: meta.planId || undefined, student_id: meta.student, template_id: meta.templateId || undefined, ...body() }); setMeta(m => ({ ...m, planId: r.id }))
+        const r = await P.save({ id: meta.planId || undefined, student_id: meta.student, ...body() }); setMeta(m => ({ ...m, planId: r.id }))
         if (r.status === 'rascunho') await P.publish(r.id)
       }
       const st = students.find(s => s.id === meta.student)
@@ -106,23 +101,32 @@ export default function WorkoutBuilder() {
   useEffect(() => { if (snap === null && (!meta.planId || w.title)) setSnap(JSON.stringify(w)) }, [w]) // eslint-disable-line
   const leave = useUnsavedGuard(snap !== null && JSON.stringify(w) !== snap)
   const markSaved = () => setSnap(JSON.stringify(w))
-  const back = () => leave(() => nav('/admin/painel?tab=usuarios'))
+  const back = () => leave(() => nav(isAdmin ? '/admin/painel?tab=usuarios' : '/pro?tab=treinos'))
   const total = w.days.reduce((a, d) => a + d.exercises.length, 0)
   const clash = weekdayClash(w.days)
+  const goStep = next => { setMsg(null); setStep(next); window.scrollTo?.({ top: 0, behavior: 'smooth' }) }
+  const nextStep = () => {
+    if (step === 0 && !meta.student) return setMsg({ bad: true, t: 'Escolha o aluno que vai receber a ficha.' })
+    if (step === 0 && w.title.trim().length < 2) return setMsg({ bad: true, t: 'Dê um nome à ficha de treino.' })
+    if (step === 1 && clash) return setMsg({ bad: true, t: clash })
+    if (step === 1 && !total) return setMsg({ bad: true, t: 'Adicione pelo menos um exercício antes de revisar.' })
+    goStep(step + 1)
+  }
   return <div className="wb" data-testid="builder">
     <header className="wb-top">
       <button className="wb-btn ghost" onClick={back} aria-label="Voltar">←</button>
-      <div className="wb-ttl"><b>Construtor de treino</b><span>{w.days.length} dia(s) · {total} exercício(s){meta.planId ? ' · editando ficha' : meta.templateId ? ' · a partir de modelo' : ''}</span></div>
-      <select className="wb-in" value="" onChange={e => { const t = templates.find(x => x.id === e.target.value); if (!t) return; const go = () => { useTemplate(t); setMeta(m => ({ ...m, templateId: t.id, templateScope: t.scope || 'global' })); setDay(0) }; total ? ask('Usar modelo', 'Substituir a ficha atual pelo modelo “' + t.title + '”?', go) : go() }} aria-label="Usar modelo" data-testid="wb-template">
-        <option value="">Usar modelo…</option>{templates.map(t => <option key={t.id} value={t.id}>{t.scope === 'pessoal' ? '★ ' : ''}{t.title}</option>)}</select>
+      <div className="wb-ttl"><b>{meta.planId ? 'Editar ficha de treino' : 'Criar ficha de treino'}</b><span>{w.days.length} dia(s) · {total} exercício(s)</span></div>
     </header>
-    <p className="org-stage">1. Dados gerais → 2. Dias e exercícios → 3. Revisar e enviar</p>
-    <section className="wb-head">
+    <nav className="wb-steps" aria-label="Etapas da ficha">{['Dados da ficha', 'Dias e exercícios', 'Revisar e enviar'].map((label, i) => <button key={label} type="button" className={'wb-step' + (step === i ? ' on' : '')} aria-current={step === i ? 'step' : undefined} onClick={() => i <= step ? goStep(i) : i === step + 1 ? nextStep() : setMsg({ bad: true, t: 'Conclua esta etapa antes de revisar a ficha.' })}><span>{i + 1}</span>{label}</button>)}</nav>
+    {step === 0 && <section className="wb-head" aria-label="Dados da ficha">
+      <label className="wb-f wb-full"><span>Aluno</span><select className="wb-in" value={meta.student} onChange={e => setMeta(m => ({ ...m, student: e.target.value }))} data-testid="wb-student" disabled={!!meta.planId && !!meta.student}><option value="">{students.length ? 'Escolha o aluno…' : isAdmin ? 'Nenhum aluno ativo' : 'Nenhum aluno vinculado'}</option>{students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
       <label className="wb-f wb-f2"><span>Nome do treino</span><input className="wb-in" value={w.title} onChange={e => setW({ ...w, title: e.target.value })} placeholder="ex.: Hipertrofia A/B" data-testid="wb-title" /></label>
       <label className="wb-f"><span>Especialidade</span><input className="wb-in" value={w.specialty} onChange={e => setW({ ...w, specialty: e.target.value })} placeholder="Musculação" data-testid="wb-specialty" /></label>
       <label className="wb-f"><span>Objetivo</span><select className="wb-in" value={w.goal} onChange={e => setW({ ...w, goal: e.target.value })} data-testid="wb-goal"><option value="">Escolha…</option>{Object.entries(GOALS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
       <label className="wb-f wb-full"><span>Como fazer o treino (orientação geral para o aluno)</span><textarea className="wb-in" rows={2} value={w.description} onChange={e => setW({ ...w, description: e.target.value })} placeholder="Aquecimento, ordem, intervalo, cuidados…" data-testid="wb-desc" /></label>
-    </section>
+    </section>}
+    {step === 1 && <>
+    <h2 className="wb-section-title">Dias e exercícios</h2>
     <nav className="wb-days" role="tablist" aria-label="Dias do treino">
       {w.days.map((d, i) => <button key={i} role="tab" aria-selected={i === day} className={'wb-day' + (i === day ? ' on' : '')} onClick={() => { setDay(i); setSel(new Set()) }} data-testid={'wb-day-' + i}>{d.name}{d.weekday != null && d.weekday !== '' ? ' · ' + WD_SHORT[+d.weekday] : ''}<small>{d.exercises.length}</small></button>)}
       <button className="wb-day add" onClick={addDay} data-testid="wb-day-add">+ Dia</button>
@@ -152,17 +156,22 @@ export default function WorkoutBuilder() {
           onDragStart={() => { drag.current = i }} onDrop={() => drop(i)} />)}</ol>
       </main>
     </div>
+    </>}
+    {step === 2 && <section className="wb-review" aria-label="Revisar ficha">
+      <h2>Confira antes de enviar</h2>
+      <p><b>Aluno:</b> {students.find(s => s.id === meta.student)?.name || 'Escolha um aluno'} · <b>Ficha:</b> {w.title || 'Sem nome'}</p>
+      {w.days.map((d, i) => <div className="wb-review-day" key={i}><div><b>{d.name}</b><span>{d.weekday == null ? 'Livre' : WEEKDAYS[d.weekday]} · {d.exercises.length} exercício(s)</span></div><button className="wb-btn ghost" type="button" onClick={() => { setDay(i); goStep(1) }}>Editar</button><ol>{d.exercises.map((e, j) => <li key={j}>{e.name} · {e.sets} séries · {e.reps || (e.duration_sec ? `${e.duration_sec}s` : 'sem repetições')}</li>)}</ol></div>)}
+      {clash && <p className="wb-msg bad" role="alert">{clash}</p>}
+    </section>}
     {dlg && <div className="wb-dlg-bg" role="presentation" onClick={() => setDlg(null)}><div className="wb-dlg" role="dialog" aria-modal="true" aria-labelledby="wb-dlg-t" onClick={e => e.stopPropagation()} data-testid="wb-dialog">
       <h3 id="wb-dlg-t">{dlg.title}</h3><p>{dlg.text}</p>
       {dlg.input != null && <input className="wb-in" autoFocus value={dlg.val} onChange={e => setDlg({ ...dlg, val: e.target.value })} onKeyDown={e => { if (e.key === 'Enter') { dlg.onOk(dlg.val); setDlg(null) } }} data-testid="wb-dialog-in" />}
       <div className="wb-actions"><button className="wb-btn ghost" onClick={() => setDlg(null)}>Cancelar</button><button className="wb-btn" onClick={() => { dlg.onOk(dlg.val); setDlg(null) }} data-testid="wb-dialog-ok">Confirmar</button></div></div></div>}
-    <footer className="wb-foot"><b>Revisar e enviar</b>
+    <footer className="wb-foot"><b>Etapa {step + 1} de 3</b>
       {msg && <p className={'wb-msg' + (msg.bad ? ' bad' : msg.ok ? ' ok' : '')} role={msg.bad ? 'alert' : 'status'} data-testid="wb-msg">{msg.t}</p>}
       <div className="wb-actions">
-        <button className="wb-btn ghost" disabled={!!busy} onClick={saveTemplate} data-testid="wb-save-tpl">{busy === 'tpl' ? 'Salvando…' : 'Salvar como modelo'}</button>
-        <select className="wb-in" value={meta.student} onChange={e => setMeta(m => ({ ...m, student: e.target.value }))} aria-label="Aluno" data-testid="wb-student" disabled={!!meta.planId && !!meta.student}>
-          <option value="">{students.length ? 'Escolha o aluno…' : isAdmin ? 'Nenhum aluno ativo' : 'Nenhum aluno vinculado'}</option>{students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
-        <button className="wb-btn" disabled={!!busy || !meta.student} onClick={send} data-testid="wb-send">{busy === 'send' ? 'Enviando…' : meta.planId ? 'Salvar e enviar nova versão' : 'Enviar para aluno'}</button>
+        {step > 0 && <button className="wb-btn ghost" type="button" onClick={() => goStep(step - 1)}>Voltar etapa</button>}
+        {step < 2 ? <button className="wb-btn" type="button" onClick={nextStep}>Continuar</button> : <button className="wb-btn" disabled={!!busy || !meta.student || !total || !!clash || w.title.trim().length < 2} onClick={send} data-testid="wb-send">{busy === 'send' ? 'Enviando…' : meta.planId ? 'Salvar e enviar nova versão' : 'Enviar para aluno'}</button>}
       </div>
     </footer>
   </div>

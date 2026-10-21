@@ -221,7 +221,7 @@ function More({ go }) {
 }
 export default function ProPortal() {
   const [sp, setSp] = useSearchParams(), nav = useNavigate(), can = useNavigationAccess()
-  const tab = sp.get('tab') || 'painel', section = sp.get('secao') || 'fichas'
+  const tab = sp.get('tab') || 'painel', section = sp.get('secao') === 'modelos' ? 'fichas' : sp.get('secao') || 'fichas'
   const go = (t, extra) => t === 'novo' ? nav('/pro/treino?' + new URLSearchParams(extra || {})) : setSp({ tab: t, ...(t === 'alunos' ? { filter: sp.get('filter') || 'todos', q: sp.get('q') || '' } : {}), ...(extra || {}) })
   const [dash, err, reloadDash] = useLoad(() => tab === 'atendimentos' || tab === 'perfil' ? C.dash(tab === 'atendimentos') : Promise.resolve(null), [tab])
   const TITLES = { painel: 'Painel', alunos: 'Meus alunos', treinos: 'Treinos', avaliacao: 'Avaliações posturais', atendimentos: 'Atendimentos', capacidade: 'Meu plano e vagas', perfil: 'Perfil profissional', verificacao: 'Verificação profissional', convites: 'Convites pendentes', cadastrar: 'Cadastrar conta do aluno', adicionar: 'Adicionar aluno', mais: 'Mais' }
@@ -236,9 +236,8 @@ export default function ProPortal() {
       {tab === 'cadastrar' && <ProClients mode="create" />}
       {tab === 'convites' && <Invites compact />}
       {tab === 'treinos' && <>
-        <Tabs cur={section} set={secao => setSp({tab:'treinos',secao})} tabs={[[ 'fichas', 'Fichas dos alunos'], ['modelos', 'Modelos'], ['publicos', 'Programas públicos']]} />
+        <Tabs cur={section} set={secao => setSp({tab:'treinos',secao})} tabs={[[ 'fichas', 'Fichas dos alunos'], ['publicos', 'Programas públicos']]} />
         {section === 'fichas' && <><div className="org-toolbar">{can('construtor') && <button className="g-btn" onClick={() => go('novo')}>Criar ficha</button>}</div><MeusTreinos go={go} /></>}
-        {section === 'modelos' && <Templates go={go} />}
         {section === 'publicos' && <div className="g-card g-list"><Li icon="clipboard" t="Meus programas públicos" s="Programas sujeitos à avaliação editorial" to="/pro/programas" /></div>}
       </>}
       {tab === 'capacidade' && <Capacidade />}

@@ -20,8 +20,8 @@ Há implementação local para cadastro de alunos, vínculo com personal princip
 | Comunidade | Publicações e comentários, moderação e compartilhamento opcional de treino concluído. | `frontend/src/views/app/Comunidade.jsx`, `api/community.js`, `api/tapago.js` |
 | Acompanhamento | Conversas, dúvidas e relatos do aluno para o personal responsável. Relato de dor pode pausar o exercício. | `frontend/src/views/app/Acompanhamento.jsx`, `api/pro.js` |
 | Avaliação postural | Personal solicita; aluno registra fotos/vídeos; profissional analisa e publica devolutiva. Não produz diagnóstico automático. | `frontend/src/views/postural/`, `api/postural*.js` |
-| Área do personal | Conta própria, sem papel de admin, abre `/pro`: Painel, Alunos, Fichas, Avaliações posturais e Atendimentos. Pode cadastrar aluno, montar e publicar ficha e solicitar/revisar avaliação dos seus vinculados. | `frontend/src/views/pro/Portal.jsx`, `frontend/src/views/builder/WorkoutBuilder.jsx`, `frontend/src/views/postural/FilaAvaliacoes.jsx`, `api/portal.js`, `api/postural-pro.js` |
-| Administração | Conta admin abre `/admin/painel` para configuração, cobrança, supervisão e governança postural. Continua podendo ver todas as avaliações e mídias do tenant. | `frontend/src/views/admin/AdminApp.jsx`, `api/postural-adm.js`, `api/postural-pro.js` |
+| Área do personal | Conta própria, sem papel de admin, abre `/pro`: Painel, Alunos, Fichas, Avaliações posturais e Atendimentos. Pode cadastrar aluno, montar e publicar ficha e solicitar/revisar avaliação dos seus vinculados. A criação da ficha tem as etapas Dados da ficha, Dias e exercícios e Revisar e enviar. Modelos de treino ficam guardados, mas não aparecem no painel nem no construtor. | `frontend/src/views/pro/Portal.jsx`, `frontend/src/views/builder/WorkoutBuilder.jsx`, `api/portal.js`, `frontend/src/views/postural/FilaAvaliacoes.jsx`, `api/postural-pro.js` |
+| Administração | Conta admin abre `/admin/painel` para configuração, cobrança, supervisão e governança postural. Continua podendo ver todas as avaliações e mídias do tenant. Modelos de ficha não aparecem no menu; os registros existentes permanecem guardados. | `frontend/src/views/admin/AdminApp.jsx`, `api/postural-adm.js`, `api/postural-pro.js` |
 
 ## Regras que precisam continuar protegidas
 
@@ -60,5 +60,11 @@ A conta de aluno de teste do banco local recebeu assinatura `individual` ativa e
 - O frontend não recebe chaves privadas. Variáveis expostas pelo Vite devem conter apenas configuração pública necessária ao navegador.
 
 ## Atualização desta fonte
+
+### Instalação interna na VPS (21/10/2026)
+
+O commit público `4dd90a1` foi clonado em `/opt/projetovitor`, separado do AVAGYM. O banco PostgreSQL `projetovitor` usa o contêiner `projetovitor-postgres` e dados em `/opt/projetovitor-runtime/postgres`; recebeu 72 migrations e começou com duas contas e zero alunos. A API e o gateway web estão online no PM2 como `projetovitor-api` e `projetovitor-web`, salvos para reinício com `pm2 save`. Respondem somente em `127.0.0.1:8798` e `127.0.0.1:4461`; o PostgreSQL responde somente em `127.0.0.1:5442`. O catálogo público de imagens e GIFs foi copiado para `/opt/projetovitor-runtime/media`, sem usar a pasta de mídia do AVAGYM.
+
+O acesso escolhido é interno, por túnel SSH. Não há domínio público configurado. As contas iniciais de administrador e personal principal são separadas, exigem troca de senha no primeiro login e tiveram login e leitura de sessão verificados. As credenciais provisórias foram geradas na VPS e guardadas com permissão `0600` em `/opt/projetovitor-runtime/credentials/`; não constam no Git. O provedor de cobrança desta instalação é o simulador, sem pagamento real. A interface compilou e os testes HTTP de página, API, planos públicos e mídia retornaram `200`; o fluxo completo em navegador, a cobrança real e a avaliação postural em aparelho não foram homologados nesta instalação. As alterações locais posteriores ao commit clonado continuam somente nesta cópia de trabalho.
 
 Mudanças futuras de tela, regra, rota, permissão ou dados devem ser registradas aqui na mesma entrega e refletidas no guia quando mudarem o uso. O PRD deve indicar o estado desejado e o estado comprovado sem criar uma segunda fonte de comportamento atual.

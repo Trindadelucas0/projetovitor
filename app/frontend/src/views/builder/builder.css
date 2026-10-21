@@ -6,6 +6,12 @@
 .wb-in{min-height:44px;background:#14181d;border:1px solid #2a3038;border-radius:10px;color:#e9ecef;padding:0 10px;font:inherit;width:100%;box-sizing:border-box}
 textarea.wb-in{padding:8px 10px}.wb-in.err{border-color:#ff6b6b}
 .wb-head{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;padding:12px 16px}
+.wb-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:16px;max-width:1100px;width:100%;box-sizing:border-box;margin:0 auto}
+.wb-step{display:flex;align-items:center;gap:9px;min-height:48px;padding:8px 12px;text-align:left;color:#9aa4ae;background:#14181d;border:1px solid #2a3038;border-radius:12px;font:inherit;font-weight:600;cursor:pointer}
+.wb-step span{display:grid;place-items:center;width:26px;height:26px;flex:none;border-radius:50%;background:#2a3038;color:#e9ecef}
+.wb-step.on{border-color:#20f51b;color:#e9ecef}.wb-step.on span{background:#20f51b;color:#11140a}
+.wb-section-title{font-size:18px;margin:8px 16px 0}.wb-review{width:min(100%,900px);box-sizing:border-box;padding:8px 16px 150px;margin:0 auto}.wb-review h2{font-size:20px}.wb-review-day{background:#14181d;border:1px solid #2a3038;border-radius:14px;padding:14px;margin:10px 0}.wb-review-day>div{display:flex;flex-direction:column;gap:4px}.wb-review-day>div span{color:#9aa4ae;font-size:12px}.wb-review-day>.wb-btn{float:right;margin-top:-40px}.wb-review-day ol{clear:both;margin:18px 0 0;padding-left:22px;line-height:1.7}
+.wb-head{width:min(100%,1000px);box-sizing:border-box;margin:0 auto;padding-bottom:150px}.wb-head .wb-f:first-child{grid-column:1/-1}.wb-head .wb-f:first-child .wb-in{max-width:500px}
 .wb-f{display:flex;flex-direction:column;gap:4px}.wb-f>span{font-size:12px;color:#9aa4ae}.wb-full{grid-column:1/-1}
 .wb-days{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 16px 16px}
 .wb-day{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid #2a3038;background:#14181d;color:#e9ecef;font-weight:600;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
@@ -41,13 +47,17 @@ textarea.wb-in{padding:8px 10px}.wb-in.err{border-color:#ff6b6b}
 .wb-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center}.wb-actions .wb-in{max-width:280px}
 .wb-msg{margin:0 0 8px;font-size:13px}.wb-msg.bad{color:#ff8b8b}.wb-msg.ok{color:#20f51b;font-weight:700}
 .wb .mob{display:none}
+.wb>.wb-bar{padding:0 16px 12px}.wb>.wb-bar .wb-f{width:min(360px,100%)}
+.wb-btn:focus-visible,.wb-step:focus-visible,.wb-day:focus-visible,.wb-cn:focus-visible,.wb-in:focus-visible{outline:2px solid #20f51b;outline-offset:2px}
 @media (max-width:900px){
   .wb-head{grid-template-columns:1fr}.wb-cols{grid-template-columns:1fr;padding-bottom:170px}
   .wb-lib{display:none;position:fixed;inset:0;max-height:none;border-radius:0;z-index:20;top:0}.wb-lib.open{display:flex}
   .wb .mob{display:inline-flex;align-items:center}.wb-fields{grid-template-columns:1fr 1fr}
   .wb-actions{flex-wrap:wrap}.wb-actions .wb-in{max-width:none;flex:1 1 100%}.wb-actions .wb-btn{flex:1}
   .wb-days .wb-btn{padding:0 10px}
+  .wb-steps{gap:5px;padding:10px}.wb-step{flex-direction:column;justify-content:center;text-align:center;font-size:11px;padding:6px 2px;line-height:1.2;min-height:58px}.wb-head{padding-bottom:180px}.wb-review{padding-bottom:180px}.wb-foot{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
 }
+@media (max-width:600px){.wb-days{flex-wrap:wrap}.wb-days .wb-sp{display:none}.wb-days .wb-btn{flex:none}.wb-card .wb-ch{flex-wrap:wrap}.wb-card .wb-cn{min-width:calc(100% - 120px)}.wb-card .wb-mv{width:100%;justify-content:flex-end}.wb-fields{grid-template-columns:1fr 1fr}.wb-f{min-width:0}.wb-review-day>.wb-btn{float:none;margin:12px 0 0;width:100%}.wb-review-day ol{margin-top:10px}.wb-actions .wb-btn{min-width:0}}
 #app:has(.wb){max-width:none !important;padding:0 !important;margin:0 !important}
 .wb-dlg-bg{position:fixed;inset:0;background:#000a;display:grid;place-items:center;z-index:40;padding:16px}.wb-dlg{background:#14181d;border:1px solid #2a3038;border-radius:16px;padding:18px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:10px}.wb-dlg h3{margin:0}.wb-dlg p{margin:0;color:#c3cad1}
 

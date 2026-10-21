@@ -161,7 +161,7 @@ function Shell() {
               <Route path="/profissional/:id" element={<Gate title="Comunidade"><ProfessionalPage /></Gate>} />
               <Route path="/ranking" element={<Navigate to="/comunidade" replace />} />
               <Route path="/pro" element={isProAccount(user) ? <ProPortal /> : <Navigate to="/hoje" replace />} />
-              <Route path="/pro/programas" element={<Navigate to={user?.admin ? '/admin/painel?tab=modelos' : '/hoje'} replace />} />
+              <Route path="/pro/programas" element={<Navigate to={user?.admin ? '/admin/painel?tab=usuarios' : '/hoje'} replace />} />
               <Route path="/pro/assinatura" element={<Navigate to="/assinatura" replace />} />
               <Route path="/admin/painel" element={user?.admin ? <AdminApp /> : <Navigate to="/hoje" replace state={{ noOnboarding: true }} />} />{/* QA AD-40/43: sem permissao -> Inicio, sem cair no questionario */}
               <Route path="/onboarding" element={<Navigate to="/treinos" replace />} />

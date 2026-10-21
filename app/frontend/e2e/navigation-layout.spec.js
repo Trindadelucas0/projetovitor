@@ -14,7 +14,8 @@ async function setup(page, role, theme) {
     else if (u.pathname === '/api/pro/prescriptions') data = {prescriptions:[]}
     else if (u.pathname === '/api/pro/library') data = {exercises:[]}
     else if (u.pathname === '/api/pro/templates') data = {templates:[]}
-    else if (u.pathname === '/api/pro/students') data = {students:[]}
+    else if (u.pathname === '/api/pro/students') data = {students:[{id:'11111111-1111-4111-8111-111111111111',name:'Aluno de teste'}]}
+    else if (u.pathname === '/api/adm/users') data = {users:[{id:'11111111-1111-4111-8111-111111111111',name:'Aluno de teste',roles:['aluno']}]}
     else if (u.pathname === '/api/feed') data = {posts:[]}
     else if (u.pathname === '/api/adm/community/editorial') data = {posts:[{id:'official-1',title:'Conteúdo programado',body:'Texto oficial',category:'comunicados',state:'agendado',status:'publicado',publish_at:'2026-10-25T12:00:00.000Z',likes:0,comments:0}]}
     else if (u.pathname.includes('subscriptions')) data = {subscriptions:{aluno:{active:true,features:{progresso:true,programas_guiados:true}}}}
@@ -74,6 +75,11 @@ for (const role of ['aluno','profissional','admin']) for (const width of [320,39
     }
     if (role !== 'aluno') {
       await page.goto('/#/pro/treino')
+      await expect(page.getByTestId('wb-template')).toHaveCount(0)
+      await expect(page.getByTestId('wb-save-tpl')).toHaveCount(0)
+      await page.getByTestId('wb-student').selectOption('11111111-1111-4111-8111-111111111111')
+      await page.getByTestId('wb-title').fill('Ficha de teste')
+      await page.getByRole('button',{name:'Continuar'}).click()
       await expect(page.getByTestId('wb-day-add')).toBeVisible()
       for(let day=0;day<6;day++) await page.getByTestId('wb-day-add').click()
       await expect(page.getByTestId('wb-day-6')).toBeVisible()

@@ -27,7 +27,7 @@ O produto pretendido é o aplicativo de um personal e seus alunos, sem marketpla
 | Personal e fichas | Vínculo, construtor, agenda e vídeo estão no código; publicação completa pela interface não foi homologada | Personal publica ficha; aluno certo a recebe; ficha anterior permanece no histórico |
 | Execução e progresso | Telas e testes isolados existem; faltam cenários completos de navegador e aparelho | Treino concluído gera histórico e métricas coerentes, inclusive sem base anterior |
 | Comunidade e avaliação postural | Módulos locais existem; avaliação ainda não foi exercitada em aparelho real nem com armazenamento R2 real | Permissões, envio, revisão e devolutiva confirmados em ambiente configurado |
-| Base de uso e produção | Esquema do banco local **reconciliado**: as 72 migrations do repositório constam aplicadas, sem pendência, e as colunas de métrica (`sessions.origin`, `sessions.time_corrected_at`) existem. Restam duas falhas de configuração apontadas pelo verificador (ver §11). Publicação desta versão na VPS não foi confirmada | As duas falhas do verificador zeradas e jornada real verificada depois da publicação |
+| Base de uso e produção | Banco local **reconciliado e conferido**: as 72 migrations do repositório constam aplicadas, as colunas de métrica (`sessions.origin`, `sessions.time_corrected_at`) existem e `verificar:plano-unico` fecha em **19 de 19** (ver §11). Publicação desta versão na VPS não foi confirmada | Jornada real verificada depois da publicação, com a mesma conferência repetida na VPS |
 
 **Identidade:** “Projeto Vitor” é o nome deste PRD. Interface, manifesto, documentos legais, domínio e identificadores internos ainda contêm a marca anterior. A troca visual e legal será uma entrega própria; este documento não a apresenta como concluída.
 
@@ -783,10 +783,9 @@ Os itens abaixo são evidências históricas registradas nesta cópia, não nova
 - Cenários de navegador do cadastro em 4 etapas, do player de vídeo e da dúvida no exercício.
 - Publicação de ficha pelo personal ponta a ponta pela interface.
 - Primeira cobrança real de R$ 39,90 ponta a ponta na InfinitePay (prova operacional externa, não coberta por simulação).
-- Publicação da 2.0.0/2.0.1 na VPS pendente: o esquema reconciliado abaixo vale para o banco local, **não** para a VPS, que precisa da mesma conferência com backup próprio.
-- **Duas falhas abertas de configuração do banco local**, apontadas pelo verificador (ver abaixo): o personal principal não tem papel `admin` e um aluno está sem plano de acesso.
+- Publicação da 2.0.0/2.0.1 na VPS pendente: a conferência abaixo vale para o banco local, **não** para a VPS, que precisa da mesma verificação com backup próprio.
 
-**Esquema do banco local — conferência de 21/10/2026**
+**Banco local — conferência e ajuste de 21/10/2026**
 
 Conferência somente leitura no banco `avagym` (`localhost`), mais `npm run verificar:plano-unico`:
 
@@ -795,7 +794,9 @@ Conferência somente leitura no banco `avagym` (`localhost`), mais `npm run veri
 - Catálogo conciliado: `individual` a 3990 centavos, ativo e vendável; `pro`, `pro_ilimitado` e `profissional_free` inativos e fora de venda; `aluno_free` preservado e com versão de plano.
 - `personal_user_id` definido e `personal_unico` ativo. `monetizacao_ativa=false` neste banco.
 - Duas linhas órfãs em `schema_migrations` (`034_resend_transactional.sql` e `068_dados_legais_ornygym.sql`) correspondem a arquivos renumerados no repositório. São inofensivas — o conteúdo atual consta aplicado sob os nomes novos —, mas não devem ser interpretadas como migrations existentes.
-- **17 de 19 conferências aprovadas.** As duas falhas: (1) o personal principal não tem papel `admin`, então a isenção de vaga e de limite de alunos **não** se aplica a ele (RN-P3 exige `personal_user_id` **e** papel `admin`); (2) um aluno está sem plano de acesso, pré-condição do vínculo. Ambas são configuração de dados do ambiente local, não defeito de código.
+- O verificador fechou primeiro em **17 de 19**, com duas falhas de configuração de dados (não de código): o personal principal sem papel `admin`, o que anula a isenção de vaga e de limite (RN-P3 exige `personal_user_id` **e** papel `admin`), e um aluno sem plano de acesso, pré-condição do vínculo.
+- **Ambas corrigidas no mesmo dia**, em transação única, após `pg_dump` validado (`backups/avagym_20261021_205055_antes-ajuste-verificador.dump`, 149 tabelas com dados): papel `admin` concedido ao principal e plano `personal_unico` atribuído ao aluno, pela mesma regra da migration 069. As duas gravações estão em `audit_log` (`personal_principal.papel_admin` e `aluno.plano_acesso_atribuido`). **Nova execução do verificador: 19 de 19, nenhuma falha.**
+- Efeito colateral aceito: o personal principal passou a acumular `admin` + `profissional`, ou seja, tem acesso administrativo pleno ao painel. É o modelo do produto (o personal **é** o administrador do ambiente) e condição da isenção, mas desfaz a separação que a rotina `ativar-personal-principal-local.mjs` havia criado entre a conta administrativa e a conta de atendimento.
 - Na suíte isolada da API, uma asserção antiga e independente de recursos de boas-vindas continua falhando. No arquivo E2E completo, 4 cenários falham em fluxos de acesso/compartilhamento alheios ao recorte das últimas entregas.
 
 ---
@@ -816,7 +817,7 @@ Conferência somente leitura no banco `avagym` (`localhost`), mais `npm run veri
 |---|---|---|
 | Histórico de migrations incompleto em outro ambiente | Painel e métricas sem esquema | API responde 503 com aviso em vez de métrica incompleta; banco local já reconciliado e conferido, VPS ainda não |
 | Migration 071 destrutiva | Perda irreversível de dados de grupos/desafios | Exige backup confirmado; script de mídia roda em modo seguro antes. Já aplicada no banco local; pendente na VPS |
-| Dependência de um único personal principal | Ambiente sem admin não vincula alunos; sem papel `admin` o principal perde a isenção de limite | Cadastro continua funcionando; `verificar:plano-unico` acusa a falta — hoje acusa exatamente isso no banco local |
+| Dependência de um único personal principal | Ambiente sem admin não vincula alunos; sem papel `admin` o principal perde a isenção de limite | Cadastro continua funcionando; `verificar:plano-unico` acusa a falta — foi assim que as duas falhas do banco local apareceram e foram corrigidas em 21/10/2026 |
 | Cobrança real nunca exercitada ponta a ponta | Primeira assinatura pode falhar em produção | Provedor `simulado` nos testes, reconciliação e diagnóstico no job; prova operacional pendente |
 | Mídia de saúde em nuvem | Exposição de dado sensível | Bucket privado, rota autorizada com reconferência, registro de acesso, retenção automática, 25 MB por vídeo |
 | Teto do plano gratuito do R2 (10 GB-mês) | Avaliações bloqueadas por armazenamento | Indicador de consumo com aviso a partir de 80% |
