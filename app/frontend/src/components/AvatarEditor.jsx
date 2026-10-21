@@ -5,6 +5,7 @@ import Icon from './Icon.jsx'
 import { api } from '../lib/api.js'
 import { ask } from '../lib/dialog.js'
 import { cropRect } from '../lib/socialRules.js'
+import { readImage } from '../lib/image.js'   // V5-AP: era igual aqui e no módulo de avaliação; agora mora em um lugar só
 import { Av } from '../views/app/kit.jsx'
 
 function paint(canvas, img, zoom, off, size) {
@@ -16,10 +17,6 @@ function paint(canvas, img, zoom, off, size) {
   return canvas
 }
 const encode = (img, zoom, off, size) => paint(document.createElement('canvas'), img, zoom, off, size).toDataURL('image/jpeg', 0.86)
-async function readImage(file) {
-  if (typeof createImageBitmap === 'function') { try { return await createImageBitmap(file, { imageOrientation: 'from-image' }) } catch { /* tenta pelo <img> */ } }
-  return new Promise((ok, fail) => { const url = URL.createObjectURL(file), i = new Image(); i.onload = () => { URL.revokeObjectURL(url); ok(i) }; i.onerror = () => { URL.revokeObjectURL(url); fail(new Error('img')) }; i.src = url })
-}
 
 export default function AvatarEditor({ avatar, name, onChange, compact = false }) {
   const [img, setImg] = useState(null), [zoom, setZoom] = useState(1), [off, setOff] = useState({ x: 0, y: 0 }), [busy, setBusy] = useState(false), [msg, setMsg] = useState('')

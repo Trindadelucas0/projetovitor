@@ -59,6 +59,9 @@ import PlanErrorHost from './views/v3/PlanErrorHost.jsx'
 import { AccessHost } from './views/billing/Access.jsx'   // Monetizacao F8
 import WelcomeHost from './views/billing/Welcome.jsx'   // lote 7: boas-vindas pos-assinatura
 import Estatisticas from './views/guided/Estatisticas.jsx'   // lote 7: progresso e estatisticas
+import Avaliacoes from './views/postural/Avaliacoes.jsx'   // V5-AP: avaliação postural do aluno
+import PosturalWizard from './views/postural/Wizard.jsx'
+import Devolutiva from './views/postural/Devolutiva.jsx'
 import { MustChangePassword, AccessLockHost, LockBanner, ScopeGate } from './views/v3/V42.jsx'
 import './styles/v42.css'
 import './styles/tours.css'
@@ -171,6 +174,10 @@ function Shell() {
           <Route path="/compartilhar" element={<Gate title="Progresso"><ShareCard /></Gate>} />
               <Route path="/progresso" element={<Gate title="Progresso"><Progress /></Gate>} />
               <Route path="/estatisticas" element={<Gate title="Estatísticas"><Estatisticas /></Gate>} />
+              {/* V5-AP: avaliação postural. O wizard é tela cheia (a barra de abas sai em /avaliacao/<id>). */}
+              <Route path="/avaliacao" element={<Gate title="Avaliação postural"><Avaliacoes /></Gate>} />
+              <Route path="/avaliacao/:id" element={<Gate title="Avaliação postural"><PosturalWizard /></Gate>} />
+              <Route path="/avaliacao/:id/devolutiva" element={<Gate title="Avaliação postural"><Devolutiva /></Gate>} />
               <Route path="/perfil" element={<Profile />} /><Route path="/perfil/social" element={<SocialProfile />} /><Route path="/u/:id" element={<SocialPublic />} />
               <Route path="/perfil/equipamentos" element={<ScopeGate title="Equipamentos"><MyEquipment /></ScopeGate>} />
               <Route path="/planos" element={<Plans />} /><Route path="/assinatura" element={<Subscription />} /><Route path="/pro/assinatura" element={<Navigate to="/assinatura" replace />} />
@@ -194,7 +201,7 @@ function Shell() {
         </ErrorBoundary>
       </div>
       {/* barra principal = treino guiado; a antiga só aparece no treino manual em execução */}
-      {authed && !user?.needs_terms && !user?.must_change_password && !isAdminAccount(user) && !isProAccount(user) && !loc.pathname.startsWith('/admin/painel') && !loc.pathname.startsWith('/pro/treino') && <GuidedTabBar />}
+      {authed && !user?.needs_terms && !user?.must_change_password && !isAdminAccount(user) && !isProAccount(user) && !loc.pathname.startsWith('/admin/painel') && !loc.pathname.startsWith('/pro/treino') && !(loc.pathname.startsWith('/avaliacao/') && !loc.pathname.endsWith('/devolutiva')) && <GuidedTabBar />}
       {authed && isAdminAccount(user) && !user?.needs_terms && !loc.pathname.startsWith('/admin/painel') && !loc.pathname.startsWith('/pro/treino') && <button className="adm-btn" style={{ position: 'fixed', left: 12, bottom: 12, minHeight: 44, zIndex: 50 }} onClick={() => navigate('/admin/painel')} data-testid="back-admin">← Painel admin</button>}
       <RestTimer />
       <Modals />
@@ -204,7 +211,7 @@ function Shell() {
       {authed && <AccessLockHost />}
       {authed && <TourHost />}
       {authed && !user?.must_change_password && !user?.needs_terms && <DeviceSetupFlow user={user} />}
-      {!(authed && ['/hoje', '/pro'].includes(loc.pathname) && !user?.must_change_password && !user?.needs_terms && !isAdminAccount(user)) && !['/treinar', '/concluido', '/pro/treino'].includes(loc.pathname) && <ThemeToggle className="g-bell g-theme-fab" />}
+      {!(authed && ['/hoje', '/pro'].includes(loc.pathname) && !user?.must_change_password && !user?.needs_terms && !isAdminAccount(user)) && !['/treinar', '/concluido', '/pro/treino'].includes(loc.pathname) && !loc.pathname.startsWith('/avaliacao/') && <ThemeToggle className="g-bell g-theme-fab" />}
       <Toast />
       <DialogHost />
     </>

@@ -81,8 +81,10 @@ aditivas (`068_plano_unico.sql`, `069_personal_do_tenant.sql`) e nenhuma remoç�
 Voltas em `app/api/db/down/068_down.sql` e `069_down.sql`.
 
 ### Antes de publicar
-- [ ] Rodar as duas migrations **num banco isolado primeiro**, duas vezes (idempotência), e conferir:
-      `DB_NAME=orny_plano_unico node db/migrate.js && DB_NAME=orny_plano_unico npm run verificar:plano-unico`
+- [x] Migrations rodadas **num banco isolado** (`orny_plano_unico`), duas vezes, em 21/10/2026:
+      `verificar:plano-unico` com 19 conferências aprovadas e `test:plano-unico:integration`
+      com 13. O banco de uso não foi tocado. Para repetir num banco novo (PowerShell):
+      `$env:DB_NAME='orny_plano_unico'; node db/migrate.js; node db/migrate.js; npm run verificar:plano-unico`
 - [ ] Confirmar **quem é o personal**: a 069 elege o administrador mais antigo e ativo do ambiente.
       Se não for o Vitor, corrigir a chave depois de aplicar (comando abaixo) — a isenção de
       limite e o vínculo automático dependem dela.

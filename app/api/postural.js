@@ -131,17 +131,20 @@ export function posturalRoutes({ json, readBody }) {
     'GET /api/avaliacao-postural/item': async (req, res) => {
       const u = await auth(req, res); if (!u) return
       const a = await mine(qs(req).get('id'), u); if (!a) return notFound(json, res)
-      const [steps, caps, version, threads] = await Promise.all([
+      const [steps, caps, version, threads, termo] = await Promise.all([
         stepsOf(a.protocol_version_id),
         q(`select * from posture_captures where assessment_id=$1 order by step_id, attempt`, [a.id]),
         versionOf(a.protocol_version_id),
         q(`select t.id, t.assessment_step_id step_id, t.status, t.created_at, t.updated_at,
              (select count(*)::int from messages m where m.thread_id=t.id) messages,
              (select body from messages m where m.thread_id=t.id order by m.id limit 1) first_message
-           from threads t where t.assessment_id=$1 and t.student_id=$2 order by t.created_at desc`, [a.id, u.id])
+           from threads t where t.assessment_id=$1 and t.student_id=$2 order by t.created_at desc`, [a.id, u.id]),
+        // texto do termo do módulo, publicado pela administração: o aluno tem de poder ler o que aceita
+        q(`select value from app_settings where tenant_id=$1 and key='avaliacao_postural_termo'`, [u.tenant_id]).then(r => r.rows[0]?.value || null).catch(() => null)
       ])
       json(res, 200, {
         assessment: publicAssessment(a),
+        termo,
         version: version && { general_instructions: version.general_instructions, preparation: version.preparation, clothing_note: version.clothing_note, camera_note: version.camera_note, notes: version.notes },
         steps,
         captures: caps.rows.map(c => publicCapture(c, a.status)),

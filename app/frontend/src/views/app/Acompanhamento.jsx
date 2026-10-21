@@ -7,6 +7,7 @@ import Icon from '../../components/Icon.jsx'
 import { C, CAT_PT, OCC_ST, dt } from '../../lib/care.js'
 import { Av, Empty, Load, Err, useLoad, Sheet, Field, useAutoRefresh } from './kit.jsx'
 import { notifyError } from '../../lib/dialog.js'
+import { AvaliacaoHomeCard } from '../postural/Avaliacoes.jsx'   // V5-AP
 
 export function ReportSheet({ ctx, onClose, onDone }) {
   const [cat, setCat] = useState(''), [desc, setDesc] = useState(''), [busy, setBusy] = useState(false), [err, setErr] = useState('')
@@ -58,6 +59,8 @@ export default function Acompanhamento() {
   const blocked = new Set(d.blocks.map(b => b.exercise_id))
   return <div className="ag" data-testid="acompanhamento">
     <span className="g-eyebrow">Acompanhamento</span><h1>Seu acompanhamento</h1>
+    {/* V5-AP: avaliação postural (o cartão não aparece quando não há nenhuma solicitada) */}
+    <AvaliacaoHomeCard />
     {can('profissionais') && <details className="org-details" open={sp.get('aba') === 'profissionais' ? true : undefined}><summary>Encontrar profissional</summary><Profissionais /></details>}
     <h2>Profissionais responsáveis</h2>
     <div className="g-card g-list">{d.professionals.length ? d.professionals.map(p => <button key={p.link_id} className="g-li" onClick={() => nav('/profissional/' + p.id)}>

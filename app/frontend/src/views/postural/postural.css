@@ -1,0 +1,89 @@
+/* Avaliação Postural — só o que não existia nas folhas atuais. Usa os tokens da marca (--ag-*),
+   nada de cor literal, e respeita claro/escuro porque os tokens já mudam com o tema. */
+
+.ap-wizard { padding-bottom: calc(96px + var(--sab, 0px)); }
+.ap-wizard-footer {
+  position: sticky; bottom: 0; display: grid; gap: 8px;
+  padding: 12px 0 calc(12px + var(--sab, 0px));
+  background: linear-gradient(to top, var(--ag-bg) 70%, transparent);
+}
+.ap-wizard-footer .g-btn { width: 100%; }
+
+.ap-h2 { font-size: 1rem; margin: 18px 0 8px; }
+.ap-pre { white-space: pre-wrap; }
+
+/* cartão de destaque no Início e no Acompanhamento */
+.ap-card { display: grid; gap: 10px; }
+.ap-card .g-btn { width: 100%; }
+
+/* etapa */
+.ap-step { display: grid; gap: 12px; }
+.ap-step-h { font-size: .95rem; margin: 4px 0 0; }
+.ap-step-list { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.ap-step-list li { line-height: 1.45; }
+.ap-step-media { display: grid; gap: 8px; }
+.ap-step-ref {
+  position: relative; padding: 0; border: 1px solid var(--ag-line); border-radius: var(--ag-radius, 20px);
+  overflow: hidden; background: var(--ag-card-2); cursor: zoom-in; display: block; width: 100%;
+}
+.ap-step-ref img { display: block; width: 100%; max-height: 42vh; object-fit: contain; }
+.ap-step-zoom {
+  position: absolute; right: 10px; bottom: 10px; display: grid; place-items: center;
+  width: 36px; height: 36px; border-radius: 50%; background: var(--ag-bg); border: 1px solid var(--ag-line);
+}
+.ap-step-care ul { margin: 6px 0 0; padding-left: 18px; }
+.ap-step-help { display: flex; flex-wrap: wrap; gap: 14px; }
+.ap-step-skipped { display: grid; gap: 6px; }
+
+/* captura */
+.ap-cap { display: grid; gap: 10px; }
+.ap-cap-prev {
+  border: 1px solid var(--ag-line); border-radius: var(--ag-radius, 20px); overflow: hidden;
+  background: var(--ag-card-2);
+}
+.ap-cap-prev img, .ap-cap-prev video { display: block; width: 100%; max-height: 52vh; object-fit: contain; background: #000; }
+.ap-cap-check { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.ap-cap-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ap-cap-actions > * { flex: 1 1 46%; min-width: 150px; }
+.ap-cap-send { display: grid; gap: 6px; }
+.ap-cap label.g-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+.ap-cap label.g-disabled { opacity: .5; pointer-events: none; }
+
+.ap-checklist { display: grid; gap: 10px; }
+.ap-bullets { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ap-bullets li { display: flex; gap: 8px; align-items: flex-start; }
+.ap-termo { max-height: 40vh; overflow: auto; white-space: pre-wrap; }
+.ap-consent { display: grid; gap: 10px; }
+.ap-consent ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+
+/* grade da devolutiva */
+.ap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.ap-grid-item { display: grid; gap: 4px; align-content: start; }
+.ap-thumb {
+  padding: 0; border: 1px solid var(--ag-line); border-radius: 14px; overflow: hidden;
+  background: var(--ag-card-2); aspect-ratio: 3 / 4; cursor: zoom-in;
+}
+.ap-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ap-thumb-video { display: grid; place-items: center; width: 100%; height: 100%; }
+
+/* visualizador em tela cheia */
+.ap-lb {
+  position: fixed; inset: 0; z-index: 1000; display: grid; grid-template-rows: auto 1fr auto;
+  background: rgba(0, 0, 0, .94); color: #fff; padding: calc(10px + var(--sat, 0px)) 10px calc(10px + var(--sab, 0px));
+}
+.ap-lb-top { display: flex; align-items: center; gap: 8px; }
+.ap-lb-top .g-icbtn { color: #fff; }
+.ap-lb-body { display: grid; place-items: center; overflow: auto; touch-action: pinch-zoom; }
+.ap-lb-body img, .ap-lb-body video { max-width: 100%; max-height: 100%; object-fit: contain; }
+.ap-lb-nav { display: flex; justify-content: center; gap: 12px; }
+
+@media (min-width: 900px) {
+  /* no desktop a etapa fica com a mídia à esquerda e as instruções à direita */
+  .ap-step { grid-template-columns: 1.1fr 1fr; grid-auto-flow: dense; align-items: start; column-gap: 24px; }
+  .ap-step > h1, .ap-step > .g-eyebrow { grid-column: 1 / -1; }
+  .ap-step-media, .ap-cap { grid-column: 1; }
+  .ap-step-h, .ap-step-list, .ap-step-care, .ap-step-help { grid-column: 2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-wizard, .ap-cap-prev, .ap-lb { transition: none !important; animation: none !important; }
+}

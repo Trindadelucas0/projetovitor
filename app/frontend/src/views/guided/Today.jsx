@@ -15,6 +15,7 @@ import { Li } from '../app/Treinos.jsx'
 import { ResumeBar } from '../v3/StartHub.jsx'
 import { usePremium, PremiumLock } from '../billing/Premium.jsx'
 import { HomeWidgets, useHome, plural } from './HomeWidgets.jsx'
+import { AvaliacaoHomeCard } from '../postural/Avaliacoes.jsx'   // V5-AP
 import './guided.css'
 
 const DN = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']
@@ -85,6 +86,9 @@ export default function Today() {
     {head}
 
     {pend > 0 && <p className="g-note" style={{ margin: '8px 0' }} data-testid="pending-sync">{rejectedCount() > 0 ? `${rejectedCount()} registro(s) recusado(s) pelo servidor ficam guardados no aparelho (nada é apagado). ` : ''}{pend - rejectedCount() > 0 ? `${pend - rejectedCount()} registro(s) aguardando conexão para sincronizar.` : ''}</p>}
+
+    {/* V5-AP: avaliação postural pendente (o cartão não aparece quando não há nenhuma solicitada) */}
+    <AvaliacaoHomeCard />
 
     {/* lote 7: 'Minha semana' fixa no topo, em destaque */}
     <section className="av-hero hw-week" style={{ marginTop: 12 }} data-testid="week-ring" aria-labelledby="wk-ttl">

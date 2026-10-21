@@ -15,6 +15,10 @@ export const TOURS = {
       S('tab-perfil', 'Perfil', 'Preferências, privacidade e segurança ficam separados. Para rever as dicas, abra Ajuda.')],
     treinos: [S('active-training', 'Treino ativo', 'Seu único treino ativo fica em destaque. Toque no botão grande para começar.'), S('tab-historico', 'Para consulta', 'Fichas anteriores, rotinas antigas e o histórico ficam aqui, só para leitura. Explorar programas aparece acima quando disponível.')],
     comunidade: [S('comunidade', 'Comunidade', 'Veja todas as publicações ou somente as de perfis que você segue.')],
+    // V5-AP: avaliação postural. Os alvos são data-testid das telas do módulo.
+    avaliacao: [S('ap-card', 'Avaliação postural', 'Quando seu personal solicita, a avaliação aparece aqui com o que falta fazer.'),
+      S('ap-card-cta', 'Uma etapa por vez', 'Cada etapa traz instruções e, quando houver, uma imagem de referência. Você pode parar e continuar depois.'),
+      S(null, 'Suas imagens são privadas', 'As fotos e vídeos ficam em área privada e saem apenas para você e para o seu profissional. Nunca aparecem na Comunidade.')],
     ...common
   },
   client: {
@@ -73,7 +77,7 @@ export function screenOf(profile, pathname, search) {
     return !tab || tab === 'dashboard' ? 'welcome' : tab
   }
   if (profile === 'pro') return pathname === '/pro' ? (!tab || tab === 'painel' ? 'welcome' : tab) : pathname === '/perfil' ? 'perfil' : null
-  const m = { '/hoje': 'welcome', '/treinos': 'treinos', '/comunidade': 'comunidade', '/progresso': 'progresso', '/perfil': 'perfil' }
+  const m = { '/hoje': 'welcome', '/treinos': 'treinos', '/comunidade': 'comunidade', '/progresso': 'progresso', '/perfil': 'perfil', '/avaliacao': 'avaliacao' }
   return m[pathname] || null
 }
 export const NEVER = ['/treinar', '/concluido', '/pro/treino', '/onboarding']

@@ -46,8 +46,12 @@ Validação local: build de produção aprovado; 322 testes unitários do fronte
 ## App do personal — plano único e painel 2.0.0 (21/10/2026)
 
 O ORNY passou a ser o app de **um personal e seus alunos**. O aluno treina no app; quem
-atende é o administrador do ambiente, chamado aqui de **personal**. Não existe mais uma
-terceira área para profissional entrar.
+atende é o administrador do ambiente, chamado aqui de **personal**.
+
+Não existe mais **cadastro público** de profissional: a tela de criar conta só cria aluno.
+A área profissional (`/pro`) continua existindo para os **personais internos** que o
+administrador cria, conforme a seção "Fichas individuais e personal responsável" acima;
+ela não é alcançável por quem se cadastra pelo app.
 
 ### Plano único
 
@@ -195,23 +199,38 @@ do frontend e **10 testes da API** do formato da ficha
 exercícios, conflitos de dias, tipos de vídeo e vídeo opcional). Verificação de sintaxe nos
 módulos alterados da API.
 
-**Não executado, portanto não homologado:**
+**Banco isolado `orny_plano_unico`, criado do zero em 21/10/2026** (o banco de uso não foi
+tocado). As migrations foram aplicadas e o migrador **rodou duas vezes**, sem duplicar
+registro. A 069 foi reaplicada separadamente, já com um administrador presente, para
+exercitar a eleição do personal. `DB_NAME=orny_plano_unico npm run verificar:plano-unico`
+(somente leitura, `api/scripts/verificar-plano-unico.mjs`) fechou com **19 conferências
+aprovadas e nenhuma falha**: um único plano à venda (`individual` a 3990);
+`pro`, `pro_ilimitado` e `profissional_free` inativos e fora de venda; `aluno_free`
+preservado e com versão de plano; nenhuma campanha apontando para plano de profissional;
+`personal_user_id` definido; o personal com papel admin e perfil profissional ativo;
+`personal_unico` ativo; e nenhum aluno sem plano de acesso.
 
-- As migrations 068 e 069 **não foram aplicadas em nenhum banco**. A senha do `.env` não
-  autentica no PostgreSQL local desta máquina (`28P01`), então nem o banco isolado de
-  teste foi criado. Aplicar primeiro num banco isolado, duas vezes, para conferir
-  idempotência, e conferir o resultado com
-  `DB_NAME=<banco> npm run verificar:plano-unico` (somente leitura, em
-  `api/scripts/verificar-plano-unico.mjs`).
+Num banco **sem administrador nenhum**, a 069 não define `personal_user_id`, e o conferidor
+acusa isso. É o padrão seguro: o cadastro continua funcionando, apenas sem vínculo
+automático, até existir um administrador.
+
+**Integração aprovada** — `DB_NAME=orny_plano_unico npm run test:plano-unico:integration`
+(`api/test/plano-unico.integration.mjs`, 13 conferências): aluno novo nasce vinculado ao
+personal; repetir o cadastro não cria um segundo vínculo; ambiente sem personal configurado
+não quebra o cadastro; o personal vinculou **21 alunos sem estourar limite**. O teste
+negativo confirma que a isenção **não vazou**: outro profissional parou exatamente no limite
+de 2 alunos do plano gratuito dele, e o aluno do personal não virou aluno dele.
 
 As voltas estão em `api/db/down/068_down.sql` (religa Individual a R$ 12,90 e os planos de
 personal) e `069_down.sql` (remove a chave `personal_user_id`). A 069 não desativa perfis
 profissionais nem desatribui planos de acesso de propósito: desatribuir deixaria alunos sem
 plano de acesso e impediria qualquer vínculo. Campanhas reescritas pela 068 não voltam ao
 plano antigo automaticamente — conferir os cupons depois de uma volta.
-- Cenários de navegador (Playwright) do cadastro em 4 etapas, do player e da dúvida.
-- Vínculo automático, isenção de limite e publicação de ficha pelo personal: dependem do
-  banco e seguem pendentes.
+
+**Não executado, portanto não homologado:**
+
+- Cenários de navegador (Playwright) do cadastro em 4 etapas, do player de vídeo e da dúvida.
+- Publicação de ficha pelo personal ponta a ponta pela interface.
 - A primeira cobrança real de R$ 39,90 ponta a ponta na InfinitePay continua sendo prova
   operacional externa, não coberta por teste simulado.
 
@@ -523,7 +542,7 @@ O início utiliza `startRemote`, que preserva a autorização existente e a cont
 
 ## Histórico
 - 2.0.1 (21/10/2026): Comunidade concentrada em Publicações (Todos e Seguindo); retirada de Minhas publicações, Grupos, Desafios, Ranking, troféus e premiações. Migration destrutiva 071 preparada, ainda não aplicada em banco.
-- 2.0.0 (21/10/2026): plano único de R$ 39,90, cadastro só de aluno, central administrativa convertida em painel do personal, aluno vinculado automaticamente, dia da semana na ficha, vídeo do personal por exercício com velocidade e dúvida no próprio exercício. Migrations 068 e 069 ainda não aplicadas em banco.
+- 2.0.0 (21/10/2026): plano único de R$ 39,90, cadastro só de aluno, central administrativa convertida em painel do personal, aluno vinculado automaticamente, dia da semana na ficha, vídeo do personal por exercício com velocidade e dúvida no próprio exercício. Migrations 068 e 069 aplicadas e conferidas no banco isolado `orny_plano_unico` (19 conferências de catálogo/personal e 13 de integração aprovadas); publicação na VPS pendente.
 - 1.9.0 (20/10/2026): publicação opcional e confirmada do card #TáPago na Comunidade, vinculada à sessão concluída e limitada a uma por treino.
 - 1.7.9 (19/10/2026): validade insere `/` após o mês; erro de permissão de tokenização Asaas recebe mensagem operacional clara, com encaminhamento para habilitação da conta.
 - 1.7.8 (19/10/2026): footer completo e responsivo na landing pública, com marca, atalhos internos, acesso e documentos legais separados; sem alteração de cadastro, planos ou API.
