@@ -1,4 +1,4 @@
--- volta da 070 (Avaliacao Postural), em ordem inversa de dependencia.
+-- volta da 072 (Avaliacao Postural), em ordem inversa de dependencia.
 -- threads e legal_acceptances voltam ao CHECK anterior; as colunas aditivas de threads saem.
 alter table threads drop column if exists assessment_step_id;
 alter table threads drop column if exists assessment_id;
@@ -20,4 +20,4 @@ drop table if exists posture_steps;
 drop table if exists posture_protocol_versions;
 drop table if exists posture_protocols;
 
-delete from schema_migrations where name = '070_avaliacao_postural.sql';
+delete from schema_migrations where name = '072_avaliacao_postural.sql';

@@ -3,7 +3,7 @@
 -- capturas corporais em area privada com ACL propria e recorrencia mensal idempotente.
 -- Sem diagnostico automatico: o modulo coleta, organiza e devolve texto escrito por pessoa.
 -- Duvida por etapa reaproveita threads/messages (context_type='avaliacao'); consentimento especifico entra
--- em legal_acceptances ('avaliacao_postural'). Tudo aditivo. Volta em db/down/070_down.sql.
+-- em legal_acceptances ('avaliacao_postural'). Tudo aditivo. Volta em db/down/072_down.sql.
 
 -- catalogo de protocolos: tenant_id nulo = oficial do sistema (mesmo padrao de exercises/programs)
 create table if not exists posture_protocols (
