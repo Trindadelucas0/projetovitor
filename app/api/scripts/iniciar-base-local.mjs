@@ -6,7 +6,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { pool } from '../db/pool.js'
 
-const ADMIN_EMAIL = 'admin@avagym.com.br'
+const ADMIN_EMAIL = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase()
+const LOCAL_ADMIN_ID = String(process.env.LOCAL_ADMIN_ID || '').trim()
+if (!ADMIN_EMAIL) throw new Error('Defina ADMIN_EMAIL no .env.')
 const apply = process.argv.includes('--apply')
 const host = process.env.DB_HOST || 'localhost'
 const db = process.env.DB_NAME || 'avagym'
@@ -42,7 +44,7 @@ try {
   const ids = users.rows.map(r => r.id)
   if (apply) {
     const alreadyConfigured = await c.query('select 1 from schema_migrations where name=$1', ['069_personal_do_tenant.sql'])
-    if (admin.id !== '9782075e-3b0b-4731-9d8c-ae0115bf8ce9' || ids.length !== 73 || alreadyConfigured.rowCount) {
+    if ((LOCAL_ADMIN_ID && admin.id !== LOCAL_ADMIN_ID) || ids.length !== 73 || alreadyConfigured.rowCount) {
       throw new Error('Esta limpeza de 21/10/2026 já foi executada ou a base mudou; não é permitido reaplicá-la.')
     }
   }

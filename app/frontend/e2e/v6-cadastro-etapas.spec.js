@@ -2,7 +2,7 @@
 // Roda SOMENTE contra a pilha de teste (API 8797 / avagym_test), servida pelo gateway em :4459.
 import { test, expect } from '@playwright/test'
 import { fillContact } from './_contact.js'
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 async function coupon(rq, baseURL) {
   const H = { Origin: baseURL }
   const adm = (await (await rq.post('/api/auth/login', { headers: H, data: { email: 'admin.e2e\u0040avadesk.local', password: PASS } })).json()).token

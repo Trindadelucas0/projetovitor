@@ -185,9 +185,9 @@ São 73 migrations e ~190 tabelas. As entidades que sustentam o produto atual:
 
 | Plano | Audiência | Preço | Situação |
 |---|---|---|---|
-`individual` — **Projeto Vitor** | aluno | R$ 39,90/mês | **À venda** |
-`aluno_free` | aluno | — | Inativo, nunca vendável. É o estado interno de "conta sem plano ainda" (`FREE_PLAN`); **não remover**, o cadastro depende dele |
-`pro` (Personal 15), `pro_ilimitado` (Personal Ilimitado), `profissional_free` | profissional | — | `active=false, sellable=false`. Nada apagado: versões, assinaturas e cobranças anteriores seguem consultáveis |
+| `individual` — **Projeto Vitor** | aluno | R$ 39,90/mês | **À venda** |
+| `aluno_free` | aluno | — | Inativo, nunca vendável. É o estado interno de "conta sem plano ainda" (`FREE_PLAN`); **não remover**, o cadastro depende dele |
+| `pro` (Personal 15), `pro_ilimitado` (Personal Ilimitado), `profissional_free` | profissional | — | `active=false, sellable=false`. Nada apagado: versões, assinaturas e cobranças anteriores seguem consultáveis |
 
 `GET /api/billing/pro-summary` responde **410 GONE** — não há assinatura de profissional para gerir.
 
@@ -736,7 +736,7 @@ A mídia postural **nunca** aparece no Feed, na Comunidade ou em notificações.
 
 ### 10.2 Variáveis relevantes
 
-`ORIGIN`, `CSRF_ALLOWED_ORIGINS`, `HOST`, `PORT`, `DATA_DIR`, `DB_*`, `SESSION_DAYS`, `RATE_LIMIT`, `SESSION_SWEEP`, `SESSION_REMINDER_MIN`, `BILLING_TICK`, `POSTURAL_RECURRENCE`, `AUDIT_RETENTION_DAYS`, `STORAGE_DRIVER` (`local` padrão), `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, VAPID, SMTP e chaves do provedor de pagamento. Detalhe em `docs/sistema/13-variaveis-ambiente.md`.
+`ORIGIN`, `CSRF_ALLOWED_ORIGINS`, `HOST`, `PORT`, `DATA_DIR`, `DB_*`, `SESSION_DAYS`, `RATE_LIMIT`, `SESSION_SWEEP`, `SESSION_REMINDER_MIN`, `BILLING_TICK`, `POSTURAL_RECURRENCE`, `AUDIT_RETENTION_DAYS`, `STORAGE_DRIVER` (`local` padrão), `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, VAPID, SMTP e chaves do provedor de pagamento. A lista completa, com os valores de exemplo, fica em `app/api/.env.example` e `app/.env.example`.
 
 Para o R2: bucket **privado**, sem domínio personalizado e sem URL pública de desenvolvimento.
 

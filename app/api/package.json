@@ -10,6 +10,7 @@
     "test:email": "node --test test/email-templates.test.mjs test/email-worker.test.mjs",
     "test:email:integration": "node --test test/email-integration.test.mjs",
     "email:previews": "node scripts/email-previews.mjs",
+    "check:sensitive": "node scripts/check-sensitive-literals.mjs",
     "migrate": "node db/migrate.js",
     "verificar:plano-unico": "node scripts/verificar-plano-unico.mjs",
     "test:plano-unico": "node --test test/ficha-dias-video.test.mjs",

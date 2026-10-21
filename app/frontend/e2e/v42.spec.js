@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 import fs from 'node:fs'
 const OUT = process.env.SHOTS_DIR || 'test-artifacts/v42'
 fs.mkdirSync(OUT, { recursive: true })
-const PASS = 'e2e-Avadesk-2026', M = { width: 390, height: 844 }
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), M = { width: 390, height: 844 }
 const shot = (page, n) => page.screenshot({ path: `${OUT}/${n}.png`, fullPage: true })
 async function ctxLogin(browser, email, password = PASS, vp = M) {
   const ctx = await browser.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin }, locale: 'pt-BR', viewport: vp, colorScheme: 'dark' })

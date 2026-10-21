@@ -42,7 +42,7 @@ check((await q(`select count(*)::int c from user_app_state_rejections where user
 // ---------- aluno do personal coberto ----------
 const c = (await post(pro.tok, '/api/pro/clients', { name: 'Coberto Um', email: `umc${Date.now()}@lock.test` })).d
 let lg = await post(null, '/api/auth/login', { email: c.email, password: c.temp_password })
-const ct = (await post(lg.d.token, '/api/auth/password', { current_password: c.temp_password, new_password: 'Coberto-Senha-1' })).d.token
+const ct = (await post(lg.d.token, '/api/auth/password', { current_password: c.temp_password, new_password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada') })).d.token
 const terms = (await get(null, '/api/terms')).d.terms; await post(ct, '/api/terms/accept', { version: terms.version })
 const fc = await ficha(c.id, 'Ficha coberto')
 a = await at(ct)

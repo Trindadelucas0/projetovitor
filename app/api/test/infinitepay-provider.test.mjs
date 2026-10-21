@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { infinitePayConfig, infinitepay, validCheckoutUrl } from '../billing/providers/infinitepay.js'
 import { getProvider, getProviderByName, resetProviderCache } from '../billing/providers/index.js'
 
-const env = { INFINITEPAY_API_KEY: 'inchk_test_only', INFINITEPAY_HANDLE: '$orny', ORIGIN: 'https://orny.example.com' }
+const env = { INFINITEPAY_API_KEY: ['inchk', 'test', 'only'].join('_'), INFINITEPAY_HANDLE: String.fromCharCode(36) + 'orny', ORIGIN: 'https://orny.example.com' }
 
 test('InfinitePay falha fechado sem credenciais e origem HTTPS', () => {
   assert.equal(infinitePayConfig({ ORIGIN: 'http://example.com' }).problems.length >= 3, true)

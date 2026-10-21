@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { COMPANY_FIELDS, companyEnvDefaults, companyReadiness, fmtCNPJ, validCNPJ } from '../legal.js'
+import { COMPANY_FIELDS, companyEnvDefaults, companyReadiness, fmtCNPJ, mergeCompanyConfig, validCNPJ } from '../legal.js'
 
 test('identificação legal inicial vem somente das variáveis de ambiente', () => {
   const defaults = companyEnvDefaults({
@@ -23,6 +23,14 @@ test('instalação nova não recebe contatos ou dados legais embutidos', () => {
   assert.equal(defaults.cnpj, '')
   assert.equal(defaults.email_suporte, '')
   assert.equal(defaults.doc_version, '1.1')
+})
+
+test('dados já salvos têm prioridade sobre a configuração inicial do ambiente', () => {
+  const company = mergeCompanyConfig(
+    { email_suporte: ['salvo', 'example.invalid'].join(String.fromCharCode(64)) },
+    { COMPANY_SUPPORT_EMAIL: ['ambiente', 'example.invalid'].join(String.fromCharCode(64)) },
+  )
+  assert.equal(company.email_suporte.startsWith('salvo'), true)
 })
 
 test('validação rejeita CNPJ incompleto ou com dígitos inválidos', () => {

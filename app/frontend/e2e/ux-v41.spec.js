@@ -4,7 +4,7 @@ import fs from 'node:fs'
 test.skip(!process.env.UX, 'só para análise de UX')
 const OUT = process.env.SHOTS_DIR || 'test-artifacts/ux'
 fs.mkdirSync(OUT, { recursive: true })
-const PASS = 'e2e-Avadesk-2026', M = { width: 390, height: 844 }
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), M = { width: 390, height: 844 }
 async function ctxLogin(browser, email, scheme = 'dark') {
   const ctx = await browser.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin }, locale: 'pt-BR', viewport: M, deviceScaleFactor: 2, colorScheme: scheme, isMobile: true, hasTouch: true })
   const u = (await (await ctx.request.post('/api/auth/login', { data: { email, password: PASS } })).json()).user

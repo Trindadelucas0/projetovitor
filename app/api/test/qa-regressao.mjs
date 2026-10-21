@@ -4,7 +4,7 @@ import test, { after } from 'node:test'
 import assert from 'node:assert/strict'
 import '../env.js'
 import { pool } from '../db/pool.js'
-const B = process.env.API || 'http://localhost:8797', PASS = 'e2e-Avadesk-2026'
+const B = process.env.API || 'http://localhost:8797', PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 if (!/_test$/.test(process.env.DB_NAME || '')) throw new Error('Recusado: rode com DB_NAME=<banco>_test (BUG-010)')
 if (/:(4449|8787)\b/.test(B)) throw new Error('Recusado: API de desenvolvimento do Lucas')
 async function call(jar, method, p, body) {
@@ -65,7 +65,7 @@ test('BUG-012 (QA): aluno criado pelo personal (travado, senha provisoria) aceit
   const ce = `qa.cli.${Date.now()}@e2e.local`
   const c = await bear(p1, 'POST', '/api/pro/clients', { name: 'Cliente QA', email: ce }); assert.equal(c.s, 201, JSON.stringify(c.d))
   let ct = (await call({}, 'POST', '/api/auth/login', { email: ce, password: c.d.temp_password })).d.token
-  const pw = await bear(ct, 'POST', '/api/auth/password', { current_password: c.d.temp_password, new_password: 'NovaSenha-QA-123' }); assert.equal(pw.s, 200); ct = pw.d.token
+  const pw = await bear(ct, 'POST', '/api/auth/password', { current_password: c.d.temp_password, new_password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada') }); assert.equal(pw.s, 200); ct = pw.d.token
   const lm = await bear(ct, 'GET', '/api/legal/me'), st = lm.d.me || lm.d
   if (st.needs_legal) {
     const r = await bear(ct, 'POST', '/api/legal/accept', { version: st.legal_version, documents: st.legal_required })

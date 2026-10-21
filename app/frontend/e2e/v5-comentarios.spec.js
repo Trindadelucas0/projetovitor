@@ -2,7 +2,7 @@
 // SOMENTE LOCAL: API de teste com e-mail desligado e E2E_AUTO_UNLOCK_DOMAIN=e2e.local; contas fictícias @e2e.local.
 // A publicação fictícia é criada pela rota de teste do próprio spec (via API de admin não existe) -> usa PW_POST_ID quando informado.
 import { test, expect } from '@playwright/test'
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 async function newUser(page, tag) {
   const terms = (await (await page.request.get('/api/terms')).json()).terms
   const r = await page.request.post('/api/auth/register', { data: { name: 'Leo Teste ' + tag, email: `v5com.${tag}.${Date.now()}@e2e.local`, password: PASS, accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version, intent: 'aluno' } })

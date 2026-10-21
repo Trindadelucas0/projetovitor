@@ -1,11 +1,11 @@
 // V5 cobranca: 3 planos (Gratis/Individual/PRO), simulador, renovacao/recusa/retentativa/carencia/suspensao,
 // cancelamento, troca de cartao, cupom %, webhook com token + idempotencia, fichas_publicas, pagina publica.
-// SOMENTE no banco de TESTE com o simulador: API=http://localhost:8797 DB_NAME=avagym_test SIM_WEBHOOK_TOKEN=sim-local-test
+// SOMENTE no banco de TESTE com o simulador. Defina API, DB_NAME, E2E_PASSWORD e SIM_WEBHOOK_TOKEN no ambiente.
 import test, { after } from 'node:test'
 import assert from 'node:assert/strict'
 import '../env.js'
 import { pool } from '../db/pool.js'
-const B = process.env.API || 'http://localhost:8797', PASS = process.env.E2E_PASSWORD || 'e2e-Avadesk-2026', WH = process.env.SIM_WEBHOOK_TOKEN || 'sim-local-test'
+const B = process.env.API || 'http://localhost:8797', PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), WH = (process.env.SIM_WEBHOOK_TOKEN || (() => { throw new Error('Defina SIM_WEBHOOK_TOKEN somente no ambiente de teste.') })())
 if (!/_test$/.test(process.env.DB_NAME || '')) throw new Error('Recusado: rode com DB_NAME=<banco>_test')
 if (/:(4449|8787)\b/.test(B)) throw new Error('Recusado: API de desenvolvimento do Lucas')
 async function call(tok, method, p, body, headers = {}) {

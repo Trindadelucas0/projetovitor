@@ -6,12 +6,12 @@ export async function run({ adm, p1, p2, stu, sid, P1, P2, get, post, check }) {
   for (const [path, body] of [['/api/adm/users/update', { id: sid, name: 'X', email: 'x\u0040x.com' }], ['/api/adm/posts/delete', { id: sid, confirm: 'EXCLUIR' }], ['/api/adm/plans/save', { student_id: sid, title: 'X', days: [] }]])
     check((await post(p1, path, body)).s === 403 && (await post(stu, path, body)).s === 403, `só admin: ${path}`)
   // usuários: editar e excluir
-  let r = await post(adm, '/api/adm/users/create', { name: 'Para Editar', email: `edit${t}@e2e.local`, type: 'aluno', password: 'temporaria-123' }); const eid = r.d.id
+  let r = await post(adm, '/api/adm/users/create', { name: 'Para Editar', email: `edit${t}@e2e.local`, type: 'aluno', password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-temporaria') }); const eid = r.d.id
   check((await post(adm, '/api/adm/users/update', { id: eid, name: 'Editado', email: 'pro1.e2e\u0040avadesk.local' })).s === 409, 'editar: e-mail único')
   check((await post(adm, '/api/adm/users/update', { id: eid, name: 'Editado', email: `editado${t}@e2e.local` })).s === 200, 'admin edita nome e e-mail')
   check((await post(adm, '/api/adm/users/delete', { id: eid })).s === 400, 'excluir exige confirmação EXCLUIR')
   check((await post(adm, '/api/adm/users/delete', { id: eid, confirm: 'EXCLUIR', reason: 'teste' })).d.anonymized, 'excluir conta anonimiza (histórico preservado)')
-  check((await fetch((process.env.API || 'http://localhost:8787') + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `editado${t}@e2e.local`, password: 'temporaria-123' }) })).status !== 200, 'conta excluída não entra')
+  check((await fetch((process.env.API || 'http://localhost:8787') + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `editado${t}@e2e.local`, password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-temporaria') }) })).status !== 200, 'conta excluída não entra')
   const me = (await get(adm, '/api/auth/me')).d.user
   check((await post(adm, '/api/adm/users/delete', { id: me.id, confirm: 'EXCLUIR' })).s === 400, 'admin não exclui a própria conta')
   // profissional: perfil e habilitações

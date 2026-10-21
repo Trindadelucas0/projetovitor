@@ -3,7 +3,7 @@
 import '../env.js'
 import { q } from '../db/pool.js'
 export const B = process.env.API || 'http://localhost:8787'
-export const PASS = process.env.E2E_PASSWORD || 'e2e-Avadesk-2026'
+export const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 let ok = 0, bad = 0
 export const check = (cond, msg) => { if (cond) { ok++; console.log('  ✓', msg) } else { bad++; console.log('  ✗', msg) } }
 export const summary = () => { console.log(`\n${ok} ok, ${bad} falha(s)`); return bad }

@@ -2,7 +2,7 @@
 import { test } from '@playwright/test'
 import fs from 'node:fs'
 const OUT = process.env.SHOTS_DIR || 'test-artifacts/reorg'; fs.mkdirSync(OUT, { recursive: true })
-const PASS = 'e2e-Avadesk-2026', W = [360, 390, 768, 1440], SCH = ['light', 'dark']
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), W = [360, 390, 768, 1440], SCH = ['light', 'dark']
 const SCREENS = { aluno: [['hoje', '/#/hoje'], ['treinos', '/#/treinos'], ['comunidade', '/#/comunidade'], ['progresso', '/#/progresso'], ['perfil', '/#/perfil'], ['meu-plano', '/#/planos']],
   pro: [['painel', '/#/pro'], ['atendimentos', '/#/pro?tab=atendimentos']], admin: [['visao-geral', '/#/admin/painel'], ['contas', '/#/admin/painel?tab=usuarios']] }
 const EMAIL = { pro: 'pro1.e2e\u0040avadesk.local', admin: 'admin.e2e\u0040avadesk.local' }

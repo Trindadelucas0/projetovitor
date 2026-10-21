@@ -2,7 +2,7 @@
 // ação destrutiva, dica de instalação por plataforma e teste visual (celular/desktop, claro/escuro).
 // SOMENTE LOCAL: API de teste com e-mail desligado; contas fictícias @e2e.local.
 import { test, expect } from '@playwright/test'
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
 async function newUser(page, tag, handle) {
   const terms = (await (await page.request.get('/api/terms')).json()).terms

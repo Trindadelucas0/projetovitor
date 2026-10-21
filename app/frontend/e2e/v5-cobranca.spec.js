@@ -1,7 +1,7 @@
 // V5 cobranca: pagina publica com 3 planos, checkout com cartao de teste no app, gestao e aba do admin.
 // SOMENTE contra a pilha de teste (gateway :4459 -> API 8797 / avagym_test, BILLING_PROVIDER=simulado).
 import { test, expect } from '@playwright/test'
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 async function signup(page, intent = 'aluno') {
   const terms = (await (await page.request.get('/api/terms')).json()).terms
   const email = `bill.ui.${Date.now()}${Math.random().toString(36).slice(2, 5)}@e2e.local`

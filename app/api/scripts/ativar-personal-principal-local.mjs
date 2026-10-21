@@ -5,8 +5,9 @@ import crypto from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { pool } from '../db/pool.js'
 
-const EMAIL = 'personal.principal@orny.local'
-const NAME = 'Personal Principal ORNY'
+const EMAIL = String(process.env.PERSONAL_PRINCIPAL_EMAIL || '').trim().toLowerCase()
+const NAME = String(process.env.PERSONAL_PRINCIPAL_NAME || '').trim()
+if (!EMAIL || !NAME) throw new Error('Defina PERSONAL_PRINCIPAL_EMAIL e PERSONAL_PRINCIPAL_NAME no .env.')
 const apply = process.argv.includes('--apply')
 const host = process.env.DB_HOST || 'localhost'
 if (process.env.NODE_ENV === 'production' || !['localhost', '127.0.0.1', '::1'].includes(host) || (process.env.DB_NAME || 'avagym') !== 'avagym') {

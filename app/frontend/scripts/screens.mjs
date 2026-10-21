@@ -3,7 +3,7 @@
 //   node screens.mjs [saida]   (APP=http://localhost:4449 API=http://localhost:8787 E2E_PASSWORD=...)
 import { chromium } from 'playwright-core'
 import fs from 'node:fs'
-const APP = process.env.APP || 'http://localhost:4449', API = process.env.API || 'http://localhost:8787', PASS = process.env.E2E_PASSWORD || 'e2e-Avadesk-2026'
+const APP = process.env.APP || 'http://localhost:4449', API = process.env.API || 'http://localhost:8787', PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 const OUT = process.argv[2] || 'screens'; fs.mkdirSync(OUT, { recursive: true })
 const j = async (p, b, t) => (await fetch(API + p, { method: b ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: 'Bearer ' + t } : {}) }, body: b ? JSON.stringify(b) : undefined })).json()
 // aluno novo, liberado pelo admin e vinculado a um profissional

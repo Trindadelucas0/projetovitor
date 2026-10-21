@@ -7,7 +7,7 @@ function requireEnv(k) { const v = process.env[k]; if (!v) throw new Error(`Defi
 export const BASE = requireEnv('PERSONAS_BASE')
 if (/:(4449|8787)(\/|$)/.test(BASE) && process.env.PERSONAS_ALLOW_DEV !== '1') throw new Error('PERSONAS_BASE aponta para o ambiente do Lucas (4449/8787). Use a API/front de teste ou defina PERSONAS_ALLOW_DEV=1 conscientemente.')
 export const
-  PASS = 'e2e-Avadesk-2026', ADMIN = 'admin.e2e\u0040avadesk.local', PRO_SEED = 'pro1.e2e\u0040avadesk.local'
+  PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), ADMIN = 'admin.e2e\u0040avadesk.local', PRO_SEED = 'pro1.e2e\u0040avadesk.local'
 export const DIR = requireEnv('CASOS_DIR')
 fs.mkdirSync(DIR, { recursive: true })
 // prints ficam fora do git/deploy; o JSON guarda o caminho relativo (prints/<perfil>/...) dentro desta pasta

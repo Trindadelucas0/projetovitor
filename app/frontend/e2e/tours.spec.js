@@ -5,7 +5,7 @@ import AxeBuilder from '@axe-core/playwright'
 import fs from 'node:fs'
 const OUT = process.env.SHOTS_DIR || 'test-artifacts/tours'
 fs.mkdirSync(OUT, { recursive: true })
-const PASS = 'e2e-Avadesk-2026', M = { width: 390, height: 844 }
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), M = { width: 390, height: 844 }
 async function open(browser, email, password = PASS, o = {}) {
   const ctx = await browser.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin }, locale: 'pt-BR', viewport: o.vp || M, colorScheme: o.scheme || 'dark', reducedMotion: o.rm || 'no-preference' })
   const r = await ctx.request.post('/api/auth/login', { data: { email, password } }), u = (await r.json()).user
@@ -75,10 +75,10 @@ test('aluno do personal: boas-vindas aponta o cadeado', async ({ browser }) => {
   const r = await (await p.ctx.request.post('/api/pro/clients', { data: { name: 'Aluno Tour', email } })).json(); await p.ctx.close()
   const rq = await browser.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin } })
   await rq.request.post('/api/auth/login', { data: { email, password: r.temp_password } })
-  await rq.request.post('/api/auth/password', { data: { current_password: r.temp_password, new_password: 'Tour-Senha-42' } })
+  await rq.request.post('/api/auth/password', { data: { current_password: r.temp_password, new_password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada') } })
   const terms = (await (await rq.request.get('/api/terms')).json()).terms
   await rq.request.post('/api/terms/accept', { data: { version: terms.version } }); await rq.close()
-  const { ctx, page } = await open(browser, email, 'Tour-Senha-42')
+  const { ctx, page } = await open(browser, email, ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada'))
   await page.goto('/#/hoje'); await walk(page, 'aluno-personal-boasvindas')
   await page.goto('/#/treinos'); await walk(page, 'aluno-personal-treinos')
   await ctx.close()

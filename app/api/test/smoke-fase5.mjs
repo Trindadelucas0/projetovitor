@@ -19,9 +19,9 @@ export async function run({ adm, p1, stu, P1, get, post, check }) {
   const pros = (await get(adm, '/api/adm/professionals')).d.professionals || []
   const pp = pros.find(x => x.user_id === proId)
   check(pp && pp.legacy_capacity === 3 && pp.capacity === pp.limit.effective_limit && pp.can_publish && pp.state === 'ativo', 'capacidade, publicação e estado definidos')
-  r = await post(adm, '/api/adm/users/create', { name: 'Aluno Novo', email: ae, type: 'aluno', password: 'temporaria-123', plan_id: 'basico', coach_id: proId, area: 'Musculação' })
+  r = await post(adm, '/api/adm/users/create', { name: 'Aluno Novo', email: ae, type: 'aluno', password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-temporaria'), plan_id: 'basico', coach_id: proId, area: 'Musculação' })
   check(r.s === 201 && r.d.link && r.d.link.ok, 'cria aluno com plano e vínculo (validações do vínculo aplicadas)')
-  const at = await le(ae, 'temporaria-123'), am = (await get(at, '/api/auth/me')).d.user
+  const at = await le(ae, ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-temporaria')), am = (await get(at, '/api/auth/me')).d.user
   check(am && am.status === 'ativo' && am.roles.join() === 'aluno', 'aluno nasce liberado e só com o papel aluno')
   check((await get(pt, '/api/pro/students')).d.students.some(s => s.id === r.d.id), 'profissional vê o aluno vinculado')
   r = await post(adm, '/api/adm/users/create', { name: 'Aluno Sem', email: `sem${t}@e2e.local`, type: 'aluno', coach_id: proId, area: 'Musculação' })

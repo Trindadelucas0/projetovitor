@@ -5,7 +5,7 @@ import test, { after } from 'node:test'
 import assert from 'node:assert/strict'
 import '../env.js'
 import { pool } from '../db/pool.js'
-const B = process.env.API || 'http://localhost:8797', PASS = 'e2e-Avadesk-2026'
+const B = process.env.API || 'http://localhost:8797', PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 async function call(jar, method, path, body) {
   const r = await fetch(B + path, { method, headers: { 'Content-Type': 'application/json', ...(jar?.c ? { Cookie: jar.c } : {}) }, body: body ? JSON.stringify(body) : undefined })
   const sc = r.headers.get('set-cookie'); if (sc && jar) { const m = /avagym_token=[^;]+/.exec(sc); if (m) jar.c = m[0] }

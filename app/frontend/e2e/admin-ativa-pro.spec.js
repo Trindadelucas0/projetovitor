@@ -1,6 +1,6 @@
 // Regressão: admin muda a Situação do profissional para "ativo" com motivo (o valor escolhido era perdido após o diálogo).
 import { test, expect } from '@playwright/test'
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 test('admin ativa profissional pelo select de Situação', async ({ browser, playwright }) => {
   const rq = await playwright.request.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin } })
   const terms = (await (await rq.get('/api/terms')).json()).terms, email = `proativa.${Date.now()}@e2e.local`, name = 'Pro Ativa ' + Date.now()

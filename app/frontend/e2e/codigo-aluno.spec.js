@@ -1,7 +1,7 @@
 // Código de aluno digitado em "Tenho um código" (aceitar convite): popup explica e leva o personal a Convites.
 import { test, expect } from '@playwright/test'
 import fs from 'node:fs'
-const DIR = process.env.REAIS_DIR || 'test-artifacts/testes-reais', SHOTS = process.env.REAIS_SHOTS_DIR || 'test-artifacts/testes-reais', RES = DIR + '/resultados.json', PASS = 'e2e-Avadesk-2026'
+const DIR = process.env.REAIS_DIR || 'test-artifacts/testes-reais', SHOTS = process.env.REAIS_SHOTS_DIR || 'test-artifacts/testes-reais', RES = DIR + '/resultados.json', PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 fs.mkdirSync(DIR, { recursive: true })
 fs.mkdirSync(SHOTS + '/prints', { recursive: true })
 const rec = r => { const a = fs.existsSync(RES) ? JSON.parse(fs.readFileSync(RES, 'utf8')) : []; a.push(r); fs.writeFileSync(RES, JSON.stringify(a, null, 1)) }

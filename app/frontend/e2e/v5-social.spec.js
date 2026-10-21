@@ -2,7 +2,7 @@
 // E2E_AUTO_UNLOCK_DOMAIN=e2e.local; contas fictícias @e2e.local criadas a cada execução.
 import { test, expect } from '@playwright/test'
 import { fillContact } from './_contact.js'
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64')
 async function newUser(page, tag) {
   const terms = (await (await page.request.get('/api/terms')).json()).terms

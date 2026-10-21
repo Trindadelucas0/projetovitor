@@ -23,7 +23,7 @@ test('integração transacional: eventos, acesso e recuperação', async t => {
   let tenant,student,coach,other
   try {
     tenant=(await q('select id from tenants limit 1')).rows[0].id
-    const hash=await bcrypt.hash('Anterior-12345',12)
+    const hash=await bcrypt.hash((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()),12)
     for(const [i,email] of emails.entries()) {
       const user=(await q("insert into users(tenant_id,name,email,password_hash,status,account_type,access_unlocked_at) values($1,'Teste Email',$2,$3,'ativo','normal',now()) returning id",[tenant,email,hash])).rows[0]
       ids.push(user.id)
@@ -59,21 +59,21 @@ test('integração transacional: eventos, acesso e recuperação', async t => {
     })
     await t.test('exportação exige senha e e-mail corretos, grava anexo e limita novo pedido',async()=>{
       assert.equal((await call('POST /api/me/export-request',{password:'incorreta',email:emails[0]},student)).status,400)
-      assert.equal((await call('POST /api/me/export-request',{password:'Anterior-12345',email:'outro\u0040example.invalid'},student)).status,400)
-      const response=await call('POST /api/me/export-request',{password:'Anterior-12345',email:emails[0]},student)
+      assert.equal((await call('POST /api/me/export-request',{password:(process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()),email:'outro\u0040example.invalid'},student)).status,400)
+      const response=await call('POST /api/me/export-request',{password:(process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()),email:emails[0]},student)
       assert.equal(response.status,202)
       const message=(await q('select o.* from email_outbox o join data_export_requests r on r.outbox_id=o.id where r.id=$1',[response.data.id])).rows[0]
       assert.equal(message.to_email,emails[0])
       assert.equal(JSON.parse(message.attachment).conta.email,emails[0])
       assert.ok(!message.attachment.includes('password_hash'))
-      assert.equal((await call('POST /api/me/export-request',{password:'Anterior-12345',email:emails[0]},student)).status,429)
+      assert.equal((await call('POST /api/me/export-request',{password:(process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()),email:emails[0]},student)).status,429)
     })
     await t.test('redefinição simultânea permite só uma alteração e invalida links antigos',async()=>{
       const old=await queuePasswordLink(student)
       const latest=await queuePasswordLink(student)
       const oldToken=new URL(old.link).hash.split('t=')[1],token=new URL(latest.link).hash.split('t=')[1]
-      assert.equal((await call('POST /api/auth/reset',{token:oldToken,password:'NovaSenha-12345'})).status,400)
-      const results=await Promise.all([call('POST /api/auth/reset',{token,password:'NovaSenha-12345'}),call('POST /api/auth/reset',{token,password:'OutraSenha-12345'})])
+      assert.equal((await call('POST /api/auth/reset',{token:oldToken,password:((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada')})).status,400)
+      const results=await Promise.all([call('POST /api/auth/reset',{token,password:((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada')}),call('POST /api/auth/reset',{token,password:((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-outra')})])
       assert.deepEqual(results.map(r=>r.status).sort(),[200,400])
       const user=(await q('select token_version,must_change_password from users where id=$1',[student])).rows[0]
       assert.equal(user.token_version,1);assert.equal(user.must_change_password,false)
@@ -84,7 +84,7 @@ test('integração transacional: eventos, acesso e recuperação', async t => {
     await t.test('links expirados são rejeitados e resposta de recuperação é genérica',async()=>{
       const link=await queuePasswordLink(student),token=new URL(link.link).hash.split('t=')[1]
       await q("update password_resets set expires_at=now()-interval '1 minute' where token_hash=$1",[tokenHash(token)])
-      assert.equal((await call('POST /api/auth/reset',{token,password:'NovaSenha-12345'})).status,400)
+      assert.equal((await call('POST /api/auth/reset',{token,password:((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada')})).status,400)
       const existing=await call('POST /api/auth/forgot',{email:emails[0]})
       const absent=await call('POST /api/auth/forgot',{email:prefix+'-absent\u0040example.invalid'})
       assert.deepEqual(existing,absent)
@@ -102,7 +102,7 @@ test('integração transacional: eventos, acesso e recuperação', async t => {
       const link=await queuePasswordLink(student),token=new URL(link.link).hash.split('t=')[1]
       await q("update users set status='bloqueado' where id=$1",[student])
       assert.equal(await queuePasswordLink(student),null)
-      assert.equal((await call('POST /api/auth/reset',{token,password:'NovaSenha-12345'})).status,400)
+      assert.equal((await call('POST /api/auth/reset',{token,password:((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada')})).status,400)
       assert.equal((await q("select count(*)::int n from email_outbox where ref=$1 and kind='conta'",[student])).rows[0].n,1)
     })
   } finally {

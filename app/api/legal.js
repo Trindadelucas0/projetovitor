@@ -39,6 +39,12 @@ export const companyReadiness = company => {
   const missing = REQUIRED_COMPANY_FIELDS.filter(k => !String(company?.[k] || '').trim())
   return { ready: missing.length === 0, missing }
 }
+export const mergeCompanyConfig = (saved = {}, env = process.env) => {
+  const defaults = companyEnvDefaults(env), out = {}
+  for (const key of COMPANY_FIELDS) out[key] = String(saved?.[key] ?? '').trim() || defaults[key] || ''
+  if (!out.doc_version) out.doc_version = DEFAULT_VERSION
+  return out
+}
 const enforceLegalReadiness = () => process.env.REQUIRE_LEGAL_CONFIG === 'true' || process.env.NODE_ENV === 'production'
 const ip = req => clientIp(req)
 
@@ -46,10 +52,7 @@ async function defaultTenant() { return (await q('select id from tenants where s
 export async function getCompany(tenantId) {
   const tid = tenantId || await defaultTenant(); if (!tid) return {}
   const r = await q('select value from app_settings where tenant_id=$1 and key=$2', [tid, KEY])
-  const v = r.rows[0]?.value || {}, defaults = companyEnvDefaults(), out = {}
-  for (const k of COMPANY_FIELDS) out[k] = String(v[k] ?? '').trim() || defaults[k] || ''
-  if (!out.doc_version) out.doc_version = DEFAULT_VERSION
-  return out
+  return mergeCompanyConfig(r.rows[0]?.value)
 }
 async function planPrices() {
   try { return (await q(`select id,audience,name,is_free,price_cents,currency,price_status from plans where active order by audience,sort`)).rows }

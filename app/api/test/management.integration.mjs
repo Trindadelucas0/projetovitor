@@ -14,7 +14,7 @@ const check=(a,b,label)=>{assert.deepEqual(a,b,label);checks++;console.log('OK',
 try{
  await c.query('begin');const uid=()=>crypto.randomUUID(),t1=uid(),t2=uid()
  await c.query("insert into tenants(id,slug,name) values($1,$3,'Gestão E2E'),($2,$4,'Outra comunidade')",[t1,t2,'mg-'+t1,'mg-'+t2])
- const password='Management-test-2026',hash=await bcrypt.hash(password,10)
+ const password=(process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()),hash=await bcrypt.hash(password,10)
  async function user(t,name,roles,type='normal'){
  const id=uid(),email=`${name}.${id}@management.test`
  await c.query("insert into users(id,tenant_id,name,email,password_hash,status,account_type) values($1,$2,$3,$4,$5,'ativo',$6)",[id,t,name,email,hash,type])

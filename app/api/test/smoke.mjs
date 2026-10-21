@@ -1,6 +1,6 @@
 // Smoke test de API (fases 0–2): fluxo completo + testes de rota direta para permissões no backend.
 // Uso: node test/setup-e2e.mjs && node test/smoke.mjs   (API em http://localhost:8787)
-const B = process.env.API || 'http://localhost:8787', PASS = process.env.E2E_PASSWORD || 'e2e-Avadesk-2026'
+const B = process.env.API || 'http://localhost:8787', PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 let ok = 0, bad = 0
 const check = (cond, msg) => { if (cond) { ok++; console.log('  ✓', msg) } else { bad++; console.log('  ✗', msg) } }
 async function call(tok, method, path, body) {
@@ -16,9 +16,9 @@ export async function main() {
   const email = `aluno${Date.now()}@e2e.local`
   const terms = (await get(null, '/api/terms')).d.terms
   check(terms && terms.version, 'termos de uso versionados publicados')
-  check((await post(null, '/api/auth/register', { name: 'Aluno Teste', email, password: 'senha-forte-1' })).s === 400, 'cadastro sem aceite dos termos é recusado')
-  check((await post(null, '/api/auth/register', { name: 'Aluno Teste', email, password: 'senha-forte-1', accept_terms: true, birth_date: '1990-01-01', terms_version: 'velha' })).s === 400, 'aceite de versão desatualizada é recusado')
-  const reg = await post(null, '/api/auth/register', { name: 'Aluno Teste', email, password: 'senha-forte-1', accept_terms: true, birth_date: '1990-01-01', terms_version: terms.version, plan_id: 'individual' })
+  check((await post(null, '/api/auth/register', { name: 'Aluno Teste', email, password: (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) })).s === 400, 'cadastro sem aceite dos termos é recusado')
+  check((await post(null, '/api/auth/register', { name: 'Aluno Teste', email, password: (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), accept_terms: true, birth_date: '1990-01-01', terms_version: 'velha' })).s === 400, 'aceite de versão desatualizada é recusado')
+  const reg = await post(null, '/api/auth/register', { name: 'Aluno Teste', email, password: (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), accept_terms: true, birth_date: '1990-01-01', terms_version: terms.version, plan_id: 'individual' })
   check(reg.s === 200 && reg.d.user.status === 'ativo', 'V3 SaaS aberto: cadastro cria conta ativa com login')
   const stu = reg.d.token
   check((await get(stu, '/api/guided/state')).s === 200, 'V3: conta nova acessa os recursos sem aprovacao')

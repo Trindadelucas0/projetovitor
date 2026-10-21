@@ -9,7 +9,7 @@ import crypto from 'node:crypto'
 import { q, pool } from '../db/pool.js'
 
 const B = process.env.API || 'http://127.0.0.1:8799'
-const PASS = 'Postural-e2e-2026A'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 const ORIGIN = 'http://127.0.0.1:4449'
 
 const JPEG = n => Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), crypto.randomBytes(Math.max(0, n - 4))])

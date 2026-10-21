@@ -1,7 +1,7 @@
 // Regressao QA historica: BUG-001 (termos 2x), BUG-003 (/admin/painel), BUG-004 (/home), BUG-005 (switches).
 // SOMENTE LOCAL: front de teste com proxy para a API de teste (8797, banco avagym_test); contas ficticias @e2e.local.
 import { test, expect } from '@playwright/test'
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 async function newUser(page, tag) {
   const terms = (await (await page.request.get('/api/terms')).json()).terms
   const r = await page.request.post('/api/auth/register', { data: { name: 'QA Aluno ' + tag, email: `qa.e2e.${tag}.${Date.now()}@e2e.local`, password: PASS, accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version, intent: 'aluno' } })

@@ -3,7 +3,7 @@
 import { test, expect } from '@playwright/test'
 import fs from 'node:fs'
 const DIR = process.env.REAIS_DIR || 'test-artifacts/testes-reais', SHOTS = process.env.REAIS_SHOTS_DIR || 'test-artifacts/testes-reais'; fs.mkdirSync(DIR, { recursive: true }); fs.mkdirSync(SHOTS + '/prints', { recursive: true })
-const BASE = 'http://localhost:4449', PASS = 'e2e-Avadesk-2026', RES = DIR + '/resultados.json'
+const BASE = 'http://localhost:4449', PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), RES = DIR + '/resultados.json'
 if (!process.env.REAIS_APPEND) fs.writeFileSync(RES, '[]')
 let n = 0
 const rec = r => { const a = JSON.parse(fs.readFileSync(RES, 'utf8')); a.push(r); fs.writeFileSync(RES, JSON.stringify(a, null, 1)) }

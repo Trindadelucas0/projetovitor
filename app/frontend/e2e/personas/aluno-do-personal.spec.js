@@ -54,11 +54,11 @@ test('Juliana (aluna do personal) — convite, ficha, áreas bloqueadas', async 
   // conta criada pelo personal (plano do personal): áreas travadas pelo ScopeGate
   const sEmail = `lia.coberta.${t}@lock.test`, r = await (await P.ctx.request.post('/api/pro/clients', { data: { name: 'Lia Coberta', email: sEmail } })).json()
   const C = await browser.newContext({ baseURL: BASE, extraHTTPHeaders: { Origin: new URL(BASE).origin }, viewport: MOBILE, colorScheme: 'light' })
-  await C.request.post('/api/auth/login', { data: { email: sEmail, password: r.temp_password } }); await C.request.post('/api/auth/password', { data: { current_password: r.temp_password, new_password: 'Lia-Senha-4242' } })
+  await C.request.post('/api/auth/login', { data: { email: sEmail, password: r.temp_password } }); await C.request.post('/api/auth/password', { data: { current_password: r.temp_password, new_password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada') } })
   const terms = (await (await C.request.get('/api/terms')).json()).terms; await C.request.post('/api/terms/accept', { data: { version: terms.version } }); await C.close()
   const lid = (await (await P.ctx.request.get('/api/pro/clients')).json()).clients.find(c => c.email === sEmail)?.id
   await P.ctx.request.post('/api/pro/plans', { data: { title: 'Ficha da Lia', student_id: lid, exercises: ex.slice(0, 2).map(e => ({ exercise_id: e.id, sets: 2, reps: '10' })) } })
-  const L = await login(browser, sEmail, 'Lia-Senha-4242')
+  const L = await login(browser, sEmail, ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada'))
   await step(L.page, 'Conta do plano do personal: Programas travado com explicação', async () => { await go(L.page, '/#/programas', 'scope-gate') })
   await step(L.page, 'Conta do plano do personal: não pode desvincular a ficha', async () => { await go(L.page, '/#/treinos', 'active-training'); await expect(L.page.getByTestId('active-detach-pro')).toHaveCount(0) })
   await step(L.page, 'Conta do plano do personal: Músculos travado', () => go(L.page, '/#/muscles', 'scope-gate'))

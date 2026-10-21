@@ -1,7 +1,7 @@
 // #TaPago > Musculos: silhueta 2D (frente/costas) com intensidade + legenda + lista; exportacao em 1:1, 4:5 e 9:16.
 import { test, expect } from '@playwright/test'
 import fs from 'node:fs'
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 const DATA = { kind: 'musculos', eligible: true, who: { name: 'Marina Exemplo', handle: 'marina' }, data: { muscles: [
   { group_id: 'peito', name: 'Peito', score: 12 }, { group_id: 'triceps', name: 'Tríceps', score: 8 }, { group_id: 'ombros', name: 'Ombros', score: 6 },
   { group_id: 'quadriceps', name: 'Quadríceps', score: 5 }, { group_id: 'costas', name: 'Costas', score: 3 }, { group_id: 'gluteos', name: 'Glúteos', score: 2 } ] } }

@@ -4,7 +4,7 @@ Este guia descreve as ações do aplicativo de um personal e seus alunos. O nome
 
 ## Primeiro uso da base local
 
-A base local começa com **zero alunos** e duas contas separadas. O administrador entra com `admin@avagym.com.br` e abre somente o painel administrativo. O personal principal entra com `personal.principal@orny.local`, troca a senha provisória no primeiro acesso e abre a área profissional em `/pro`. A publicação na VPS e a contratação do plano exigem validação própria antes de receber alunos reais.
+A base local começa com **zero alunos** e duas contas separadas. O administrador entra com a conta definida em `ADMIN_EMAIL` e abre somente o painel administrativo. O personal principal entra com a conta definida em `PERSONAL_PRINCIPAL_EMAIL`, troca a senha provisória no primeiro acesso e abre a área profissional em `/pro`. Esses valores ficam somente no `.env`. A publicação na VPS e a contratação do plano exigem validação própria antes de receber alunos reais.
 
 ## Aluno: começar
 
@@ -31,6 +31,7 @@ A base local começa com **zero alunos** e duas contas separadas. O administrado
 2. Use o painel para usuários, assinaturas, configurações, supervisão e auditoria.
 3. Em **Avaliação postural**, o administrador pode acompanhar todas as avaliações do ambiente, inclusive mídias, e administrar protocolos, versões, termo e retenção.
 4. A conta administrativa não é necessária para cadastrar alunos, montar fichas ou fazer o atendimento diário do personal.
+5. Em uma instalação nova, preencha os dados oficiais em **Dados da empresa** antes de liberar cadastros. Os contatos salvos nessa tela continuam editáveis e têm prioridade sobre a configuração inicial do servidor.
 
 ## Personal interno e transferência
 

@@ -4,7 +4,7 @@ import fs from 'node:fs'
 test.skip(!process.env.MANUAL, 'só para gerar o manual')
 const OUT = process.env.SHOTS_DIR || 'test-artifacts/manual'
 fs.mkdirSync(OUT, { recursive: true })
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 const BLUR = /@|e2e|[Tt]este|TESTE|Exemplo|EXEMPLO|Zé|ZÉ|\bV3 |Prof\. |admin\.|\b(?=[A-Z0-9]*\d)[A-Z0-9]{8}\b|\/#\/convite/
 async function shot(page, name, full = false) {
   await page.waitForTimeout(500)

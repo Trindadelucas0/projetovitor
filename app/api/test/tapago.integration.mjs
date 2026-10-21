@@ -3,7 +3,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { q, pool } from '../db/pool.js'
 
-const B = process.env.API || 'http://127.0.0.1:8799', PASS = 'Tapago-e2e-2026A'
+const B = process.env.API || 'http://127.0.0.1:8799', PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
 async function call(jar, method, path, body) {
   const r = await fetch(B + path, { method, headers: { 'Content-Type': 'application/json', Origin: 'http://127.0.0.1:4449', ...(jar.c ? { Cookie: jar.c } : {}) }, body: body == null ? undefined : JSON.stringify(body) })

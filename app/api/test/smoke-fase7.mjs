@@ -30,9 +30,9 @@ export async function run({ adm, p1, p2, P1, get, post, check }) {
   await bad([{ name: 'A', exercises: [E(a, { rpe: 14 })] }], 'RPE fora de 1–10 é recusado')
   await bad([{ name: 'A', exercises: [E(a, { reps: '' })] }], 'exige repetições ou tempo')
   // aluno novo vinculado ao pro1, ficha v2 enviada
-  r = await post(adm, '/api/adm/users/create', { name: 'Aluno Construtor', email: `construtor${t}@e2e.local`, type: 'aluno', password: 'temporaria-123', plan_id: 'premium', coach_id: P1.user_id, area: 'Musculação' })
+  r = await post(adm, '/api/adm/users/create', { name: 'Aluno Construtor', email: `construtor${t}@e2e.local`, type: 'aluno', password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-temporaria'), plan_id: 'premium', coach_id: P1.user_id, area: 'Musculação' })
   const sid = r.d.id, linked = r.d.link?.ok
-  const stu = (await fetch(B + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `construtor${t}@e2e.local`, password: 'temporaria-123' }) }).then(x => x.json())).token
+  const stu = (await fetch(B + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `construtor${t}@e2e.local`, password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-temporaria') }) }).then(x => x.json())).token
   await post(stu, '/api/terms/accept', { version: (await get(null, '/api/terms')).d.terms.version })
   if (linked) {
     r = await post(p1, '/api/pro/prescriptions', { student_id: sid, template_id: tid, title: 'Hipertrofia v2', goal: 'hypertrophy', specialty: 'Musculação', description: 'Faça na ordem; bi-set sem descanso', days: good })

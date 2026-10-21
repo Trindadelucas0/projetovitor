@@ -3,15 +3,15 @@ export async function run({ stu, adm, p1, p2, sid, P1, get, post, check, origin 
   console.log('Recuperação de senha')
   // V4 F7: redefinir a senha desconecta os aparelhos da conta — por isso o fluxo usa uma conta descartável, não o aluno do smoke
   const terms = (await get(null, '/api/terms')).d.terms
-  const reg = await post(null, '/api/auth/register', { name: 'Reset Smoke', email: `reset${Date.now()}@e2e.local`, password: 'e2e-Avadesk-2026', accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version, plan_id: 'individual' })
+  const reg = await post(null, '/api/auth/register', { name: 'Reset Smoke', email: `reset${Date.now()}@e2e.local`, password: (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version, plan_id: 'individual' })
   const me = reg.d.user, rid = me.id
   await post(adm, '/api/adm/users/status', { id: rid, status: 'ativo' })
   check((await post(null, '/api/auth/forgot', { email: me.email })).s === 200, 'pedido de recuperação (resposta genérica)')
   check((await post(stu, '/api/adm/users/reset-link', { id: sid })).s === 403, 'aluno não gera link de redefinição')
   const link = (await post(adm, '/api/adm/users/reset-link', { id: rid })).d.link, tok = link.split('t=')[1]
-  check((await post(null, '/api/auth/reset', { token: tok, password: 'nova-senha-123' })).s === 200, 'redefinição com link de uso único')
-  check((await post(null, '/api/auth/reset', { token: tok, password: 'outra-senha-123' })).s === 400, 'link não pode ser reutilizado')
-  check((await post(null, '/api/auth/login', { email: me.email, password: 'nova-senha-123' })).s === 200, 'login com a nova senha')
+  check((await post(null, '/api/auth/reset', { token: tok, password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada') })).s === 200, 'redefinição com link de uso único')
+  check((await post(null, '/api/auth/reset', { token: tok, password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-outra') })).s === 400, 'link não pode ser reutilizado')
+  check((await post(null, '/api/auth/login', { email: me.email, password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada') })).s === 200, 'login com a nova senha')
   check((await get(reg.d.token, '/api/auth/me')).s === 401, 'V4: redefinir a senha desconecta os aparelhos antigos')
 
   console.log('Fase 2 — comunidade')

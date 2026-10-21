@@ -10,7 +10,7 @@ import '../env.js'
 import { pool } from '../db/pool.js'
 import { anonymizeUser } from '../lgpd.js'
 import { PUBLIC_DIR } from '../storage/index.js'
-const B = process.env.API || 'http://localhost:8797', ORIGIN = process.env.WEB_ORIGIN || 'http://localhost:4459', PASS = 'e2e-Avadesk-2026'
+const B = process.env.API || 'http://localhost:8797', ORIGIN = process.env.WEB_ORIGIN || 'http://localhost:4459', PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 // QA: zera os contadores do rate limit (rota so existe na API de teste com TEST_RL_RESET=1); sem ela, reinicie a API antes
 await fetch(B + '/api/test/rate-limit/reset', { method: 'POST' }).then(r => console.log('# reset rate limit:', r.status)).catch(() => {})
 async function call(jar, method, p, body, extra = {}) {

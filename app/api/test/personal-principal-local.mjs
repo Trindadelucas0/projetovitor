@@ -5,7 +5,8 @@ import { pool } from '../db/pool.js'
 
 const password = process.env.PERSONAL_TEST_PASSWORD
 if (!password) throw new Error('Defina PERSONAL_TEST_PASSWORD somente na sessão de teste.')
-const email = 'personal.principal@orny.local'
+const email = String(process.env.PERSONAL_PRINCIPAL_EMAIL || '').trim().toLowerCase()
+if (!email) throw new Error('Defina PERSONAL_PRINCIPAL_EMAIL no .env.')
 const base = 'http://127.0.0.1:' + (process.env.PORT || 8787)
 const user = (await pool.query('select id, must_change_password from users where email=$1', [email])).rows[0]
 assert.ok(user?.must_change_password, 'Conta provisória não encontrada')

@@ -40,13 +40,20 @@ Os testes locais mencionados no PRD são registros de entregas anteriores. Esta 
 
 ### Início sem alunos — somente banco local (21/10/2026)
 
-A pedido do responsável, o banco local `avagym` foi preparado para começar com **zero alunos**. Das 74 contas anteriores, 73 foram excluídas com seus vínculos, sessões, assinaturas, notificações e histórico de teste. A conta preservada foi `admin [at] avagym.com.br`, ativa e com papel `admin`. Na execução seguinte, uma conta separada `personal.principal [at] orny.local`, somente com papel `profissional`, assumiu `app_settings.personal_user_id`. A senha provisória exige troca no primeiro acesso.
+A pedido do responsável, o banco local `avagym` foi preparado para começar com **zero alunos**. Das 74 contas anteriores, 73 foram excluídas com seus vínculos, sessões, assinaturas, notificações e histórico de teste. A conta administrativa preservada continuou ativa com papel `admin`. Na execução seguinte, uma conta separada, somente com papel `profissional`, assumiu `app_settings.personal_user_id`. Os endereços dessas contas ficam apenas no `.env` local; a senha provisória exige troca no primeiro acesso.
 
 Antes da limpeza, foi criado e validado o dump `backups/avagym_20261021_154519_antes-limpeza-contas-local.dump`. A rotina `api/scripts/iniciar-base-local.mjs` passou em simulação com rollback e depois foi aplicada em uma transação. Conferência independente após a gravação: **1 conta, 0 alunos, 0 profissionais antigos, 0 vínculos, 0 sessões, 0 assinaturas, 0 notificações e 0 registros de auditoria antigos**. Somente `069_personal_do_tenant.sql` foi registrada adicionalmente neste banco para configurar o principal; as demais migrations pendentes não foram aplicadas. Catálogo, configurações do sistema e arquivos de mídia externos ao banco não foram apagados. A VPS não foi alterada.
 
 **Execução local:** ver [instruções atuais](docs/EXECUCAO-LOCAL.md). Segredos permanecem em `.env` fora do Git. A cópia em `F:\projetovitor\projetovitor` não é prova de publicação na VPS.
 
 **Arquivos de apoio:** os manuais, wireframes, auditorias e PDFs históricos da pasta `docs/` foram removidos a pedido do responsável. As saídas dos testes visuais ficam em `app/frontend/test-artifacts/` e as prévias de e-mail em `app/api/data/email-previews/`, ambos fora do Git. O protocolo postural continua transcrito no código; sua fonte PDF histórica não está mais nesta cópia e o texto precisa de revisão profissional antes de uma nova versão publicada. O script de virada da monetização permanece no código, mas seu antigo guia de operação foi removido: não o aplique em produção sem um plano de execução e rollback atualizado.
+
+## Configuração privada e dados legais
+
+- Credenciais de banco, sessão, cobrança, armazenamento e envio de e-mail são lidas apenas pelo servidor em `api/.env`, que permanece fora do Git.
+- Os dados já salvos em **Administração → Dados da empresa** têm prioridade. Em uma instalação nova, a API usa as variáveis `COMPANY_*` somente como configuração inicial; campos obrigatórios ausentes mantêm o bloqueio legal existente.
+- `api/.env.example` documenta apenas os nomes das variáveis e valores locais não sensíveis. Contas, destinatários, senhas e tokens de teste precisam ser informados no ambiente antes da execução.
+- O frontend não recebe chaves privadas. Variáveis expostas pelo Vite devem conter apenas configuração pública necessária ao navegador.
 
 ## Atualização desta fonte
 

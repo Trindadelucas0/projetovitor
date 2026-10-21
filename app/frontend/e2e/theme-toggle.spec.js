@@ -2,7 +2,7 @@
 import { test, expect } from '@playwright/test'
 import fs from 'node:fs'
 const OUT = process.env.SHOTS_DIR || 'test-artifacts/tema'; fs.mkdirSync(OUT, { recursive: true })
-const PASS = 'e2e-Avadesk-2026', M = { width: 390, height: 844 }
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), M = { width: 390, height: 844 }
 const theme = page => page.evaluate(() => document.documentElement.dataset.theme)
 test('sem login: alterna e guarda só o cache visual', async ({ browser }) => {
   const ctx = await browser.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin }, viewport: M, colorScheme: 'dark' }), page = await ctx.newPage()
@@ -38,7 +38,7 @@ test('aluno do personal não vê "Todos os programas" no Início', async ({ brow
   const email = `temacli.${Date.now()}@lock.test`, r = await (await p.request.post('/api/pro/clients', { data: { name: 'Aluno Tema', email } })).json(); await p.close()
   const ctx = await browser.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin }, viewport: M })
   await ctx.request.post('/api/auth/login', { data: { email, password: r.temp_password } })
-  const u = (await (await ctx.request.post('/api/auth/password', { data: { current_password: r.temp_password, new_password: 'Tema-Senha-42' } })).json()).user
+  const u = (await (await ctx.request.post('/api/auth/password', { data: { current_password: r.temp_password, new_password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada') } })).json()).user
   const terms = (await (await ctx.request.get('/api/terms')).json()).terms; await ctx.request.post('/api/terms/accept', { data: { version: terms.version } })
   await ctx.addInitScript(x => localStorage.setItem('gym_user', JSON.stringify({ ...x, needs_terms: false })), u)
   const page = await ctx.newPage(); await page.goto('/#/hoje'); await page.waitForTimeout(1800)

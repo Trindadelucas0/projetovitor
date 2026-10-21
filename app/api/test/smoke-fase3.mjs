@@ -3,7 +3,7 @@ const B = process.env.API || 'http://localhost:8787'
 export async function run({ adm, p1, p2, stu, sid, P1, get, post, check }) {
   console.log('Fase 3 — LGPD')
   const email = `lgpd${Date.now()}@e2e.local`, terms = (await get(null, '/api/terms')).d.terms
-  const reg = await post(null, '/api/auth/register', { name: 'Titular LGPD', email, password: 'senha-forte-1', accept_terms: true, birth_date: '1990-01-01', terms_version: terms.version, plan_id: 'individual' })
+  const reg = await post(null, '/api/auth/register', { name: 'Titular LGPD', email, password: (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), accept_terms: true, birth_date: '1990-01-01', terms_version: terms.version, plan_id: 'individual' })
   const t = reg.d.token, uid = reg.d.user.id
   // V4.1: exportação de dados removida do app → endpoint não existe mais
   check((await get(t, '/api/me/export')).s === 404, 'exportação de dados removida (V4.1)')
@@ -13,10 +13,10 @@ export async function run({ adm, p1, p2, stu, sid, P1, get, post, check }) {
   const q = (await get(adm, '/api/adm/data-requests')).d.requests.find(r => r.user_id === uid)
   check(!!q, 'pedido aparece na fila do admin')
   check((await post(adm, '/api/adm/data-requests/decide', { id: q.id, action: 'excluir' })).s === 400, 'exclusão exige confirmação explícita (EXCLUIR)')
-  check((await post(null, '/api/auth/login', { email, password: 'senha-forte-1' })).s === 200, 'nada é apagado antes da confirmação')
+  check((await post(null, '/api/auth/login', { email, password: (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) })).s === 200, 'nada é apagado antes da confirmação')
   let r = await post(adm, '/api/adm/data-requests/decide', { id: q.id, action: 'excluir', confirm: 'EXCLUIR', note: 'pedido do titular' })
   check(r.s === 200, 'admin confirma e executa a exclusão (anonimização)')
-  check((await post(null, '/api/auth/login', { email, password: 'senha-forte-1' })).s === 401, 'conta excluída não entra mais')
+  check((await post(null, '/api/auth/login', { email, password: (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) })).s === 401, 'conta excluída não entra mais')
   check((await get(adm, '/api/adm/audit')).d.audit.some(a => a.action === 'lgpd.exclusao_executada'), 'exclusão registrada na auditoria')
   check((await get(adm, '/api/adm/terms')).d.versions.length >= 1, 'admin vê as versões dos termos e os aceites')
 
@@ -24,7 +24,7 @@ export async function run({ adm, p1, p2, stu, sid, P1, get, post, check }) {
   check((await get(p1, '/api/guided/today')).s === 403, 'conta profissional não registra treino pessoal')
   // V4 F5: identidade única — a mesma conta pode ter os dois papéis (testado numa conta descartável para não mexer nos fixtures)
   { const terms = (await get(null, '/api/terms')).d.terms
-    const reg = await post(null, '/api/auth/register', { name: 'Dupla Smoke', email: `dupla${Date.now()}@e2e.local`, password: 'e2e-Avadesk-2026', accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version, plan_id: 'individual' })
+    const reg = await post(null, '/api/auth/register', { name: 'Dupla Smoke', email: `dupla${Date.now()}@e2e.local`, password: (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version, plan_id: 'individual' })
     check((await post(adm, '/api/adm/users/role', { id: reg.d.user.id, role: 'profissional', on: true })).s === 200, 'V4: aluno também pode ser profissional na mesma conta')
     const roles = (await get(reg.d.token, '/api/auth/me')).d.user.roles
     check(roles.includes('aluno') && roles.includes('profissional'), 'V4: papel de aluno preservado') }

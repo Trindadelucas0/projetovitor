@@ -3,7 +3,7 @@ import test, { after } from 'node:test'
 import assert from 'node:assert/strict'
 import '../env.js'
 import { pool } from '../db/pool.js'
-const B = process.env.API || 'http://localhost:8797', PASS = process.env.E2E_PASSWORD || 'e2e-Avadesk-2026', ORI = process.env.WEB_ORIGIN || 'http://localhost:4459'
+const B = process.env.API || 'http://localhost:8797', PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), ORI = process.env.WEB_ORIGIN || 'http://localhost:4459'
 if (!/_test$/.test(process.env.DB_NAME || '')) throw new Error('Recusado: rode com DB_NAME=<banco>_test')
 after(() => pool.end())
 const call = async (method, p, { body, tok, cookie } = {}) => { const r = await fetch(B + p, { method, headers: { 'Content-Type': 'application/json', Origin: ORI, ...(tok ? { Authorization: 'Bearer ' + tok } : {}), ...(cookie ? { Cookie: cookie } : {}) }, body: body ? JSON.stringify(body) : undefined }); let d = {}; try { d = await r.json() } catch { /* */ } return { s: r.status, d, h: r.headers } }

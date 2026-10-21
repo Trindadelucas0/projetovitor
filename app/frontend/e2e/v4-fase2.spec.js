@@ -5,7 +5,7 @@ import fs from 'node:fs'
 
 const SHOTS = process.env.SHOTS_DIR || 'test-artifacts/shots'
 fs.mkdirSync(SHOTS, { recursive: true })
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 const KEY = 'avagym_guided_session_v1'
 
 async function newStudent(request) {

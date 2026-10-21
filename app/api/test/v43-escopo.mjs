@@ -21,7 +21,7 @@ check((await get(n.tok, '/api/post?id=' + ids.b)).s === 403, 'R1 normal não abr
 // R2 aluno do personal A (coberto)
 const c = (await post(pa.tok, '/api/pro/clients', { name: 'Aluno Escopo', email: `esc${Date.now()}@lock.test` })).d
 let lg = await post(null, '/api/auth/login', { email: c.email, password: c.temp_password })
-let ct = (await post(lg.d.token, '/api/auth/password', { current_password: c.temp_password, new_password: 'Escopo-Senha-1' })).d.token
+let ct = (await post(lg.d.token, '/api/auth/password', { current_password: c.temp_password, new_password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada') })).d.token
 const terms = (await get(null, '/api/terms')).d.terms; await post(ct, '/api/terms/accept', { version: terms.version })
 f = await feed(ct)
 check(f.includes(ids.a) && !f.includes(ids.sys) && !f.includes(ids.b) && !f.includes(ids.aSys), 'R2 aluno do personal: só a comunidade do personal')
@@ -49,12 +49,12 @@ check(f.includes(ids.sys) && f.includes(ids.a) && !f.includes(ids.b), 'R3 person
 await post(adm, '/api/adm/grants', { user_id: pa.id, audience: 'profissional', kind: 'limit', key: 'alunos_ativos', value: 10, days: 30, reason: 'teste' })
 const code = (await q('select share_code from users where id=$1', [pa.id])).rows[0].share_code
 const em = `cod${Date.now()}@lock.test`
-let r = await post(null, '/api/auth/register', { name: 'Aluno Código', email: em, password: 'Codigo-Senha-1', accept_terms: true, birth_date: '1990-01-01', terms_version: terms.version, plan_id: 'individual', pro_code: code })
+let r = await post(null, '/api/auth/register', { name: 'Aluno Código', email: em, password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada'), accept_terms: true, birth_date: '1990-01-01', terms_version: terms.version, plan_id: 'individual', pro_code: code })
 const kt = r.d.token
 check(r.s === 200 && r.d.user.account_type === 'personal_client' && r.d.user.managed_by === pa.id && !r.d.user.must_change_password, 'R7 cadastro com código: aluno do personal, vinculado, sem troca de senha')
 check((await q(`select 1 from coach_students where coach_id=$1 and student_id=$2 and status='ativo'`, [pa.id, r.d.user.id])).rowCount === 1, 'R7 vínculo automático')
 check((await get(kt, '/api/feed')).d.posts.some(p => p.id === ids.a), 'R7 já vê a comunidade do personal sem cobrança')
-check((await post(null, '/api/auth/register', { name: 'Código Errado', email: `x${Date.now()}@lock.test`, password: 'Codigo-Senha-1', accept_terms: true, birth_date: '1990-01-01', terms_version: terms.version, pro_code: 'ZZZZZZZZ' })).s === 400, 'R7 código inválido recusado')
+check((await post(null, '/api/auth/register', { name: 'Código Errado', email: `x${Date.now()}@lock.test`, password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada'), accept_terms: true, birth_date: '1990-01-01', terms_version: terms.version, pro_code: 'ZZZZZZZZ' })).s === 400, 'R7 código inválido recusado')
 // R6 personal com mensalidade pendente → aluno coberto só visualiza
 await post(adm, '/api/adm/access/set', { user_id: pa.id, unlocked: false })
 r = await post(kt, '/api/posts/like', { id: ids.a })

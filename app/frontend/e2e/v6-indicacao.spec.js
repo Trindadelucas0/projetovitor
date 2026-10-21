@@ -1,7 +1,7 @@
 // Monetizacao F5 (revisado 16/10): indicacao por CODIGO no Perfil ("Copiar codigo"), sem link na interface.
 // Roda SOMENTE contra a pilha de teste (API 8797 / avagym_test), servida pelo gateway em :4459.
 import { test, expect } from '@playwright/test'
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 const phone = () => '1196' + String(Date.now() % 1e7).padStart(7, '0')
 test('Perfil mostra o codigo de indicacao com Copiar codigo e sem link', async ({ page, baseURL }) => {
   test.skip(/:4449\b/.test(baseURL), 'nao roda contra o ambiente do Lucas')

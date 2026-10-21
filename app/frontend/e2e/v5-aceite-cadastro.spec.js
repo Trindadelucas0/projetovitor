@@ -4,7 +4,7 @@
 // Roda SOMENTE contra a pilha de teste (API 8797 / avagym_test), servida pelo gateway em :4459.
 import { test, expect } from '@playwright/test'
 import { fillContact } from './_contact.js'
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 test('raiz abre o Login; cadastro em etapas com aceite entra direto, sem gate de termos', async ({ page, baseURL }) => {
   test.skip(/:4449\b/.test(baseURL), 'nao roda contra o ambiente do Lucas')
   const csp = []; page.on('console', m => { if (/Content Security Policy|Refused to/i.test(m.text())) csp.push(m.text()) })

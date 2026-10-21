@@ -4,7 +4,7 @@ import '../env.js'
 import { pool } from '../db/pool.js'
 
 const BASE = process.env.API || 'http://127.0.0.1:8798'
-const PASS = process.env.E2E_PASSWORD || 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 if (!/_test$/.test(process.env.DB_NAME || '')) throw new Error('Recusado: use banco _test')
 if (process.env.BILLING_PROVIDER !== 'infinitepay' || process.env.NODE_ENV === 'production') throw new Error('Recusado: use InfinitePay simulado fora de produção')
 if (/:(4449|8787)\b/.test(BASE)) throw new Error('Recusado: API de uso')

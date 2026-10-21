@@ -47,7 +47,7 @@ for (const [w, h, tag] of [[390, 844, 'celular'], [1280, 860, 'desktop']]) {
     await page.setViewportSize({ width: w, height: h })
     await page.request.post('/api/test/rate-limit/reset').catch(() => {})
     const terms = (await (await page.request.get('/api/terms')).json()).terms
-    const r = await page.request.post('/api/auth/register', { headers: { Origin: baseURL }, data: { name: 'Bruna Planos', email: `e2e.pl.${Date.now()}.${w}@e2e.local`, password: 'e2e-Avadesk-2026', accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version, intent: 'aluno',
+    const r = await page.request.post('/api/auth/register', { headers: { Origin: baseURL }, data: { name: 'Bruna Planos', email: `e2e.pl.${Date.now()}.${w}@e2e.local`, password: (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version, intent: 'aluno',
       contact: { phone: '1195' + String(Date.now() % 1e7).padStart(7, '0'), cep: '01310100', street: 'Avenida Paulista', number: '1', complement: '', neighborhood: 'Bela Vista', city: 'São Paulo', uf: 'SP' } } })
     expect(r.status()).toBe(200)
     await page.goto('/#/assinatura')

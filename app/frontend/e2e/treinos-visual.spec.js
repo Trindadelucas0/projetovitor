@@ -3,7 +3,7 @@
 import { test, expect } from '@playwright/test'
 import fs from 'node:fs'
 const TAG = process.env.TAG || 'depois', SCREEN = process.env.SCREEN || 'treinos', OUT = process.env.SHOTS_DIR || `test-artifacts/${SCREEN}-redesign/${TAG}`; fs.mkdirSync(OUT, { recursive: true })
-const B = 'http://localhost:4449', PASS = 'e2e-Avadesk-2026'
+const B = 'http://localhost:4449', PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 test.setTimeout(240000)
 async function reg(rq, name) { const t = (await (await rq.get('/api/terms')).json()).terms, email = `tv.${Date.now()}.${Math.random().toString(36).slice(2, 6)}@e2e.local`
   await rq.post('/api/auth/register', { data: { name, email, password: PASS, accept_terms: true, birth_date: '1990-01-01', terms_version: t?.version } }); return email }
@@ -34,7 +34,7 @@ test(SCREEN + ': aluno com programa / sem treino / aluno do personal', async ({ 
   const ex = (await (await P.request.get('/api/pro/library?limit=2')).json()).exercises
   await P.request.post('/api/pro/plans', { data: { title: 'Ficha Força A', student_id: c.id, exercises: ex.map(e => ({ exercise_id: e.id, sets: 3, reps: '10' })) } }); await P.close()
   const cc = await browser.newContext({ baseURL: B, extraHTTPHeaders: { Origin: new URL(B).origin } }); await cc.request.post('/api/auth/login', { data: { email: cem, password: c.temp_password } })
-  await cc.request.post('/api/auth/password', { data: { current_password: c.temp_password, new_password: 'Visual-Senha-42' } })
+  await cc.request.post('/api/auth/password', { data: { current_password: c.temp_password, new_password: ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada') } })
   const t = (await (await cc.request.get('/api/terms')).json()).terms; await cc.request.post('/api/terms/accept', { data: { version: t.version } }); await cc.close()
-  await shots(browser, 'aluno-com-programa', withProg); await shots(browser, 'aluno-sem-treino', empty); await shots(browser, 'aluno-do-personal', cem, 'Visual-Senha-42')
+  await shots(browser, 'aluno-com-programa', withProg); await shots(browser, 'aluno-sem-treino', empty); await shots(browser, 'aluno-do-personal', cem, ((process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) + '-alterada'))
 })

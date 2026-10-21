@@ -5,9 +5,9 @@ const OUT = process.env.SHOTS_DIR || 'test-artifacts/perfil'; fs.mkdirSync(OUT, 
 test('perfil do aluno sem toasts e sem 404', async ({ browser, playwright }) => {
   const rq = await playwright.request.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin } })
   const terms = (await (await rq.get('/api/terms')).json()).terms, email = `perfil.${Date.now()}@e2e.local`
-  await rq.post('/api/auth/register', { data: { name: 'Perfil Teste', email, password: 'e2e-Avadesk-2026', accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version } }); await rq.dispose()
+  await rq.post('/api/auth/register', { data: { name: 'Perfil Teste', email, password: (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version } }); await rq.dispose()
   const ctx = await browser.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin }, viewport: { width: 390, height: 844 } })
-  const u = (await (await ctx.request.post('/api/auth/login', { data: { email, password: 'e2e-Avadesk-2026' } })).json()).user
+  const u = (await (await ctx.request.post('/api/auth/login', { data: { email, password: (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) } })).json()).user
   await ctx.addInitScript(x => localStorage.setItem('gym_user', JSON.stringify(x)), u)
   const page = await ctx.newPage(), bad = []
   page.on('response', r => { if (r.status() === 404) bad.push(r.request().method() + ' ' + r.url()) })
@@ -21,9 +21,9 @@ test('perfil do aluno sem toasts e sem 404', async ({ browser, playwright }) => 
 test('perfil: API sem recursos opcionais (404) não mostra aviso vermelho', async ({ browser, playwright }) => {
   const rq = await playwright.request.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin } })
   const terms = (await (await rq.get('/api/terms')).json()).terms, email = `perfil404.${Date.now()}@e2e.local`
-  await rq.post('/api/auth/register', { data: { name: 'Perfil 404', email, password: 'e2e-Avadesk-2026', accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version } }); await rq.dispose()
+  await rq.post('/api/auth/register', { data: { name: 'Perfil 404', email, password: (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()), accept_terms: true, birth_date: '1990-01-01', terms_version: terms?.version } }); await rq.dispose()
   const ctx = await browser.newContext({ baseURL: 'http://localhost:4449', extraHTTPHeaders: { Origin: new URL('http://localhost:4449').origin }, viewport: { width: 390, height: 844 } })
-  const u = (await (await ctx.request.post('/api/auth/login', { data: { email, password: 'e2e-Avadesk-2026' } })).json()).user
+  const u = (await (await ctx.request.post('/api/auth/login', { data: { email, password: (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })()) } })).json()).user
   await ctx.addInitScript(x => localStorage.setItem('gym_user', JSON.stringify(x)), u)
   for (const p of ['**/api/me/trophies*', '**/api/me/unlock-request*', '**/api/me/export-request*', '**/api/me/theme*', '**/api/me/tours*'])
     await ctx.route(p, r => r.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"not found"}' }))

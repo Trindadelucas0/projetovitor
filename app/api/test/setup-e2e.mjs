@@ -1,10 +1,10 @@
 // SOMENTE DESENVOLVIMENTO LOCAL: cria/atualiza usuários fixos de teste (admin, 2 profissionais) para os smoke tests.
-// Senha via E2E_PASSWORD (padrão: e2e-Avadesk-2026). Não rode em produção.
+// Senha obrigatória via E2E_PASSWORD. Não rode em produção.
 import '../env.js'
 import bcrypt from 'bcryptjs'
 import { q, pool } from '../db/pool.js'
 if (process.env.NODE_ENV === 'production') { console.error('não rode em produção'); process.exit(1) }
-const pass = process.env.E2E_PASSWORD || 'e2e-Avadesk-2026'
+const pass = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 const t = (await q(`select id from tenants where slug=$1`, [process.env.DEFAULT_TENANT || 'avadesk'])).rows[0].id
 const hash = await bcrypt.hash(pass, 10)
 for (const [email, name, roles] of [['admin.e2e\u0040avadesk.local', 'Admin E2E', ['admin']], ['pro1.e2e\u0040avadesk.local', 'Profa. Ana E2E', ['profissional']], ['pro2.e2e\u0040avadesk.local', 'Prof. Bruno E2E', ['profissional']]]) {

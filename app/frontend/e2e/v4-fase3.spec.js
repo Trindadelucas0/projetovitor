@@ -5,7 +5,7 @@ import pg from '../../api/node_modules/pg/lib/index.js'
 
 const SHOTS = process.env.SHOTS_DIR || 'test-artifacts/shots'
 fs.mkdirSync(SHOTS, { recursive: true })
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 const db = () => { const c = new pg.Client({ host: 'localhost', user: 'postgres', password: process.env.DB_PASSWORD || 'postgres', database: 'avagym' }); return c }
 async function register(request, label, intent) {
   const terms = (await (await request.get('/api/terms')).json()).terms

@@ -1,6 +1,6 @@
 // V5 - tela "Logs e auditoria" do admin (filtros e paginacao). SOMENTE LOCAL (front 4459 -> API 8797, banco avagym_test).
 import { test, expect } from '@playwright/test'
-const PASS = 'e2e-Avadesk-2026'
+const PASS = (process.env.E2E_PASSWORD || (() => { throw new Error('Defina E2E_PASSWORD somente no ambiente de teste.') })())
 test('admin ve logs com filtros e paginacao', async ({ page }) => {
   const r = await page.request.post('/api/auth/login', { data: { email: 'admin.e2e\u0040avadesk.local', password: PASS } })
   expect(r.ok()).toBeTruthy(); const u = (await r.json()).user
