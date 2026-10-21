@@ -1,7 +1,7 @@
 // Templates transacionais: somente texto escapado e links construídos pelo servidor.
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 export function appLink(path = '/perfil') {
-  const origin = new URL(process.env.ORIGIN || 'http://localhost:4449')
+  const origin = new URL(process.env.ORIGIN || 'http://localhost:5551')
   if (!['http:', 'https:'].includes(origin.protocol)) throw new Error('ORIGIN inválida')
   return origin.origin + '/#' + (String(path).startsWith('/') ? path : '/perfil')
 }

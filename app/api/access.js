@@ -6,6 +6,7 @@
 import { q } from './db/pool.js'
 import { resolve } from './entitlements.js'
 import { welcomeResources } from './welcome-features.js'
+import { isInternalPersonal } from './internal-personal.js'
 
 export const PAID_STATUSES = ['ativa', 'inadimplente', 'carencia']
 const db = c => c || { query: (t, p) => q(t, p) }
@@ -50,6 +51,7 @@ export async function accessOf(user, c) {
   for (const a of ['aluno', 'profissional']) {
     if (!roles.includes(a)) continue
     const sources = await ownSources(c, user.id, a)
+    if (a === 'profissional' && await isInternalPersonal(user.tenant_id, user.id, c)) sources.push({ kind: 'personal_interno' })
     if (a === 'aluno') {   // D4: aluno vinculado usa o plano do personal (vaga ja contada no aceite)
       const coaches = (await c.query(`select cs.coach_id, u.name from coach_students cs join users u on u.id=cs.coach_id where cs.student_id=$1 and cs.status='ativo'`, [user.id])).rows
       for (const k of coaches) {
@@ -91,7 +93,9 @@ export async function monetizationGate(key, user, res, json) {
   if (!(await monetizationOn(user.tenant_id))) return true
   const acc = await accessOf(user)
   const path = key.split(' ')[1] || ''
-  const ok = path.startsWith('/api/pro/') ? !!acc.audiences.profissional?.has : acc.has_any
+  const professionalRoute = path.startsWith('/api/pro/')
+  const ok = professionalRoute ? !!acc.audiences.profissional?.has
+    : roles.includes('aluno') ? !!acc.audiences.aluno?.has : acc.has_any
   if (ok) return true
   json(res, 402, { error: NO_ACCESS_MSG, code: 'ACCESS_REQUIRED', audience: path.startsWith('/api/pro/') ? 'profissional' : null })
   return false

@@ -14,7 +14,7 @@ const qs = req => new URL(req.url, 'http://x').searchParams
 const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 const newCode = () => Array.from({ length: 8 }, () => ALPHA[crypto.randomInt(ALPHA.length)]).join('')
 const normCode = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12)
-const linkOf = code => (process.env.ORIGIN || 'http://localhost:4449') + '/#/convite/' + code
+const linkOf = code => (process.env.ORIGIN || 'http://localhost:5551') + '/#/convite/' + code
 const proInfo = async uid => (await q(`select pp.state, pp.capacity, pp.verification_status, coalesce(pp.display_name,u.name) name, pp.specialties, pp.photo_url,
     (select count(*)::int from coach_students c where c.coach_id=pp.user_id and c.status='ativo') active
   from professional_profiles pp join users u on u.id=pp.user_id where pp.user_id=$1`, [uid])).rows[0]

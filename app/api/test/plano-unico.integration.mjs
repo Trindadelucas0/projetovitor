@@ -6,8 +6,9 @@ import '../env.js'
 import assert from 'node:assert/strict'
 import crypto from 'node:crypto'
 import { pool } from '../db/pool.js'
-import { tenantPersonalId, isTenantPersonal, linkToTenantPersonal, linkFailures, createLink, isLinked, PlanError } from '../pro.js'
+import { tenantPersonalId, isTenantPersonal, isManagedPersonal, linkToTenantPersonal, linkFailures, createLink, isLinked, PlanError } from '../pro.js'
 import { ensureSubscription, capacitySummary } from '../entitlements.js'
+import { accessOf } from '../access.js'
 
 const DB = 'orny_plano_unico'
 if (process.env.DB_NAME !== DB) throw Error('Use somente DB_NAME=' + DB)
@@ -73,6 +74,20 @@ try {
   }
   check((await pool.query(`select count(*)::int n from coach_students where coach_id=$1 and status='ativo'`, [personal])).rows[0].n,
     21, 'o personal vinculou 21 alunos sem estourar limite')
+
+  // Personal interno criado pelo Admin: sem plano profissional pago e sem alunos iniciais.
+  const interno = crypto.randomUUID()
+  await pool.query(`insert into users(id,tenant_id,name,email,password_hash,status) values($1,$2,'Personal interno',$3,'test-only','ativo')`,
+    [interno, tid, `${interno}@plano-unico.test`])
+  await pool.query(`insert into user_roles(user_id,tenant_id,role_id) values($1,$2,'profissional')`, [interno, tid])
+  await pool.query(`insert into professional_profiles(user_id,tenant_id,display_name,state,can_publish,internal_managed)
+    values($1,$2,'Personal interno','ativo',true,true)`, [interno, tid])
+  check(await isManagedPersonal(tid, interno), true, 'personal interno é reconhecido sem assinatura')
+  check((await capacitySummary(interno)).effective_limit, null, 'personal interno não tem limite de alunos')
+  check((await pool.query(`select count(*)::int n from coach_students where coach_id=$1 and status='ativo'`, [interno])).rows[0].n, 0, 'personal interno começa sem alunos')
+  check((await accessOf({ id: interno, tenant_id: tid, roles: ['profissional'] })).audiences.profissional.has, true, 'personal interno acessa sem pagamento')
+  const transferido = await novoAluno()
+  check(await linkFailures(tid, transferido, interno, null), [], 'aluno pode ser atribuído ao personal interno')
 
   // ---------- 4) negativo: outro profissional CONTINUA sujeito ao limite ----------
   // Garante que a isenção não vazou para qualquer profissional.

@@ -6,9 +6,9 @@ Instalação (lockfiles, uma vez): `cd api; npm ci` e `cd frontend; npm ci` (cac
 
 - Iniciar: `powershell -ExecutionPolicy Bypass -File scripts\dev-start.ps1`
 - Parar: `powershell -ExecutionPolicy Bypass -File scripts\dev-stop.ps1` (mata só os PIDs salvos em `D:\open-gyn-saas\runtime\pids.txt`)
-- URLs: app http://localhost:5173 (Vite, proxy `/api` → API) · API http://localhost:8787 (porta esperada por `frontend/vite.config.js`)
+- URLs: app http://localhost:5551 (Vite, proxy `/api` → API) · API http://localhost:8787
 - Dados: `D:\open-gyn-saas\runtime\data` (fora do repo; contém `secret` e `vapid.json` — não versionar). Logs: `D:\open-gyn-saas\logs`.
-- Env usadas: `PORT=8787 DATA_DIR=... RP_ID=localhost ORIGIN=http://localhost:5173`.
+- Env usadas: `PORT=8787 DATA_DIR=... RP_ID=localhost ORIGIN=http://localhost:5551`.
 
 ## Resultados (2026-10-13)
 - `npm ci` api/frontend OK; `npm run build` OK (aviso de chunk >500 kB); `npm test` 196/196 OK.

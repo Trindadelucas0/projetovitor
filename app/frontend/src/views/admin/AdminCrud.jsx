@@ -154,7 +154,7 @@ export function StudentTraining({ u, pros }) {
       {tf && <div className="adm-tools" style={{ marginTop: 8 }}>
         <select className="adm-in" value={tf.coach_id} onChange={e => setTf({ ...tf, coach_id: e.target.value })} aria-label="Novo profissional"><option value="">Novo profissional…</option>{active.filter(p => p.user_id !== tf.link.coach_id).map(p => <option key={p.user_id} value={p.user_id}>{p.display_name || p.name} ({p.available} vaga[s])</option>)}</select>
         <input className="adm-in" placeholder="Motivo" value={tf.reason} onChange={e => setTf({ ...tf, reason: e.target.value })} />
-        <button className="adm-btn" disabled={!tf.coach_id || tf.reason.trim().length < 3} onClick={async () => { if (!await ask('Confirmar a transferência do vínculo?')) return; try { await C.transfer({ link_id: tf.link.id, coach_id: tf.coach_id, reason: tf.reason, confirm: true }); setTf(null); reload() } catch (e) { notifyError(e) } }}>Confirmar transferência</button>
+        <button className="adm-btn" disabled={!tf.coach_id || tf.reason.trim().length < 3} onClick={async () => { if (!await ask('Transferir o aluno e arquivar a ficha atual? O histórico será preservado.')) return; try { await C.transfer({ link_id: tf.link.id, coach_id: tf.coach_id, reason: tf.reason, confirm: true }); setTf(null); reload() } catch (e) { notifyError(e) } }}>Confirmar transferência</button>
         <button className="adm-btn ghost" onClick={() => setTf(null)}>Cancelar</button></div>}
       {!d.links.length && <p className="g-mut g-xs">Nenhum vínculo.</p>}</div>
     {dlg}</div>

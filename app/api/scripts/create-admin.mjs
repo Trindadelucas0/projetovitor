@@ -34,6 +34,6 @@ try {
   for (const document of ['termos_uso', 'privacidade']) await q(`insert into legal_acceptances(tenant_id,user_id,document,version,granted,ip,user_agent) values($1,$2,$3,$4,true,'127.0.0.1','create-admin')`, [t.id, u.id, document, legalVersion])
   await q(`insert into audit_log(tenant_id,actor_id,action,entity,entity_id,data) values($1,$2,'admin.criado_cli','user',$2,'{}')`, [t.id, u.id]).catch(() => {})
   if (auto) console.log(`SENHA (mostrada só agora): ${p1}`)
-  console.log(`Administrador criado: ${email}. Entre em http://localhost:4449 com esse e-mail e senha.`)
+  console.log(`Administrador criado: ${email}. Entre em http://localhost:5551 com esse e-mail e senha.`)
 } catch (e) { console.error('erro:', e.message); process.exitCode = 1 }
 finally { rl.close(); await pool.end() }

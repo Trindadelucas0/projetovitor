@@ -10,6 +10,7 @@ import bcrypt from 'bcryptjs'
 import crypto from 'node:crypto'
 import { likeTerm, likeEsc, pageNum } from './sqlsafe.js'
 import { applyWeekdaySchedule } from './workout-schema.js'
+import { isInternalPersonal } from './internal-personal.js'
 const genPassword = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; let p; do { p = Array.from({ length: 14 }, () => A[crypto.randomInt(A.length)]).join('') } while (!/\d/.test(p) || !/[a-z]/.test(p) || !/[A-Z]/.test(p)); return p }
 
 const qs = req => new URL(req.url, 'http://x').searchParams
@@ -97,10 +98,13 @@ export async function isTenantPersonal(tid, userId) {
   if (String(await tenantPersonalId(tid)) !== String(userId)) return false
   return (await q(`select 1 from user_roles where user_id=$1 and tenant_id=$2 and role_id='admin'`, [userId, tid])).rowCount > 0
 }
+export async function isManagedPersonal(tid, userId, client) {
+  return await isTenantPersonal(tid, userId) || await isInternalPersonal(tid, userId, client)
+}
 
 // verificações do vínculo (PRD 8.2), reaproveitadas pelo admin e pela aprovação de solicitações
 export async function linkFailures(tid, studentId, coachId, area) {
-  const exempt = await isTenantPersonal(tid, coachId)
+  const exempt = await isManagedPersonal(tid, coachId)
   const s = (await q(`select u.status, ap.max_professionals, ap.active plan_active from users u left join user_access_plans x on x.user_id=u.id left join access_plans ap on ap.id=x.plan_id where u.id=$1 and u.tenant_id=$2`, [studentId, tid])).rows[0]
   const p = (await q(`select pp.*, (select count(*) from coach_students cs where cs.coach_id=pp.user_id and cs.status='ativo')::int active_links,
       (select count(*) from professional_qualifications q where q.user_id=pp.user_id and q.status='verificada' and ($2::text is null or q.area ilike $2 or q.kind ilike $2))::int verified
@@ -123,7 +127,7 @@ export const planCode = fail => fail.some(f => f.startsWith(PLAN_LIMIT)) ? 'LIMI
 export class PlanError extends Error { constructor(x) { super(x.error); Object.assign(this, x) } }
 export async function createLink(admin, studentId, coachId, area, origin = 'admin') {
   // V3: insert + limite do plano na MESMA transação, com trava na assinatura do profissional (concorrência)
-  const exempt = await isTenantPersonal(admin.tenant_id, coachId)   // personal do app: sem limite de alunos
+  const exempt = await isManagedPersonal(admin.tenant_id, coachId)
   const c = await pool.connect(); let r
   try {
     await c.query('begin')
@@ -148,6 +152,19 @@ export async function linkToTenantPersonal(tid, studentId) {
   const fail = await linkFailures(tid, studentId, personal, null)
   if (fail.length) { console.error('[cadastro] vínculo automático recusado:', fail.join(' · ')); return null }
   return createLink({ id: personal, tenant_id: tid }, studentId, personal, null, 'cadastro')
+}
+// Cadastro: vínculo obrigatório gravado na mesma transação da conta.
+export async function linkNewStudentToPrincipal(tid, studentId, actorId, client) {
+  const query = client?.query?.bind(client) || q
+  const principal = (await query(`select u.id from app_settings s join users u
+      on u.id::text=(s.value #>> '{}') and u.tenant_id=s.tenant_id
+      join user_roles r on r.user_id=u.id and r.tenant_id=u.tenant_id and r.role_id='admin'
+      join professional_profiles p on p.user_id=u.id and p.tenant_id=u.tenant_id and p.state='ativo'
+      where s.tenant_id=$1 and s.key='personal_user_id' and u.status='ativo' and u.disabled_at is null`, [tid])).rows[0]?.id
+  if (!principal) throw Object.assign(new Error('Personal principal indisponível para receber alunos'), { code: 'PRINCIPAL_UNAVAILABLE' })
+  const link = (await query(`insert into coach_students(tenant_id,coach_id,student_id,created_by,origin)
+    values($1,$2,$3,$4,'cadastro') returning id`, [tid, principal, studentId, actorId])).rows[0]
+  return link.id
 }
 // Responsável padrão de ocorrência/conversa: o personal da ficha ativa (regra de um treino ativo) ou, sem ficha, o vínculo ativo MAIS RECENTE
 async function defaultResponsible(studentId) {
@@ -508,6 +525,7 @@ export function proRoutes({ json, readBody }) {
       const u = await guard('admin')(req, res, json); if (!u) return
       const st = qs(req).get('status'), s = likeTerm(qs(req).get('q'), 100)
       const r = await q(`select u.id,u.name,u.email,u.status,u.created_at,u.share_code,u.account_type,u.access_unlocked_at,u.access_suspended_at,u.access_suspension_reason,u.last_seen_at,(select m.name from users m where m.id=u.managed_by) managed_by_name,(select pp.verification_status from professional_profiles pp where pp.user_id=u.id) verification,
+          coalesce((select pp.internal_managed from professional_profiles pp where pp.user_id=u.id),false) internal_managed,
           coalesce((select json_agg(json_build_object('audience',s.audience,'plan',p.name,'status',s.status,'over_limit',s.over_limit) order by s.audience) from subscriptions s join plans p on p.id=s.plan_id where s.user_id=u.id and s.status<>'cancelada'),'[]') subs, coalesce(array_agg(distinct ur.role_id) filter (where ur.role_id is not null),'{}') roles,
           u.access_unlocked_at, u.account_type, uap.plan_id, ap.max_professionals, (select count(*) from coach_students cs where cs.student_id=u.id and cs.status='ativo')::int links
         from users u left join user_roles ur on ur.user_id=u.id left join user_access_plans uap on uap.user_id=u.id left join access_plans ap on ap.id=uap.plan_id
@@ -567,14 +585,14 @@ export function proRoutes({ json, readBody }) {
           await c.query('insert into user_access_plans(user_id,plan_id,assigned_by) values($1,$2,$3)', [id, plan.id, u.id])
           await c.query('insert into access_plan_history(plan_id,user_id,action,actor_id) values($1,$2,$3,$4)', [plan.id, id, 'atribuido', u.id])
         }
-        if (type === 'profissional') await c.query(`insert into professional_profiles(user_id,tenant_id,display_name,state,can_publish) values($1,$2,$3,'ativo',true)`, [id, u.tenant_id, name])
+        if (type === 'aluno') await linkNewStudentToPrincipal(u.tenant_id, id, u.id, c)
+        if (type === 'profissional') await c.query(`insert into professional_profiles(user_id,tenant_id,display_name,state,can_publish,internal_managed) values($1,$2,$3,'ativo',true,true)`, [id, u.tenant_id, name])
         await c.query('commit')
-      } catch (e) { await c.query('rollback'); c.release(); if (e.code === '23505') return json(res, 409, { error: 'Este e-mail já tem conta. Peça para a pessoa entrar e informar o código dela.', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } }); throw e }
+      } catch (e) { await c.query('rollback'); c.release(); if (e.code === '23505') return json(res, 409, { error: 'Este e-mail já tem conta. Peça para a pessoa entrar e informar o código dela.', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } }); if (e.code === 'PRINCIPAL_UNAVAILABLE') return json(res, 503, { error: e.message, code: e.code }); throw e }
       c.release()
       await audit(u.tenant_id, u.id, 'usuario.criado_admin', 'user', id, { type, plan: plan?.id || null })
       let link = null
-      if (type === 'aluno') try { const linkId = await linkToTenantPersonal(u.tenant_id, id); link = linkId ? { ok: true, id: linkId } : null }
-      catch (e) { link = { ok: false, error: e.message } }
+      if (type === 'aluno') link = { ok: true }
       json(res, 201, { id, email, type, temp_password: generated ? password : undefined, link })
     },
     'POST /api/adm/users/same-person': async (req, res) => {

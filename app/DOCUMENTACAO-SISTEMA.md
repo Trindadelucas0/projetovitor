@@ -3,6 +3,10 @@
 Fonte oficial de comportamento. Versão frontend: 2.0.1; API: 2.0.1. Atualização: 21/10/2026 — Avaliação Postural, fichas individuais, Progresso e Comunidade somente com publicações.
 O inventário em `docs/INVENTARIO-FUNCIONAL.md` preserva o levantamento histórico e seus limites de validação; este documento consolida os fluxos atualizados.
 
+### Execução local
+
+No computador de desenvolvimento, o aplicativo abre em `http://localhost:5551` e a API permanece em `http://localhost:8787`. A origem configurada na API deve usar a mesma porta `5551`, para que login, cookies e validações de origem funcionem normalmente. A porta interna da VPS não muda com esta configuração local.
+
 ## Avaliação Postural — 21/10/2026
 
 Nova área **Avaliação Postural**: o personal solicita, o aluno registra fotos e vídeos guiados no celular, o
@@ -99,6 +103,12 @@ A área **Comunidade** contém somente o feed de publicações. O usuário pode 
 
 ## Fichas individuais e personal responsável — 21/10/2026
 
+**Complemento local — personais internos e transição de contas antigas.** O Admin principal continua como destino automático dos novos alunos. A opção **Nova conta → Personal interno** marca o profissional como integrante interno: ele entra e atende sem assinatura profissional e recebe alunos apenas por transferência do Admin. A isenção não se estende à assinatura de aluno quando a mesma pessoa também tem esse papel. Em **Alunos → Vínculos → Transferir**, o destino deve ser o principal ou um personal interno ativo. A troca do vínculo, o arquivamento da ficha anterior e a auditoria ocorrem na mesma transação; uma falha conserva o vínculo e a ficha anteriores. O novo personal publica a próxima ficha. A transferência exige um único vínculo ativo de origem.
+
+Contas profissionais antigas não são reclassificadas automaticamente. `api/scripts/transicao-personais-antigos.mjs --tenant=<uuid>` apresenta a prévia; com `--apply`, desativa os perfis profissionais antigos desse ambiente, encaminha seus alunos ao principal e arquiva as fichas anteriores, preservando sessões e histórico. Contas que também têm papel de aluno continuam acessíveis como aluno. A rotina aborta e desfaz a transação diante de vínculo conflitante. Nenhuma aplicação a dados de uso ou produção faz parte desta alteração local.
+
+Onde olhar no código: marcação em `api/db/migrations/073_personal_interno.sql` e `api/pro.js`; acesso em `api/access.js` e `api/entitlements.js`; transferência em `api/admcrud.js`; prévia/transição em `api/scripts/transicao-personais-antigos.mjs`; apresentação em `frontend/src/views/admin/AdminApp.jsx` e `UserPanel.jsx`.
+
 O ORNY não oferece mais programas prontos, catálogo, recomendação automática ou questionário para escolher treino. Cada aluno usa somente uma **ficha de treino** criada pelo personal responsável. Sem ficha ativa, a tela **Treinos** informa que o aluno está aguardando o personal; não há ação alternativa para iniciar programa do sistema.
 
 Todo aluno novo, inclusive cadastrado pelo painel administrativo, é vinculado automaticamente ao **personal principal** configurado no ambiente. O administrador também pode criar contas de **personal interno** sem assinatura PRO e transferir um aluno para elas. A transferência encerra o vínculo anterior, arquiva a ficha anterior para consulta e deixa o novo personal como único responsável por criar a próxima ficha. Sessões, cargas, fichas e programas antigos não são apagados.
@@ -169,12 +179,13 @@ A migration `069_personal_do_tenant.sql` grava em `app_settings` a chave
 dele com `state='ativo'` e o plano de acesso `personal_unico` (um personal responsável).
 
 No cadastro público e no cadastro pelo painel, o aluno recebe o plano de acesso e é
-vinculado ao personal automaticamente. Falha no vínculo **não** desfaz o cadastro: a conta
-existe e o personal pode vincular em Convites.
+vinculado ao personal na mesma transação. Se o principal estiver indisponível ou a criação
+do vínculo falhar, o cadastro é desfeito e pode ser tentado novamente após corrigir a configuração.
 
-O personal é isento de vaga e de limite de alunos ativos. A isenção exige as **duas**
-condições — estar marcado em `personal_user_id` **e** ter o papel `admin`. Um segundo
-profissional, no dia em que o app abrir para vários personais, continua sujeito ao limite.
+O principal é isento de vaga e de limite de alunos ativos quando está marcado em
+`personal_user_id` **e** tem papel `admin`. O personal interno ativo, criado pelo Admin,
+também é isento de cobrança profissional e limite. Outros profissionais não recebem
+essa isenção.
 
 ### Painel do personal
 

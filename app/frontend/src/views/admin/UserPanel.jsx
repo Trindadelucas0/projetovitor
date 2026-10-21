@@ -12,10 +12,11 @@ import { UserEdit, ProEdit, StudentRecord, StudentTraining } from './AdminCrud.j
 
 const when = d => d ? new Date(d).toLocaleDateString('pt-BR') : 'nunca'
 const post = (p, b) => api(p, { method: 'POST', body: JSON.stringify(b) })
-export const accountTypePT = u => u.account_type === 'personal_client' ? 'Aluno do personal' : u.roles?.includes('admin') ? 'Administrador' : u.roles?.includes('profissional') ? 'Personal' : 'Usuário normal'
+export const accountTypePT = u => u.account_type === 'personal_client' ? 'Aluno do personal' : u.roles?.includes('admin') ? 'Administrador' : u.internal_managed ? 'Personal interno' : u.roles?.includes('profissional') ? 'Personal' : 'Usuário normal'
 export const mensalidadePT = u => u.access_suspended_at ? { t: 'Suspensa', s: u.access_suspension_reason || 'Suspensão administrativa', c: 'warn' }
   : u.account_type === 'personal_client' ? { t: 'Coberta pelo PRO', s: `Conteúdo do personal ${u.managed_by_name || ''}`.trim(), c: 'ok' }
   : u.roles?.includes('admin') ? { t: 'Não se aplica', s: 'Conta da administração', c: '' }
+  : u.internal_managed ? { t: 'Isento', s: 'Personal interno criado pelo Admin; não precisa contratar plano profissional', c: 'ok' }
   : (u.subs || []).some(s => !/free/i.test(s.plan || '') && ['ativa','trial','inadimplente','carencia'].includes(s.status)) ? { t: 'Em dia', s: 'Acesso conforme o plano', c: 'ok' } : { t: 'Sem plano pago', s: 'Pode contratar pela tela de assinatura', c: '' }
 const Sec = ({ title, help, children, id }) => <section className="upn-sec" data-testid={'upn-' + id}><h3>{title}</h3>{help && <p className="upn-help">{help}</p>}{children}</section>
 const Row = ({ k, children }) => <div className="upn-row"><span>{k}</span><b>{children}</b></div>
@@ -48,13 +49,14 @@ export default function UserPanel({ u, onClose, reload, pros, reloadPros, onDele
         {!u.roles.includes('admin') && <div className="adm-tools">
           {u.access_suspended_at ? <button className="adm-btn" disabled={busy} onClick={run(() => post('/api/adm/access/set', { user_id: u.id, unlocked: true, note: 'suspensão removida' }))} data-testid="upn-liberar">Reativar acesso</button>
             : <button className="adm-btn ghost" disabled={busy} onClick={async () => { const note = await askText('Suspender esta conta?', { text: 'Informe o motivo. Ele será mostrado para a pessoa.', ok: 'Suspender', danger: true }); if (note != null) run(() => post('/api/adm/access/set', { user_id: u.id, unlocked: false, note }))() }} data-testid="upn-travar">Suspender acesso</button>}</div>}
-        {isPro && <div className="upn-box" data-testid="upn-assinatura">
+        {isPro && !u.internal_managed && <div className="upn-box" data-testid="upn-assinatura">
           <Row k="Assinatura do personal">{proSub ? proSub.plan_name.replace(/free/i, 'Gratuito') : 'Sem assinatura'}</Row>
           <p className="upn-help">Define quantos alunos o personal pode ter.{proSub && Object.keys(proSub.limits || {}).length ? ` Hoje: ${(proSub.usage || {}).alunos_ativos ?? 0} de ${proSub.limits.alunos_ativos ?? 'sem limite definido'} alunos.` : ' "A definir" = o limite desse plano ainda não foi decidido; nada é bloqueado por ele.'}</p>
           {proSub && <label className="upn-field">Trocar assinatura
             <select className="adm-in" value={proSub.plan_id} disabled={busy} onChange={e => run(() => V.admChangePlan({ user_id: u.id, audience: 'profissional', plan_id: e.target.value }))()} data-testid="upn-trocar">
               {(cat?.plans || []).filter(p => p.audience === 'profissional').map(p => <option key={p.id} value={p.id}>{p.name.replace(/free/i, 'Gratuito')}</option>)}</select></label>}
         </div>}
+        {u.internal_managed && <p className="upn-help">Este personal recebe alunos por transferência feita pelo Admin. A cobrança dos alunos segue a assinatura de cada um.</p>}
       </Sec>
 
       <Sec id="treino" title="Treino atual e vínculos">

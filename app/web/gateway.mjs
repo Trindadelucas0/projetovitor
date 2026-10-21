@@ -4,7 +4,7 @@
 // frame-ancestors 'none', nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, COOP e HSTS.
 // HTTP -> HTTPS (BUG-022): se o Cloudflare informar X-Forwarded-Proto: http, redireciona 301.
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path'
-const PORT = +(process.env.PORT || 4449), API = +(process.env.API_PORT || 3449)
+const PORT = +(process.env.PORT || 5551), API = +(process.env.API_PORT || 3449)
 const DIST = path.resolve(process.env.DIST_DIR || '/opt/avagym/app/frontend/dist')
 const MEDIA = path.resolve(process.env.MEDIA_DIR || '/opt/avagym-runtime/media')
 const FORCE_HTTPS = process.env.FORCE_HTTPS !== '0'

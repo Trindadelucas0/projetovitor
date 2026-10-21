@@ -1,6 +1,6 @@
 // Autenticação email+senha (bcrypt) com JWT (cookie httpOnly "avagym_token" ou Authorization: Bearer)
 // + middlewares requireAuth / requireRole / escopo por tenant + rotas de catálogo (músculos, exercícios, programas).
-import { attachByProCode, autoUnlockForTests } from './accounts-v42.js'
+import { autoUnlockForTests } from './accounts-v42.js'
 import './env.js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
@@ -146,10 +146,9 @@ export function authRoutes({ json, readBody, bridge, clearCookies }) {
       const t = await q('select id from tenants where slug=$1 and active', [String(b.tenant || process.env.DEFAULT_TENANT || 'avadesk')])
       if (!t.rowCount) return json(res, 400, { error: 'Academia não encontrada' })
       if ((await q('select 1 from users where lower(email)=$1', [email])).rowCount) return json(res, 409, { error: 'Este e-mail já tem conta. Quer entrar ou recuperar a senha?', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } })
-      const byCode = b.pro_code ? await attachByProCode(null, t.rows[0].id, b.pro_code) : null   // V4.3: cadastro com o código do personal
-      if (byCode?.error) return json(res, 400, { error: byCode.error, errors: { pro_code: byCode.error } })
       const hash = await bcrypt.hash(password, 12)
-      const u = await transaction(async () => {
+      let u
+      try { u = await transaction(async () => {
         let u
         try { u = await q('insert into users(tenant_id,name,email,password_hash,birth_date) values($1,$2,$3,$4,$5) returning id', [t.rows[0].id, name.slice(0, 80), email, hash, b.birth_date]) }
         catch (e) { if (e.code === '23505') return null; throw e }   // corrida: o índice único decide
@@ -160,16 +159,15 @@ export function authRoutes({ json, readBody, bridge, clearCookies }) {
         // V3 (decisão Lucas 15/10): SaaS aberto — conta nasce ativa, sem aprovação do admin (admin ainda pode bloquear)
         await acceptAtSignup(u.rows[0].id, { professional: false, health: typeof b.health_consent === 'boolean' ? b.health_consent : null }, req)
         if (terms) await acceptTerms(u.rows[0].id, terms.version, req)
-        if (byCode) { const a = await attachByProCode(u.rows[0].id, t.rows[0].id, b.pro_code); if (a?.apply) await a.apply() }
+        await (await import('./pro.js')).linkNewStudentToPrincipal(t.rows[0].id, u.rows[0].id, u.rows[0].id)
         await autoUnlockForTests(u.rows[0].id, email)   // só em teste local (E2E_AUTO_UNLOCK_DOMAIN)
         await audit(t.rows[0].id, u.rows[0].id, 'conta.cadastro', 'user', u.rows[0].id, { intent, termos: terms && terms.version })
         return u
-      })
+      }) } catch (e) {
+        if (e.code === 'PRINCIPAL_UNAVAILABLE') return json(res, 503, { error: e.message, code: e.code })
+        throw e
+      }
       if (!u) return json(res, 409, { error: 'Este e-mail já tem conta. Quer entrar ou recuperar a senha?', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } })
-      // O aluno novo já nasce vinculado ao personal do ambiente. Falha aqui não desfaz o
-      // cadastro: a conta existe e o personal pode vincular pelo painel.
-      try { await (await import('./pro.js')).linkToTenantPersonal(t.rows[0].id, u.rows[0].id) }
-      catch (e) { console.error('vinculo automatico no cadastro', e.message) }
       // Cupom do link ou digitado: o servidor aplica depois de criar a conta. Falha nao desfaz o cadastro.
       let couponResult = null
       if (b.coupon) {

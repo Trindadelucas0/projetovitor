@@ -1,12 +1,20 @@
 # Guia diário do personal — ORNY
 
+## Administração: principal, personal interno e transferência
+
+Todo aluno novo entra para o personal principal, que é o Admin configurado no ambiente. Em **Nova conta**, escolha **Personal interno** para cadastrar outro responsável. Ele entra sem contratar assinatura profissional e começa sem alunos; o aluno mantém sua própria regra de pagamento.
+
+Para distribuir o atendimento, abra **Alunos**, escolha o aluno, vá a **Histórico de treinos e vínculos → Vínculos**, clique em **Transferir**, selecione o novo personal, informe o motivo e confirme. A ficha anterior fica no histórico; o novo personal precisa publicar a próxima ficha. Se a transferência falhar, o responsável e a ficha anteriores continuam. Se o principal estiver indisponível durante um novo cadastro, a conta não será criada até a configuração ser corrigida.
+
+Para contas profissionais antigas, a administração técnica deve executar primeiro a prévia da rotina de transição para conferir quantos alunos serão movidos ao principal. A aplicação é separada e exige revisão; não ocorre ao abrir o painel ou atualizar o aplicativo.
+
 Fonte oficial: [documentação do sistema](../app/DOCUMENTACAO-SISTEMA.md). Este guia descreve o uso, sem substituir as regras da fonte oficial.
 
 ## O que é o app (21/10/2026)
 
-O ORNY é o app de **um personal e seus alunos**. O aluno treina no app; você atende pelo
-**painel do personal** (a antiga central administrativa). Não existe mais uma área
-separada para profissional entrar, nem cadastro público de personal.
+O ORNY recebe novos alunos para o **personal principal**, que atende pelo painel de administração.
+O Admin pode cadastrar personais internos, que entram na área profissional e recebem alunos
+por transferência. Não há cadastro público de personal.
 
 Há **um plano**: R$ 39,90 por mês, do aluno, pago no app por cartão ou Pix. O aluno só
 acessa treinos, progresso e comunidade depois do pagamento confirmado.

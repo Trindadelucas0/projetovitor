@@ -1,9 +1,9 @@
 // AVADESK Fitness · admin gestor: editar e excluir tudo (usuários, profissionais, fichas, treinos, vínculos, comunidade, exercícios).
 // Regras: só admin; validação no backend; toda exclusão exige confirm 'EXCLUIR'; soft delete onde há histórico; tudo na auditoria.
 import { supersedeOthers } from './pro.js'
-import { q } from './db/pool.js'
+import { q, transaction } from './db/pool.js'
 import { requireAuth, audit } from './auth.js'
-import { linkFailures, createLink, notify } from './pro.js'
+import { linkFailures, notify, isManagedPersonal } from './pro.js'
 import { anonymizeUser } from './lgpd.js'
 import { normDays, planProblems, flat } from './portal.js'
 import { likeTerm, likeEsc, pageNum } from './sqlsafe.js'
@@ -214,17 +214,36 @@ export function adminCrudRoutes({ json, readBody }) {
       const b = await readBody(req), reason = txt(b.reason, 300)
       if (reason.length < 3) return json(res, 400, { error: 'Informe o motivo da transferência', errors: { reason: 'Obrigatório' } })
       if (b.confirm !== true) return json(res, 400, { error: 'Confirme a transferência' })
-      const l = (await q(`select * from coach_students where id=$1 and tenant_id=$2 and status='ativo'`, [+b.link_id, u.tenant_id])).rows[0]
-      if (!l) return json(res, 404, { error: 'Vínculo ativo não encontrado' })
-      if (!isUuid(b.coach_id) || b.coach_id === l.coach_id) return json(res, 400, { error: 'Escolha outro profissional' })
-      const area = txt(b.area, 80) || l.area
-      await q(`update coach_students set status='encerrado', ended_at=now(), ended_by=$2, end_reason=$3 where id=$1`, [l.id, u.id, 'transferência: ' + reason])
-      const fail = await linkFailures(u.tenant_id, l.student_id, b.coach_id, area)
-      if (fail.length) { await q(`update coach_students set status='ativo', ended_at=null, ended_by=null, end_reason=null where id=$1`, [l.id]); return json(res, 409, { error: fail[0], reasons: fail }) }
-      const id = await createLink(u, l.student_id, b.coach_id, area)
-      await q(`update pro_plans set status='arquivado', updated_at=now() where owner_id=$1 and student_id=$2 and status in ('ativo','rascunho')`, [l.coach_id, l.student_id])
-      await audit(u.tenant_id, u.id, 'vinculo.transferido', 'link', id, { from: l.coach_id, to: b.coach_id, student: l.student_id, reason })
-      json(res, 200, { ok: true, id })
+      if (!isUuid(b.coach_id)) return json(res, 400, { error: 'Escolha outro personal' })
+      let outcome
+      try { outcome = await transaction(async () => {
+        const l = (await q(`select * from coach_students where id=$1 and tenant_id=$2 and status='ativo' for update`, [+b.link_id, u.tenant_id])).rows[0]
+        if (!l) return { status: 404, error: 'Vínculo ativo não encontrado' }
+        if (b.coach_id === l.coach_id) return { status: 400, error: 'Escolha outro personal' }
+        // Serializa também outras transferências simultâneas do mesmo aluno.
+        await q('select id from users where id=$1 and tenant_id=$2 for update', [l.student_id, u.tenant_id])
+        const target = (await q(`select p.user_id from professional_profiles p join users x on x.id=p.user_id
+          where p.user_id=$1 and p.tenant_id=$2 and p.state='ativo' and x.status='ativo' and x.disabled_at is null`, [b.coach_id, u.tenant_id])).rows[0]
+        if (!target) return { status: 409, error: 'O novo personal não está ativo neste ambiente' }
+        if (!(await isManagedPersonal(u.tenant_id, b.coach_id))) return { status: 409, error: 'Escolha o personal principal ou um personal interno criado pelo Admin' }
+        const active = (await q(`select id from coach_students where student_id=$1 and tenant_id=$2 and status='ativo' for update`, [l.student_id, u.tenant_id])).rows
+        if (active.length !== 1 || active[0].id !== l.id) return { status: 409, error: 'O aluno precisa ter um único vínculo ativo antes da transferência' }
+        await q(`update coach_students set status='encerrado', ended_at=now(), ended_by=$2, end_reason=$3 where id=$1`, [l.id, u.id, 'transferência: ' + reason])
+        const fail = await linkFailures(u.tenant_id, l.student_id, b.coach_id, txt(b.area, 80) || l.area)
+        if (fail.length) throw Object.assign(new Error(fail[0]), { status: 409, reasons: fail })
+        const next = (await q(`insert into coach_students(tenant_id,coach_id,student_id,created_by,area,origin)
+          values($1,$2,$3,$4,$5,'admin') returning id`, [u.tenant_id, b.coach_id, l.student_id, u.id, txt(b.area, 80) || l.area])).rows[0]
+        await q(`update pro_plans set status='arquivado', archived_at=now(), updated_at=now()
+          where owner_id=$1 and student_id=$2 and tenant_id=$3 and status in ('ativo','rascunho')`, [l.coach_id, l.student_id, u.tenant_id])
+        await q(`insert into audit_log(tenant_id,actor_id,action,entity,entity_id,data)
+          values($1,$2,'vinculo.transferido','link',$3,$4)`, [u.tenant_id, u.id, String(next.id), { from: l.coach_id, to: b.coach_id, student: l.student_id, reason }])
+        return { id: next.id }
+      }) } catch (error) {
+        if (error.status === 409) return json(res, 409, { error: error.message, reasons: error.reasons })
+        throw error
+      }
+      if (outcome.error) return json(res, outcome.status, { error: outcome.error })
+      json(res, 200, { ok: true, id: outcome.id })
     },
     // ---------- comunidade ----------
     'GET /api/adm/posts': async (req, res) => {

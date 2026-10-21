@@ -3,6 +3,7 @@
 import { q, pool } from './db/pool.js'
 import { audit } from './auth.js'
 import { fail } from './errors.js'
+import { isInternalPersonal } from './internal-personal.js'
 
 export const AUDIENCES = ['aluno', 'profissional']
 // V5: inadimplente e carencia mantem o acesso (retentativas/carencia sem atrito); so suspensa/cancelada bloqueiam
@@ -63,6 +64,10 @@ export async function resolve(userId, audience, c, { lock = false } = {}) {
 
 // checagem de recurso: devolve null (ok) ou { code, error }
 export async function checkFeature(userId, audience, feature, c) {
+  if (audience === 'profissional') {
+    const u = (await db(c).query('select tenant_id from users where id=$1', [userId])).rows[0]
+    if (u && await isInternalPersonal(u.tenant_id, userId, db(c))) return null
+  }
   const e = await resolve(userId, audience, c)
   if (!e) return { code: 'FEATURE_NOT_INCLUDED', error: 'Você não tem um plano para esta área.' }
   if (!e.active) return { code: 'SUBSCRIPTION_INACTIVE', error: 'Sua assinatura está ' + e.status + '. Regularize para continuar.', status: e.status }
@@ -74,6 +79,10 @@ export async function checkFeature(userId, audience, feature, c) {
 // (select … for update) para serializar aceites simultâneos e reconta o uso real depois do bloqueio.
 // V4 F5 (opção B): o limite é SÓ plano + concessões. O antigo "cap" (professional_profiles.capacity) é ignorado de propósito.
 export async function checkLimitLocked(c, userId, metric, { adding = 1 } = {}) {
+  if (metric === 'alunos_ativos') {
+    const u = (await c.query('select tenant_id from users where id=$1', [userId])).rows[0]
+    if (u && await isInternalPersonal(u.tenant_id, userId, c)) return null
+  }
   const m = METRICS[metric]
   const e = await resolve(userId, m.audience, c, { lock: true })
   if (!e) return { code: 'FEATURE_NOT_INCLUDED', error: 'Sem plano para esta área.' }
@@ -91,6 +100,12 @@ function summarize(e, metric, used) {
 }
 // resposta única de capacidade, usada por todas as telas (profissional e admin)
 export async function capacitySummary(userId, metric = 'alunos_ativos', c) {
+  if (metric === 'alunos_ativos') {
+    const u = (await db(c).query('select tenant_id from users where id=$1', [userId])).rows[0]
+    if (u && await isInternalPersonal(u.tenant_id, userId, db(c))) {
+      return { metric, plan_limit: null, granted_extra: 0, effective_limit: null, used: await METRICS[metric].count(db(c), userId), available: null, over_limit: false, plan_name: 'Personal interno' }
+    }
+  }
   const m = METRICS[metric]
   const e = await resolve(userId, m.audience, c)
   if (!e) return { metric, plan_limit: 0, granted_extra: 0, effective_limit: 0, used: 0, available: 0, over_limit: false }
