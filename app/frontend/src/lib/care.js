@@ -53,6 +53,7 @@ export const initials = n => (n || '?').split(' ').filter(Boolean).slice(0, 2).m
 // comunidade
 export const F = {
   cats: () => api('/api/feed/categories'), feed: p => api('/api/feed?' + new URLSearchParams(p || {})), post: id => api('/api/post?id=' + id),
+  notices: () => api('/api/community/notices'), saveNotice: b => post('/api/community/notices/save', b), cancelNotice: id => post('/api/community/notices/cancel', { id }),
   save: b => post('/api/posts', b), del: id => post('/api/posts/delete', { id }), like: (id, on) => post('/api/posts/like', { id, on }),
   publishWorkout: b => post('/api/community/workout-post', b),
   comment: (post_id, body, parent_id) => post('/api/comments', { post_id, body, parent_id }), likeComment: (id, on) => post('/api/comments/like', { id, on }), delComment: id => post('/api/comments/delete', { id }),
