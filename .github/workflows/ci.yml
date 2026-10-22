@@ -1,0 +1,55 @@
+name: Verificacoes
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Obter codigo
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            app/api/package-lock.json
+            app/frontend/package-lock.json
+
+      - name: Instalar dependencias da API
+        working-directory: app/api
+        run: npm ci --no-audit --no-fund
+
+      - name: Verificar dados sensiveis versionados
+        working-directory: app/api
+        run: npm run check:sensitive
+
+      - name: Testar modulos da API
+        working-directory: app/api
+        run: |
+          npm run test:email
+          npm run test:plano-unico
+
+      - name: Instalar dependencias do frontend
+        working-directory: app/frontend
+        run: npm ci --no-audit --no-fund
+
+      - name: Testar frontend
+        working-directory: app/frontend
+        run: npm test
+
+      - name: Compilar frontend
+        working-directory: app/frontend
+        run: npm run build

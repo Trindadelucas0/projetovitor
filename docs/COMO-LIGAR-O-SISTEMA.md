@@ -139,7 +139,8 @@ Para criar um **novo** administrador com senha forte gerada e mostrada uma únic
 
 ```powershell
 cd F:\projetovitor\projetovitor\app\api
-npm run create-admin -- --email novo.admin@exemplo.local --name "Nome" --generate
+$adminEmail = Read-Host 'E-mail do novo administrador'
+npm run create-admin -- --email $adminEmail --name "Nome" --generate
 ```
 
 O script recusa um e-mail que já exista — ele cria conta, não troca senha.
@@ -149,8 +150,10 @@ Para trocar a senha de uma conta **que já existe**, a recuperação pela tela (
 ```powershell
 cd F:\projetovitor\projetovitor\app\api
 $env:NOVA_SENHA = (Read-Host 'Nova senha (10+ caracteres)')
-node -e "import('./env.js').then(async()=>{const b=(await import('bcryptjs')).default;const{pool}=await import('./db/pool.js');const email='CONTA@EXEMPLO.LOCAL';const senha=process.env.NOVA_SENHA||'';if(senha.length<10)throw new Error('defina NOVA_SENHA com 10+ caracteres');const r=await pool.query('update users set password_hash=$2, token_version=coalesce(token_version,0)+1, must_change_password=false where lower(email)=lower($1) returning email,token_version',[email,await b.hash(senha,12)]);console.log(r.rowCount?('senha trocada: '+r.rows[0].email+' (token_version '+r.rows[0].token_version+')'):'conta nao encontrada');await pool.end()})"
+$env:CONTA_EMAIL = (Read-Host 'E-mail da conta local')
+node -e "import('./env.js').then(async()=>{const b=(await import('bcryptjs')).default;const{pool}=await import('./db/pool.js');const email=process.env.CONTA_EMAIL||'';const senha=process.env.NOVA_SENHA||'';if(senha.length<10)throw new Error('defina NOVA_SENHA com 10+ caracteres');const r=await pool.query('update users set password_hash=$2, token_version=coalesce(token_version,0)+1, must_change_password=false where lower(email)=lower($1) returning email,token_version',[email,await b.hash(senha,12)]);console.log(r.rowCount?('senha trocada: '+r.rows[0].email+' (token_version '+r.rows[0].token_version+')'):'conta nao encontrada');await pool.end()})"
 Remove-Item Env:NOVA_SENHA
+Remove-Item Env:CONTA_EMAIL
 ```
 
 Passe a senha pela variável `NOVA_SENHA` do terminal em vez de escrevê-la no comando, para não deixá-la no histórico. Em qualquer caminho, a senha nova não deve ser escrita em documentação, script versionado ou commit.

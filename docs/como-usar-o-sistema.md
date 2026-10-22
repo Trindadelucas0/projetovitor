@@ -8,7 +8,7 @@ A base local começa com **zero alunos** e duas contas separadas. O administrado
 
 ## Acesso interno à instalação na VPS
 
-Na máquina de uso, abra um terminal e mantenha `ssh -N -L 4461:127.0.0.1:4461 root@187.127.3.250` conectado. Depois abra `http://localhost:4461` no navegador. O administrador usa `admin@avagym.com.br` e o personal usa `personal.principal@orny.local`; ambos criam uma senha nova no primeiro acesso. O responsável pela VPS pode consultar as credenciais provisórias diretamente nos arquivos protegidos `/opt/projetovitor-runtime/credentials/admin.txt` e `/opt/projetovitor-runtime/credentials/personal.txt`, sem enviá-las por chat. Fechar o terminal encerra apenas o túnel local; os serviços continuam no PM2.
+Na máquina de uso, abra um terminal e mantenha `ssh -N -L 4461:127.0.0.1:4461 root@187.127.3.250` conectado. Depois abra `http://localhost:4461` no navegador. O administrador e o personal usam os endereços mostrados nos arquivos protegidos da VPS e criam uma senha nova no primeiro acesso. O responsável pela VPS pode consultar as credenciais provisórias diretamente nos arquivos protegidos `/opt/projetovitor-runtime/credentials/admin.txt` e `/opt/projetovitor-runtime/credentials/personal.txt`, sem enviá-las por chat. Fechar o terminal encerra apenas o túnel local; os serviços continuam no PM2.
 
 Esta instalação interna usa cobrança simulada e não tem endereço público. A abertura da página e o login inicial foram verificados, mas o cadastro e pagamento de alunos reais dependem de configuração comercial, legal e validação própria antes da liberação.
 
