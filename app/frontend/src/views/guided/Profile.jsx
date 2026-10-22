@@ -1,4 +1,3 @@
-import { useNavigationAccess } from '../../components/NavigationAccess.jsx'
 import { ExportRequest } from '../v3/V42.jsx'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -6,7 +5,6 @@ import Icon from '../../components/Icon.jsx'
 import { useStore } from '../../store/useStore.js'
 import { C, P } from '../../lib/care.js'
 import { isNonTrainee } from './TabBar.jsx'
-import { G, GOAL_PT, LEVEL_PT, LOC_PT } from '../../lib/guided.js'
 import ThemePicker from '../../components/ThemePicker.jsx'
 import ContextSwitch from '../v3/ContextSwitch.jsx'
 import { MyCoachesCard } from '../../components/MyCoaches.jsx'
@@ -20,11 +18,8 @@ import { openDeviceSetup } from '../../components/DeviceSetupFlow.jsx'
 export default function Profile() {
   const nav = useNavigate(), [sp] = useSearchParams()
   const user = useStore(s => s.user), signOut = useStore(s => s.signOut)
-  const can = useNavigationAccess(), proAcc = isNonTrainee(user)
+  const proAcc = isNonTrainee(user)
   const section = sp.get('liberacao') ? 'privacidade' : sp.get('secao') || 'conta'
-  const [st, setSt] = useState(null)
-  useEffect(() => { if (!proAcc && section === 'preferencias' && can('perguntas')) G.state().then(setSt).catch(() => {}) }, [proAcc, section])
-  const p = st?.profile
   const Li = ({ icon, t, s, to, onClick, testid }) => <button className="g-li" onClick={onClick || (() => nav(to))} data-testid={testid}><span className="g-ico"><Icon name={icon} /></span><span><b>{t}</b>{s && <><br /><span className="g-mut g-xs">{s}</span></>}</span><span className="g-chev"><Icon name="play" /></span></button>
   const titles = { preferencias: 'Preferências', privacidade: 'Privacidade e segurança', ajuda: 'Ajuda e suporte', dados: 'Conta', indicacoes: 'Indicações' }
   return <div className="ag" data-testid="profile">
@@ -50,9 +45,10 @@ export default function Profile() {
     </>}
     {section === 'indicacoes' && user && <ReferralPanel />}
     {section === 'dados' && <><p className="g-mut">{user?.name} · {user?.email}</p>{user && !proAcc && user.status === 'ativo' && <><MyCodePanel /><MyInvites /></>}</>}
+    {/* Plano único: o aluno treina a ficha do personal, então o questionário e a lista de equipamentos
+        (que só filtravam recomendações de programa) saíram daqui. */}
     {section === 'preferencias' && <>
       {user && <ThemePicker />}
-      {!proAcc && can('perguntas') && <div className="org-section"><h2>Preferências de treino</h2>{p && <p className="g-mut g-sm">{GOAL_PT[p.objetivo]} · {LEVEL_PT[p.nivel]} · {LOC_PT[p.local]}</p>}<div className="g-card g-list"><Li icon="pencil" t="Refazer perguntas" to="/onboarding" /><Li icon="dumbbell" t="Equipamentos" to="/perfil/equipamentos" testid="profile-equipment" /></div></div>}
       <div className="g-card g-list org-list"><Li icon="gear" t="Idioma e configurações do treino" s="Unidades, descanso, som e lembretes" to="/settings" /></div>
     </>}
     {section === 'privacidade' && user && <><MeusDados /><Seguranca /></>}

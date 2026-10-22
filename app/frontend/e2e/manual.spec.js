@@ -66,7 +66,6 @@ test('aluno', async ({ browser, playwright }) => {
   await page.goto('/#/progresso'); await shot(page, 'a13-progresso')
   await page.goto('/#/comunidade'); await shot(page, 'a14-comunidade')
   await page.goto('/#/perfil'); await shot(page, 'a15-perfil', true)
-  await page.goto('/#/perfil/equipamentos'); await shot(page, 'a16-equipamentos')
   await ctx.close()
 })
 test('profissional', async ({ browser, playwright }) => {

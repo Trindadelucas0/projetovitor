@@ -27,7 +27,7 @@ O produto pretendido é o aplicativo de um personal e seus alunos, sem marketpla
 | Personal e fichas | Vínculo, construtor, agenda e vídeo estão no código; publicação completa pela interface não foi homologada | Personal publica ficha; aluno certo a recebe; ficha anterior permanece no histórico |
 | Execução e progresso | Telas e testes isolados existem; faltam cenários completos de navegador e aparelho | Treino concluído gera histórico e métricas coerentes, inclusive sem base anterior |
 | Comunidade e avaliação postural | Módulos locais existem; avaliação ainda não foi exercitada em aparelho real nem com armazenamento R2 real | Permissões, envio, revisão e devolutiva confirmados em ambiente configurado |
-| Base de uso e produção | Banco local **reconciliado e conferido**: as 72 migrations do repositório constam aplicadas, as colunas de métrica (`sessions.origin`, `sessions.time_corrected_at`) existem e `verificar:plano-unico` fecha em **19 de 19** (ver §11). Publicação desta versão na VPS não foi confirmada | Jornada real verificada depois da publicação, com a mesma conferência repetida na VPS |
+| Base de uso e produção | Banco local **reconciliado e conferido**: as 72 migrations do repositório constam aplicadas, as colunas de métrica (`sessions.origin`, `sessions.time_corrected_at`) existem e `verificar:plano-unico` fecha em **19 de 19** (ver §11). O commit `4dd90a1` está instalado internamente na VPS com banco novo, 72 migrations e dois processos PM2 online; login inicial, API e mídia passaram no teste HTTP. Não há domínio público nem cobrança real configurada | Jornada completa verificada no ambiente alvo antes de receber alunos reais |
 
 **Identidade:** “Projeto Vitor” é o nome deste PRD. Interface, manifesto, documentos legais, domínio e identificadores internos ainda contêm a marca anterior. A troca visual e legal será uma entrega própria; este documento não a apresenta como concluída.
 
@@ -744,7 +744,7 @@ Para o R2: bucket **privado**, sem domínio personalizado e sem URL pública de 
 
 - `npm run migrate` (`api/db/migrate.js`) é idempotente — rodar duas vezes não duplica registro.
 - Toda migration tem `down` correspondente em `api/db/down/`.
-- `071_remover_grupos_desafios_ranking.sql` é **destrutiva**: apaga dados de grupos/desafios/ranking e suas concessões. **Já aplicada no banco local**, após backup validado e com a prévia da rotina de mídias acusando zero arquivos. Em qualquer outro ambiente (VPS incluída), aplicar só com backup confirmado e rodando antes `api/scripts/remover-midias-desafios.mjs`, que lista em modo seguro e só remove arquivos com confirmação explícita.
+- `071_remover_grupos_desafios_ranking.sql` é **destrutiva**: apaga dados de grupos/desafios/ranking e suas concessões. **Já aplicada no banco local**, após backup validado e com a prévia da rotina de mídias acusando zero arquivos. Também foi aplicada na VPS sobre um banco recém-criado, sem dados anteriores. Em qualquer base já utilizada, aplicar só com backup confirmado e rodando antes `api/scripts/remover-midias-desafios.mjs`, que lista em modo seguro e só remove arquivos com confirmação explícita.
 - Rollback do módulo postural: `072_down.sql` devolve `threads` e `legal_acceptances` aos CHECK anteriores e remove as sete tabelas. `pg_dump` validado antes, como em qualquer migration.
 - `068_down.sql` religa Individual a R$ 12,90 e os planos de personal; `069_down.sql` remove `personal_user_id`. Campanhas reescritas pela 068 **não** voltam ao plano antigo automaticamente — conferir cupons depois de uma volta.
 
@@ -783,7 +783,7 @@ Os itens abaixo são evidências históricas registradas nesta cópia, não nova
 - Cenários de navegador do cadastro em 4 etapas, do player de vídeo e da dúvida no exercício.
 - Publicação de ficha pelo personal ponta a ponta pela interface.
 - Primeira cobrança real de R$ 39,90 ponta a ponta na InfinitePay (prova operacional externa, não coberta por simulação).
-- Publicação da 2.0.0/2.0.1 na VPS pendente: a conferência abaixo vale para o banco local, **não** para a VPS, que precisa da mesma verificação com backup próprio.
+- Instalação interna da 2.0.1 na VPS concluída no commit `4dd90a1`, em banco novo e isolado; a conferência detalhada abaixo ainda vale para o banco local e precisa ser repetida na VPS antes de uso real. Publicação pública e cobrança real seguem pendentes.
 
 **Banco local — conferência e ajuste de 21/10/2026**
 
@@ -815,8 +815,8 @@ Conferência somente leitura no banco `avagym` (`localhost`), mais `npm run veri
 
 | Risco | Impacto | Mitigação existente |
 |---|---|---|
-| Histórico de migrations incompleto em outro ambiente | Painel e métricas sem esquema | API responde 503 com aviso em vez de métrica incompleta; banco local já reconciliado e conferido, VPS ainda não |
-| Migration 071 destrutiva | Perda irreversível de dados de grupos/desafios | Exige backup confirmado; script de mídia roda em modo seguro antes. Já aplicada no banco local; pendente na VPS |
+| Histórico de migrations incompleto em outro ambiente | Painel e métricas sem esquema | API responde 503 com aviso em vez de métrica incompleta; banco local foi conferido em detalhe e o banco novo da VPS recebeu as 72 migrations, mas ainda precisa da verificação funcional completa |
+| Migration 071 destrutiva | Perda irreversível de dados de grupos/desafios | Exige backup confirmado em base com dados; foi aplicada no banco local com backup e na VPS sobre banco novo, sem dados anteriores |
 | Dependência de um único personal principal | Ambiente sem admin não vincula alunos; sem papel `admin` o principal perde a isenção de limite | Cadastro continua funcionando; `verificar:plano-unico` acusa a falta — foi assim que as duas falhas do banco local apareceram e foram corrigidas em 21/10/2026 |
 | Cobrança real nunca exercitada ponta a ponta | Primeira assinatura pode falhar em produção | Provedor `simulado` nos testes, reconciliação e diagnóstico no job; prova operacional pendente |
 | Mídia de saúde em nuvem | Exposição de dado sensível | Bucket privado, rota autorizada com reconferência, registro de acesso, retenção automática, 25 MB por vídeo |

@@ -39,7 +39,6 @@ import Train from './views/guided/Train.jsx'
 import Done from './views/guided/Done.jsx'
 import Progress from './views/guided/Progress.jsx'
 import Profile from './views/guided/Profile.jsx'
-import MyEquipment from './views/guided/MyEquipment.jsx'
 import AdminPrograms from './views/guided/AdminPrograms.jsx'
 // AVAGYM
 import Treinos from './views/app/Treinos.jsx'
@@ -179,7 +178,6 @@ function Shell() {
               <Route path="/avaliacao/:id" element={<Gate title="Avaliação postural"><PosturalWizard /></Gate>} />
               <Route path="/avaliacao/:id/devolutiva" element={<Gate title="Avaliação postural"><Devolutiva /></Gate>} />
               <Route path="/perfil" element={<Profile />} /><Route path="/perfil/social" element={<SocialProfile />} /><Route path="/u/:id" element={<SocialPublic />} />
-              <Route path="/perfil/equipamentos" element={<ScopeGate title="Equipamentos"><MyEquipment /></ScopeGate>} />
               <Route path="/planos" element={<Plans />} /><Route path="/assinatura" element={<Subscription />} /><Route path="/pro/assinatura" element={<Navigate to="/assinatura" replace />} />
               <Route path="/convite/:code" element={<AcceptInvite />} />
               <Route path="/admin/programas" element={user ? <AdminPrograms /> : <Navigate to="/hoje" replace />} />

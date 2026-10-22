@@ -84,7 +84,7 @@ export function Recommendations() {
         </div>
         {d.recommendations.slice(1).map(r => <ProgramCard key={r.id} p={r} why={r.why} onClick={() => nav('/programa/' + r.id)} />)}
       </>
-        : <div className="g-card"><p>Não encontramos um programa ideal com essas respostas.</p>{d.no_compatible && <button className="g-link" data-testid="recs-equipment" onClick={() => nav('/perfil/equipamentos')}>Revisar meus equipamentos</button>}<button className="g-link" onClick={() => nav('/onboarding')}>Refazer perguntas</button></div>}
+        : <div className="g-card"><p>Não encontramos um programa ideal com essas respostas.</p><button className="g-link" onClick={() => nav('/onboarding')}>Refazer perguntas</button></div>}
     </div>
     <div className="g-row" style={{ justifyContent: 'space-between', marginTop: 10 }}>
       <button className="g-link" onClick={() => nav('/onboarding')}>Refazer perguntas</button>

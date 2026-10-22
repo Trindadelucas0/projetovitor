@@ -84,22 +84,21 @@ test('aluno do personal: boas-vindas aponta o cadeado', async ({ browser }) => {
   await ctx.close()
 })
 
-test('personal: boas-vindas e convites', async ({ browser }) => {
+test('personal: boas-vindas e alunos', async ({ browser }) => {
   const { ctx, page } = await open(browser, 'pro1.e2e\u0040avadesk.local')
-  await page.goto('/#/pro'); await walk(page, 'personal-boasvindas')
-  await page.goto('/#/pro?tab=cadastrar'); await walk(page, 'personal-cadastrar')   // reorganização: Adicionar aluno → Cadastrar
+  await page.goto('/#/pro'); const n = await walk(page, 'personal-boasvindas'); expect(n).toBe(5)
+  await page.goto('/#/pro?tab=alunos'); await walk(page, 'personal-alunos')
   await ctx.close()
 })
 
 test('admin: boas-vindas (abre o menu no celular), usuários, painel do usuário, liberações', async ({ browser }) => {
   const { ctx, page } = await open(browser, 'admin.e2e\u0040avadesk.local', PASS, { vp: { width: 390, height: 844 } })
-  await page.goto('/#/admin/painel'); const n = await walk(page, 'admin-boasvindas'); expect(n).toBe(6)
+  await page.goto('/#/admin/painel'); const n = await walk(page, 'admin-boasvindas'); expect(n).toBe(5)
   await page.goto('/#/admin/painel?tab=usuarios'); await walk(page, 'admin-usuarios')
   await page.getByTestId('dt-row').first().click(); await expect(page.getByTestId('user-panel')).toBeVisible()
   await walk(page, 'admin-usuario')
   await page.getByTestId('upn-close').click()
   await page.goto('/#/admin/painel?tab=liberacoes'); await walk(page, 'admin-liberacoes')
-  await page.goto('/#/admin/painel?tab=verificacoes'); await walk(page, 'admin-verificacoes')
   await page.goto('/#/admin/painel?tab=lgpd'); await walk(page, 'admin-lgpd')
   await ctx.close()
 })
