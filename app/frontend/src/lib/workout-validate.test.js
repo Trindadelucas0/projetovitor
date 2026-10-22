@@ -19,6 +19,7 @@ const D = (exercises, extra = {}) => ({ name: 'Treino A', description: '', weekd
 // Cada entrada quebra uma regra isolada (ou nenhuma, no caso válido).
 const CORPUS = {
   'ficha válida': [D([E(), E({ exercise_id: 'leg_press_45', name: 'Leg press 45°', reps: '10' })])],
+  'orientação para a próxima vez': [D([E()], { next_time_guidance: '  Repita a carga.  ' })],
   'sem dias': [],
   'dia vazio': [D([])],
   'séries 0': [D([E({ sets: 0 })])],

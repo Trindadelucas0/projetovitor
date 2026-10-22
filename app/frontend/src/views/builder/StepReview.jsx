@@ -59,6 +59,7 @@ export default function StepReview({ st, students, problemas, onIr, onEditarDia 
                 <button type="button" className="g-link" onClick={() => onEditarDia(i)}>Editar</button>
               </div>
               {d.description && <p className="g-mut g-xs wb-previa-desc">{d.description}</p>}
+              {d.next_time_guidance && <p className="g-mut g-xs wb-previa-desc"><b>Para a próxima vez:</b> {d.next_time_guidance}</p>}
               {d.exercises.length
                 ? <ol className="wb-previa-exs">
                     {d.exercises.map((e, j) => (

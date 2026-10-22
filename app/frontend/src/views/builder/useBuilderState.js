@@ -25,7 +25,7 @@ export function initialState({ planId, templateId, templateScope, student }) {
 
 // Dias vindos do servidor (ficha ou modelo) para a forma da tela.
 export const daysFromSaved = p => (p.days?.length ? p.days : [{ ...blankDay(0), exercises: p.exercises || [] }]).map(d => ({
-  ...d, description: d.description || '', weekday: d.weekday == null ? null : +d.weekday,
+  ...d, description: d.description || '', next_time_guidance: d.next_time_guidance || '', weekday: d.weekday == null ? null : +d.weekday,
   exercises: (d.exercises || []).map(fromSaved),
 }))
 

@@ -16,6 +16,7 @@ export const G = {
   abandon: reason => api('/api/guided/abandon', { method: 'POST', body: JSON.stringify({ reason }) }),
   today: wid => api('/api/guided/today' + (wid ? '?workout=' + wid : '')),
   saveSession: s => api('/api/guided/sessions', { method: 'POST', body: JSON.stringify(s) }),
+  sessionMuscles: clientId => api('/api/guided/sessions/muscles?client_id=' + encodeURIComponent(clientId)),
   progress: () => api('/api/guided/progress'),
   stats: dias => api('/api/guided/stats?dias=' + dias),   // lote 7
   home: () => api('/api/guided/home'),                     // lote 7: widgets do Inicio

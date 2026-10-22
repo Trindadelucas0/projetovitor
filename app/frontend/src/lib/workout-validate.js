@@ -63,6 +63,7 @@ export function normDays(days) {
     name: txt(d.name, 60) || `Treino ${String.fromCharCode(65 + i)}`,
     weekday: Number.isInteger(+d.weekday) && d.weekday !== null && d.weekday !== '' ? Math.max(0, Math.min(6, +d.weekday)) : null,
     description: d.description ? txt(d.description, 1500) : null,
+    next_time_guidance: d.next_time_guidance ? txt(d.next_time_guidance, 1500) : null,
     exercises: (Array.isArray(d.exercises) ? d.exercises : []).slice(0, MAX_EX_PER_DAY).map(normExercise)
   }))
 }

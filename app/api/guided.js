@@ -28,6 +28,14 @@ const LOC_PT = { gym: 'academia', home: 'em casa', home_noequip: 'sem equipament
 const RESTR_PT = { knee: 'joelho', lumbar: 'lombar', shoulder: 'ombro', other: 'outra' }
 const RESTR_NA = { knee: 'no joelho', lumbar: 'na lombar', shoulder: 'no ombro' }
 const RESTR_TAG = { knee: 'joelho', lumbar: 'lombar', shoulder: 'ombro' }
+async function sessionMuscleGroups(sessionId, u) {
+  const result = await q(`select eg.group_id, round(sum(case when eg.role='primary' then 1 else 0.4 end)::numeric, 1)::float sets
+    from session_sets ss join sessions s on s.id=ss.session_id
+    join exercise_groups eg on eg.exercise_id=ss.exercise_id
+    where s.id=$1 and s.user_id=$2 and s.tenant_id=$3 and s.status='done' and ss.removed_at is null
+    group by eg.group_id order by sets desc, eg.group_id`, [sessionId, u.id, u.tenant_id])
+  return result.rows
+}
 const RELATED = { weight_loss: ['conditioning'], conditioning: ['weight_loss'], home: [], hypertrophy: ['strength'], strength: ['hypertrophy'], mobility: [] }
 
 // lista do aluno é substituída pela nova (a lista anterior fica no histórico de auditoria)
@@ -302,7 +310,7 @@ export function guidedRoutes({ json, readBody }) {
       const sets = (Array.isArray(b.sets) ? b.sets : []).slice(0, 300)
       const now = new Date()
       let cur = (await q('select id,tenant_id,status,state,started_at,server_started_at,integrity from sessions where user_id=$1 and client_id=$2', [u.id, cid])).rows[0]
-      if (cur && cur.status === 'done') return json(res, 200, { id: cur.id, duplicate: true, state: cur.state })
+      if (cur && cur.status === 'done') return json(res, 200, { id: cur.id, duplicate: true, state: cur.state, groups: await sessionMuscleGroups(cur.id, u) })
       if (cur && ['descartada', 'interrompida'].includes(cur.state)) return json(res, 200, { id: cur.id, duplicate: true, state: cur.state })
       const integrity = { ...(cur?.integrity || {}) }
       let started = cur ? new Date(cur.started_at) : new Date(b.started_at || now)
@@ -380,8 +388,16 @@ export function guidedRoutes({ json, readBody }) {
         await recordCorrection(cur, u.id, timing?.total_sec ?? Math.round((finished - started) / 1000), correction)
         await q('update sessions set time_corrected_at=now() where id=$1', [sid])
       }
-      json(res, 200, { id: sid, volume, timing, state: newState, counts_in_metrics: !correction && !integrity.clock_invalid })
+      json(res, 200, { id: sid, volume, timing, state: newState, counts_in_metrics: !correction && !integrity.clock_invalid, groups: finished ? await sessionMuscleGroups(sid, u) : [] })
       if (finished && !correction) checkGoals(u.id)   // V5: aviso "meta atingida" nos desafios (assíncrono)
+    },
+    'GET /api/guided/sessions/muscles': async (req, res) => {
+      const u = await requireTrainee(req, res, json); if (!u) return
+      const cid = new URL(req.url, 'http://x').searchParams.get('client_id')
+      if (!cid || cid.length > 64) return json(res, 400, { error: 'client_id inválido' })
+      const s = (await q('select id,status from sessions where user_id=$1 and tenant_id=$2 and client_id=$3', [u.id, u.tenant_id, cid])).rows[0]
+      if (!s) return json(res, 404, { error: 'Treino não encontrado' })
+      json(res, 200, { id: s.id, status: s.status, groups: s.status === 'done' ? await sessionMuscleGroups(s.id, u) : [] })
     },
     'GET /api/guided/progress': async (req, res) => {
       const u = await requireTrainee(req, res, json); if (!u) return

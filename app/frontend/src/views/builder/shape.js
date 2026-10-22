@@ -9,7 +9,7 @@ export const LEVEL_PT = { beginner: 'Iniciante', intermediate: 'Intermediário',
 export const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 export const WD_SHORT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
 
-export const blankDay = i => ({ name: 'Treino ' + String.fromCharCode(65 + i), description: '', weekday: null, exercises: [] })
+export const blankDay = i => ({ name: 'Treino ' + String.fromCharCode(65 + i), description: '', next_time_guidance: '', weekday: null, exercises: [] })
 
 export const newEx = x => ({
   exercise_id: x.id, name: x.name, media: x.media, sets: 3, reps: '10-12', load_kg: '', duration_sec: '',

@@ -6,6 +6,17 @@ import { applyWeekdaySchedule, normDays, shapeProblems, videoKind } from '../wor
 
 const ex = (over = {}) => ({ exercise_id: 'supino', name: 'Supino', sets: 3, reps: '10-12', rest_sec: 60, ...over })
 
+test('orientação da próxima vez fica no treino certo e é limitada no servidor', () => {
+  const days = normDays([
+    { name: 'Treino A', next_time_guidance: '  Repita a carga.  ', exercises: [ex()] },
+    { name: 'Treino B', next_time_guidance: 'A'.repeat(1600), exercises: [ex()] },
+    { name: 'Treino C', exercises: [ex()] },
+  ])
+  assert.equal(days[0].next_time_guidance, 'Repita a carga.')
+  assert.equal(days[1].next_time_guidance.length, 1500)
+  assert.equal(days[2].next_time_guidance, null)
+})
+
 test('dia da semana: aceita 0 a 6 e trata vazio como Livre', () => {
   const d = normDays([
     { name: 'A', weekday: 1, exercises: [ex()] },

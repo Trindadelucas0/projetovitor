@@ -99,6 +99,12 @@ export default function StepDays({ st, dx, day, groups, clash, errosPorEx, onAvi
               onChange={e => dx({ type: 'dayField', k: 'description', v: e.target.value })}
               placeholder="ex.: foco em membros inferiores; 5 min de bicicleta antes" />
           </details>
+          <label className="wb-campo">
+            <span className="g-mut g-xs">Para a próxima vez (opcional)</span>
+            <textarea className="g-in" rows={3} maxLength={1500} value={day.next_time_guidance || ''} data-testid="wb-next-time-guidance"
+              onChange={e => dx({ type: 'dayField', k: 'next_time_guidance', v: e.target.value })}
+              placeholder="Orientação que o aluno verá ao concluir este treino" />
+          </label>
         </div>
 
         {clash && <p className="wb-erro wb-alerta" role="alert" data-testid="wb-weekday-clash">{clash}</p>}

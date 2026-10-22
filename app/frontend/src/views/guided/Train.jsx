@@ -67,6 +67,7 @@ export default function Train() {
       const n = newSession({ active: { id: null, title: plan.title + ' · ' + plan.owner_name }, workout: { id: null, name: plan.title + (dd?.name && plan.days.length > 1 ? ' · ' + dd.name : ''), exercises: exs.map(e => ({ ...e, suggestion: { weight: e.weight, reps: e.reps } })) } })
       n.exercises = n.exercises.map((e, i) => { const o = exs[i]; return { ...e, timed: o.timed, rest_sec: o.rest_sec ?? 60, group: o.group ?? null, per_set: o.per_set || [], tempo: o.tempo || '', rpe: o.rpe ?? null, rir: o.rir ?? null, side: o.side || 'bilateral', technique: o.technique || 'normal', notes: o.notes || '', reps_label: o.reps || '', load_kg: o.load_kg ?? null, video_url: o.video_url || null } })
       n.plan_desc = plan.description || plan.notes || ''; n.day_desc = dd?.description || ''
+      n.next_time_guidance = dd?.next_time_guidance || ''
       n.plan_id = plan.id; setDraft(n) }).catch(e => setErr(e.message || 'Plano indisponível')); return }
     G.today(sp.get('w')).then(t => {
       if (!t.active) return nav('/recomendados', { replace: true })
