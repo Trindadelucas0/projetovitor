@@ -70,7 +70,12 @@ export async function putStream(req, { key, want, max, expectedSha = null, expec
     return { error: 'O arquivo chegou diferente do que saiu do aparelho. Tente de novo.', code: 'SHA_MISMATCH', status: 409 }
   if (!validKey(key)) return { error: 'Chave de arquivo inválida.', code: 'INVALID_INPUT', status: 400 }
 
-  await storage().put('private', key, body, mimeOf(key))
+  try {
+    await storage().put('private', key, body, mimeOf(key))
+  } catch (e) {
+    console.error('[postural] armazenamento privado indisponível:', e.message)
+    return { error: 'Não foi possível guardar o arquivo no servidor. Confira o espaço e as permissões de armazenamento e tente novamente.', code: 'STORAGE_UNAVAILABLE', status: 503 }
+  }
   return { key, bytes: size, sha256: sha, mime: mimeOf(key) }
 }
 

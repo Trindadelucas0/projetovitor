@@ -117,10 +117,8 @@ export default function Wizard() {
       para acompanhar sua postura e seus movimentos.
     </p>
     <ul className="ap-bullets g-sm">
-      <li><Icon name="checkCircle" /> Fotos e vídeos guiados, um por vez</li>
-      <li><Icon name="checkCircle" /> Seu progresso fica salvo: pode parar e voltar</li>
-      <li><Icon name="checkCircle" /> Instruções passo a passo em cada etapa</li>
-      <li><Icon name="checkCircle" /> Arquivos privados, só você e seu profissional</li>
+      <li><Icon name="checkCircle" /> Uma foto ou vídeo por etapa, com orientação</li>
+      <li><Icon name="checkCircle" /> Seu progresso fica salvo e suas imagens são privadas</li>
     </ul>
     {a.message && <div className="g-note g-sm"><strong>Recado do seu profissional:</strong><p>{a.message}</p></div>}
     <p className="g-mut g-xs">São {steps.length} etapas. Você pode sair e continuar depois sem perder nada.</p>
@@ -130,9 +128,7 @@ export default function Wizard() {
     const itens = Array.isArray(d.version?.preparation) ? d.version.preparation : []
     const todos = itens.length > 0 && itens.every(x => prep[x.key])
     return shell(TITULO.preparo, <>
-      {Array.isArray(d.version?.general_instructions) && d.version.general_instructions.length > 0 &&
-        <ul className="ap-step-list g-sm" data-testid="ap-general">{d.version.general_instructions.map((t, k) => <li key={k}>{t}</li>)}</ul>}
-      {d.version?.clothing_note && <div className="g-note g-sm" data-testid="ap-clothing"><strong>Vestimenta</strong><p>{d.version.clothing_note}</p></div>}
+      <p className="ap-prep-intro">Confira estes pontos antes de começar:</p>
       {itens.length > 0 && <div className="ap-checklist">
         {itens.map(x => (
           <label key={x.key} className="g-chk" data-testid={'prep-' + x.key}>
@@ -141,7 +137,12 @@ export default function Wizard() {
           </label>
         ))}
       </div>}
-      <p className="g-mut g-xs">Marcar a lista ajuda você a lembrar, mas não garante que a foto saiu certa: confira cada imagem antes de usar.</p>
+      {(d.version?.general_instructions?.length > 0 || d.version?.clothing_note) && <details className="ap-step-details">
+        <summary>Ver orientações completas</summary>
+        {d.version?.general_instructions?.length > 0 && <ul className="ap-step-list" data-testid="ap-general">{d.version.general_instructions.map((t, k) => <li key={k}>{t}</li>)}</ul>}
+        {d.version?.clothing_note && <div className="g-note" data-testid="ap-clothing"><strong>Vestimenta</strong><p>{d.version.clothing_note}</p></div>}
+      </details>}
+      <p className="g-mut g-sm">Confira cada imagem antes de usar.</p>
     </>, <Btn onClick={() => vai(1)} disabled={itens.length > 0 && !todos} data-testid="ap-prep-done">
       {itens.length > 0 && !todos ? 'Confirme a lista para seguir' : 'Estou preparado'}
     </Btn>, `Preparação · ${i + 1} de ${telas.length}`)
@@ -157,7 +158,7 @@ export default function Wizard() {
         onChange={e => setForm(f => ({ ...f, weight_kg: e.target.value }))} data-testid="ap-weight" />
     </Field>
     <Field label="Qual seu objetivo principal?">
-      <div className="g-opts">
+      <div className="g-opts ap-choice-grid">
         {OBJETIVOS.map(o => (
           <button key={o} type="button" className={(form?.objectives || []).includes(o) ? 'g-on' : ''}
             onClick={() => setForm(f => ({ ...f, objectives: (f.objectives || []).includes(o) ? f.objectives.filter(x => x !== o) : [...(f.objectives || []), o] }))}>{o}</button>
@@ -165,7 +166,7 @@ export default function Wizard() {
       </div>
     </Field>
     <Field label="Sente dor atualmente?">
-      <div className="g-opts">
+      <div className="g-opts ap-choice-grid ap-choice-two">
         <button type="button" className={form?.pain_now === true ? 'g-on' : ''} onClick={() => setForm(f => ({ ...f, pain_now: true }))} data-testid="ap-pain-yes">Sim</button>
         <button type="button" className={form?.pain_now === false ? 'g-on' : ''} onClick={() => setForm(f => ({ ...f, pain_now: false }))} data-testid="ap-pain-no">Não</button>
       </div>

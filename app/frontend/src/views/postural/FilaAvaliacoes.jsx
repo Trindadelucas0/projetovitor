@@ -7,11 +7,32 @@ import Icon from '../../components/Icon.jsx'
 import RevisaoAvaliacao from './RevisaoAvaliacao.jsx'
 import { Btn, Empty, Err, Load, Field, Tabs, useLoad, useAutoRefresh } from '../app/kit.jsx'
 import { notify, notifyError } from '../../lib/dialog.js'
-import { APV, STATUS_PT } from '../../lib/postural.js'
+import { APV, STATUS_PT, EXAMPLES } from '../../lib/postural.js'
+import ExampleEditor from './ExampleEditor.jsx'
 import { P } from '../../lib/care.js'
 import './postural.css'
 
 const dt = s => s ? new Date(s).toLocaleDateString('pt-BR') : ''
+
+function PersonalExamples() {
+  const [protocols, error] = useLoad(() => APV.protocolos())
+  const [protocolId, setProtocolId] = useState('')
+  const [steps, stepsError] = useLoad(() => protocolId ? EXAMPLES.steps(protocolId) : Promise.resolve({ steps: [] }), [protocolId])
+  const [stepId, setStepId] = useState('')
+  if (error || stepsError) return <Err msg={error || stepsError} />
+  return <div className="g-card ap-solicitar">
+    <p className="g-sm">Adicione exemplos seus para os alunos das próximas avaliações que você solicitar.</p>
+    <Field label="Protocolo"><select className="g-in" value={protocolId} onChange={e => { setProtocolId(e.target.value); setStepId('') }}>
+      <option value="">Selecione…</option>
+      {(protocols?.protocols || []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+    </select></Field>
+    {protocolId && <Field label="Etapa"><select className="g-in" value={stepId} onChange={e => setStepId(e.target.value)}>
+      <option value="">Selecione…</option>
+      {(steps?.steps || []).map(s => <option key={s.id} value={s.id}>{s.position}. {s.title}</option>)}
+    </select></Field>}
+    {stepId && <ExampleEditor stepId={stepId} />}
+  </div>
+}
 
 function Solicitar({ onDone }) {
   const [alunos] = useLoad(() => P.students('ativos', ''))
@@ -122,9 +143,10 @@ export default function FilaAvaliacoes() {
         ficam em área privada: saem só por aqui, e todo acesso é registrado.
       </p>
 
-      <Tabs tabs={[['fila', 'Fila', c.aguardando_analise || 0], ['solicitar', 'Nova solicitação'], ['recorrencias', 'Repetições'], ['duvidas', 'Dúvidas', c.duvidas || 0]]} cur={aba} set={setAba} />
+      <Tabs tabs={[['fila', 'Fila', c.aguardando_analise || 0], ['solicitar', 'Nova solicitação'], ['exemplos', 'Meus exemplos'], ['recorrencias', 'Repetições'], ['duvidas', 'Dúvidas', c.duvidas || 0]]} cur={aba} set={setAba} />
 
       {aba === 'solicitar' && <Solicitar onDone={() => { setAba('fila'); reload() }} />}
+      {aba === 'exemplos' && <PersonalExamples />}
       {aba === 'recorrencias' && <Recorrencias />}
       {aba === 'duvidas' && <p className="g-mut g-sm">
         As dúvidas abrem na conversa do atendimento, junto com o resto. <a className="g-link" href="#/pro?tab=atendimentos">Ir para Dúvidas e atendimentos</a>.

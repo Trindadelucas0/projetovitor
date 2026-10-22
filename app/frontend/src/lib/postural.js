@@ -66,6 +66,23 @@ export const APA = {
   salvarRetencao: retencao_dias => post('/api/adm/avaliacao/retencao', { retencao_dias })
 }
 
+export const EXAMPLES = {
+  list: stepId => api('/api/avaliacao-postural/exemplos/editor?step_id=' + encodeURIComponent(stepId)),
+  steps: protocolId => api('/api/avaliacao-postural/exemplos/protocolo?protocol_id=' + encodeURIComponent(protocolId)),
+  order: ids => post('/api/avaliacao-postural/exemplos/ordem', { ids }),
+  remove: id => post('/api/avaliacao-postural/exemplos/remover', { id }),
+  editorUrl: id => API_BASE + '/api/avaliacao-postural/exemplos/editor/media?id=' + encodeURIComponent(id),
+  studentUrl: (id, assessmentId) => API_BASE + '/api/avaliacao-postural/exemplos/media?id=' + encodeURIComponent(id) + '&assessment_id=' + encodeURIComponent(assessmentId)
+}
+
+export async function uploadExample(stepId, file, scope = 'personal') {
+  const r = await fetch(API_BASE + '/api/avaliacao-postural/exemplos/upload?step_id=' + encodeURIComponent(stepId) + '&scope=' + scope,
+    { method: 'POST', credentials: 'include', headers: { 'Content-Type': file.type || 'application/octet-stream' }, body: file })
+  const d = await r.json().catch(() => ({}))
+  if (!r.ok) throw Object.assign(new Error(d.error || 'Falha no envio. Tente novamente.'), { status: r.status, code: d.code })
+  return d
+}
+
 // envio da mídia demonstrativa do protocolo (corpo bruto, como uploadExMedia em lib/care.js)
 export async function uploadStepMedia(stepId, kind, file) {
   const r = await fetch(API_BASE + '/api/adm/avaliacao/etapas/midia?step_id=' + encodeURIComponent(stepId) + '&kind=' + kind,

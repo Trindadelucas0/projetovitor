@@ -20,6 +20,7 @@ import { tapagoRoutes } from './tapago.js';
 import { posturalRoutes } from './postural.js';
 import { posturalProRoutes } from './postural-pro.js';
 import { posturalAdminRoutes } from './postural-adm.js';
+import { posturalExampleRoutes } from './postural-examples.js';
 import { startPosturalRecurrence } from './postural-job.js';
 import { lgpdRoutes, termsStatus } from './lgpd.js';
 import { legalRoutes } from './legal.js';
@@ -414,6 +415,7 @@ Object.assign(routes, tapagoRoutes({ json, readBody }));  // #TáPago 2.0: edito
 Object.assign(routes, posturalRoutes({ json, readBody }));  // Avaliação Postural: wizard do aluno, capturas privadas e devolutiva
 Object.assign(routes, posturalProRoutes({ json, readBody }));  // Avaliação Postural: fila do profissional, análise por etapa, recaptura e recorrência
 Object.assign(routes, posturalAdminRoutes({ json, readBody }));  // Avaliação Postural: catálogo, versões, termo, indicadores e retenção
+Object.assign(routes, posturalExampleRoutes({ json, readBody }));
 Object.assign(routes, lgpdRoutes({ json, readBody, legacyState: readState, legacyErase: uid => { eraseStatePg(uid).catch(() => {}); try { fs.unlinkSync(stateFile(uid)) } catch {} db.users = db.users.filter(x => x.id !== uid); saveDb() } }));
 Object.assign(routes, legalRoutes({ json, readBody }));  // dados da empresa + aceite dos documentos legais
 Object.assign(routes, exerciseMediaRoutes({ json, readBody }));

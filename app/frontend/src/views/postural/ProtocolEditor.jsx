@@ -11,6 +11,7 @@ import MediaLightbox from '../../components/MediaLightbox.jsx'
 import { Btn, Empty, Err, Load, Field, useLoad } from '../app/kit.jsx'
 import { ask, askText, notify, notifyError } from '../../lib/dialog.js'
 import { APA, KIND_PT, uploadStepMedia } from '../../lib/postural.js'
+import ExampleEditor from './ExampleEditor.jsx'
 import './postural.css'
 
 const CAMERAS = [['', 'Não definida'], ['frontal', 'De frente'], ['posterior', 'De costas'], ['lateral_direita', 'Lado direito'], ['lateral_esquerda', 'Lado esquerdo'], ['livre', 'Livre']]
@@ -108,7 +109,9 @@ function EditorEtapa({ step, editable, onSaved, onRemoved }) {
       ))}
     </div>
 
-    <h4 className="ap-h2">Mídia demonstrativa</h4>
+    <h4 className="ap-h2">Demonstrações para novas avaliações</h4>
+    <ExampleEditor stepId={step.id} scope="protocol" />
+    <h4 className="ap-h2">Mídia antiga da versão</h4>
     {midias.length > 0 && <div className="g-row">
       {midias.map((m, k) => <Btn key={m.kind} variant="secondary" size="sm" onClick={() => setLb(k)}>Ver {m.label.toLowerCase()}</Btn>)}
     </div>}

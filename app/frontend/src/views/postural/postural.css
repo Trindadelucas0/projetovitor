@@ -103,3 +103,31 @@
 .ap-ed-flags { display: grid; gap: 8px; }
 .ap-ed-row { align-items: center; }
 .ap-ed-name { background: none; border: 0; color: inherit; text-align: left; cursor: pointer; padding: 0; flex: 1; }
+
+/* Leitura curta, controles claros e demonstração em foco no assistente postural. */
+.ag.ap-wizard { font-size: 17px; line-height: 1.5; }
+.ag.ap-wizard .g-sm, .ag.ap-wizard .g-xs { font-size: 15px; }
+.ag.ap-wizard .g-eyebrow { font-size: 13px; }
+.ag.ap-wizard .g-field label { font-size: 15px; }
+.ag.ap-wizard .ap-bullets { margin: 14px 0; gap: 12px; }
+.ap-prep-intro { font-weight: 650; margin: 12px 0 !important; }
+.ag.ap-wizard .ap-checklist { gap: 4px; }
+.ag.ap-wizard .ap-checklist .g-chk { align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--ag-line); }
+.ag.ap-wizard .ap-checklist .g-chk input { width: 20px; height: 20px; margin-top: 3px; accent-color: var(--ag-acc); }
+.ag.ap-wizard .ap-choice-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 8px; }
+.ag.ap-wizard .ap-choice-grid button { min-height: 52px; border: 1px solid var(--ag-line); border-radius: 14px; background: var(--ag-card); color: var(--ag-txt); font: inherit; font-size: 15px; font-weight: 650; padding: 8px; }
+.ag.ap-wizard .ap-choice-grid button.g-on { border-color: var(--ag-acc); background: color-mix(in srgb,var(--ag-acc) 16%,var(--ag-card)); }
+.ag.ap-wizard .ap-choice-two { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.ap-step-details { border: 1px solid var(--ag-line); background: var(--ag-card); border-radius: 14px; padding: 12px 14px; }
+.ap-step-details summary { cursor: pointer; font-weight: 700; min-height: 30px; }
+.ap-step-details[open] > :not(summary) { margin-top: 12px; }
+.ap-example-frame { border-radius: 18px; overflow: hidden; background: var(--ag-card-2); }
+.ap-example-frame video { width: 100%; max-height: 42vh; display: block; }
+.ap-example-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 15px; font-weight: 650; }
+.ap-example-nav button { width: 48px; height: 48px; border-radius: 13px; border: 1px solid var(--ag-line); color: var(--ag-txt); background: var(--ag-card); font-size: 24px; }
+.ap-example-nav button:disabled { opacity: .4; }
+.ap-example-editor { display: grid; gap: 10px; margin: 12px 0; }
+.ap-example-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; border: 1px solid var(--ag-line); border-radius: 12px; padding: 8px; }
+.ap-example-row > span { flex: 1; }
+.ap-example-add { display: flex; justify-content: center; align-items: center; min-height: 48px; cursor: pointer; }
+@media (max-width: 400px) { .ag.ap-wizard .ap-choice-grid { grid-template-columns: 1fr; } .ag.ap-wizard .ap-choice-two { grid-template-columns: repeat(2,minmax(0,1fr)); } }

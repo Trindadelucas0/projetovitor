@@ -8,7 +8,7 @@ import Icon from '../../components/Icon.jsx'
 import { Btn, Sheet, Field } from '../app/kit.jsx'
 import MediaLightbox from '../../components/MediaLightbox.jsx'
 import CaptureUploader from '../../components/CaptureUploader.jsx'
-import { AP, KIND_PT } from '../../lib/postural.js'
+import { AP, KIND_PT, EXAMPLES } from '../../lib/postural.js'
 import { notify, notifyError } from '../../lib/dialog.js'
 
 const CAMERA_PT = {
@@ -19,16 +19,21 @@ const CAMERA_PT = {
 
 export default function StepCard({ assessmentId, step, capture, question, onSaved, onAsked, disabled }) {
   const [lightbox, setLightbox] = useState(null)
+  const [exampleIndex, setExampleIndex] = useState(0)
   const [duvida, setDuvida] = useState(false)
   const [dispensa, setDispensa] = useState(false)
   const [texto, setTexto] = useState('')
   const [motivo, setMotivo] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const midias = [
+  const antigas = [
     step.has_reference && { kind: 'foto', url: AP.stepMediaUrl(step.id, 'referencia'), label: 'Foto de referência' },
     step.has_demo && { kind: 'video', url: AP.stepMediaUrl(step.id, 'demo'), label: 'Vídeo demonstrativo' }
   ].filter(Boolean)
+  const midias = step.examples?.length
+    ? step.examples.map((e, i) => ({ kind: e.kind, url: EXAMPLES.studentUrl(e.id, assessmentId), label: `Exemplo ${i + 1}` }))
+    : antigas
+  const atual = midias[Math.min(exampleIndex, midias.length - 1)]
 
   const enviarDuvida = async () => {
     if (texto.trim().length < 2) return
@@ -56,31 +61,40 @@ export default function StepCard({ assessmentId, step, capture, question, onSave
       <h1>{step.title}</h1>
       {step.description ? <p className="g-mut g-sm">{step.description}</p> : null}
 
-      {midias.length > 0 && <div className="ap-step-media">
-        {midias.map((m, i) => m.kind === 'foto'
-          ? <button key={m.label} className="ap-step-ref" onClick={() => setLightbox(i)} aria-label="Ampliar foto de referência" data-testid={'step-ref-' + step.code}>
-            <img src={m.url} alt="Foto de referência da posição" loading="lazy" />
-            <span className="ap-step-zoom"><Icon name="expand" /></span>
-          </button>
-          : <Btn key={m.label} variant="secondary" onClick={() => setLightbox(i)} data-testid={'step-demo-' + step.code}>
-            <Icon name="play" /> Ver demonstração
-          </Btn>)}
+      {atual && <div className="ap-step-media" data-testid="ap-examples">
+        <div className="ap-example-frame">
+          {atual.kind === 'foto'
+            ? <button className="ap-step-ref" onClick={() => setLightbox(exampleIndex)} aria-label="Ampliar demonstração" data-testid={'step-ref-' + step.code}>
+              <img src={atual.url} alt={`Demonstração ${exampleIndex + 1} de ${midias.length}: ${step.title}`} loading="lazy" />
+              <span className="ap-step-zoom"><Icon name="expand" /></span>
+            </button>
+            : <video key={atual.url} src={atual.url} controls playsInline preload="metadata" aria-label={`Demonstração ${exampleIndex + 1} de ${midias.length}`} />}
+        </div>
+        {midias.length > 1 && <div className="ap-example-nav">
+          <button type="button" aria-label="Exemplo anterior" disabled={exampleIndex === 0} onClick={() => setExampleIndex(i => i - 1)}>←</button>
+          <span aria-live="polite">Exemplo {exampleIndex + 1} de {midias.length}</span>
+          <button type="button" aria-label="Próximo exemplo" disabled={exampleIndex === midias.length - 1} onClick={() => setExampleIndex(i => i + 1)}>→</button>
+        </div>}
       </div>}
 
       {step.camera_position && <p className="g-mut g-xs"><Icon name="info" /> {CAMERA_PT[step.camera_position]}</p>}
-      {step.camera_note && <p className="g-mut g-xs">{step.camera_note}</p>}
+      {step.camera_note && <p className="g-mut g-sm">{step.camera_note}</p>}
 
       {Array.isArray(step.instructions) && step.instructions.length > 0 && <>
         <h3 className="ap-step-h">Como fazer</h3>
         <ol className="ap-step-list" data-testid={'step-instructions-' + step.code}>
-          {step.instructions.map((t, i) => <li key={i}>{t}</li>)}
+          {step.instructions.slice(0, 2).map((t, i) => <li key={i}>{t}</li>)}
         </ol>
       </>}
 
-      {Array.isArray(step.cautions) && step.cautions.length > 0 && <div className="g-note ap-step-care" data-testid={'step-cautions-' + step.code}>
-        <strong className="g-sm"><Icon name="shield" /> Cuidados importantes</strong>
-        <ul className="g-sm">{step.cautions.map((t, i) => <li key={i}>{t}</li>)}</ul>
-      </div>}
+      {(step.instructions?.length > 2 || step.cautions?.length > 0) && <details className="ap-step-details">
+        <summary>Ver cuidados e detalhes</summary>
+        {step.instructions?.length > 2 && <ol start={3} className="ap-step-list">{step.instructions.slice(2).map((t, i) => <li key={i}>{t}</li>)}</ol>}
+        {step.cautions?.length > 0 && <div className="ap-step-care" data-testid={'step-cautions-' + step.code}>
+          <strong><Icon name="shield" /> Cuidados importantes</strong>
+          <ul>{step.cautions.map((t, i) => <li key={i}>{t}</li>)}</ul>
+        </div>}
+      </details>}
 
       {capture?.status === 'dispensada'
         ? <div className="g-card ap-step-skipped" data-testid={'step-skipped-' + step.code}>

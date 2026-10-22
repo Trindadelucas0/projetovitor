@@ -8,9 +8,9 @@ A base local começa com **zero alunos** e duas contas separadas. O administrado
 
 ## Acesso à instalação na VPS
 
-Abra `https://academia.avadesk.com.br` no navegador. O administrador e o personal usam as credenciais próprias da VPS e criam uma senha nova no primeiro acesso. As credenciais do banco **local** `avagym`, usadas em `http://127.0.0.1:5551`, não são as senhas desta instalação. O responsável pela VPS pode consultar as credenciais provisórias diretamente nos arquivos protegidos `/opt/projetovitor-runtime/credentials/admin.txt` e `/opt/projetovitor-runtime/credentials/personal.txt`, sem enviá-las por chat.
+Abra `https://academia.avadesk.com.br` no navegador. As três contas solicitadas (administração, personal principal e aluno de teste) foram configuradas na VPS. O responsável pode consultar os arquivos protegidos `/opt/projetovitor-runtime/credentials/admin.txt`, `/opt/projetovitor-runtime/credentials/personal.txt` e `/opt/projetovitor-runtime/credentials/aluno.txt` diretamente na VPS, sem enviar as senhas por chat. Após entrar, aceite os documentos pendentes e troque a senha em **Perfil**.
 
-O domínio responde e aceita a origem HTTPS nas requisições de login, mas um login real pelo domínio ainda precisa ser conferido. Esta instalação usa cobrança simulada: cadastro e pagamento de alunos reais dependem de configuração comercial, legal e validação própria antes da liberação.
+O domínio e os três logins foram verificados. O aluno de teste entra com papel de aluno e já está vinculado ao personal principal, mas as áreas internas continuam bloqueadas até um pagamento confirmado; a conta não recebeu cobrança fictícia. Esta instalação usa cobrança simulada: cadastro e pagamento de alunos reais dependem de configuração comercial, legal e validação própria antes da liberação.
 
 ## Aluno: começar
 
