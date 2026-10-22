@@ -86,6 +86,7 @@ function localDriver() {
     },
   }
 }
+export const localPrivateStorage = localDriver()
 let driver = null
 // V5-AP: o driver R2 saiu do estado de rascunho e vive em ./r2.js (API S3, SigV4 à mão).
 // O padrão continua local — em desenvolvimento e nos testes nada deve depender de rede.

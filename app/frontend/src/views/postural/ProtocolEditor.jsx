@@ -111,7 +111,7 @@ function EditorEtapa({ step, editable, onSaved, onRemoved }) {
 
     <h4 className="ap-h2">Demonstrações para novas avaliações</h4>
     <ExampleEditor stepId={step.id} scope="protocol" />
-    <h4 className="ap-h2">Mídia antiga da versão</h4>
+    <details className="ap-step-details"><summary>Mídia antiga da versão</summary>
     {midias.length > 0 && <div className="g-row">
       {midias.map((m, k) => <Btn key={m.kind} variant="secondary" size="sm" onClick={() => setLb(k)}>Ver {m.label.toLowerCase()}</Btn>)}
     </div>}
@@ -121,7 +121,8 @@ function EditorEtapa({ step, editable, onSaved, onRemoved }) {
       {step.has_reference && <Btn variant="tertiary" onClick={() => tirarMidia('referencia')}>Remover foto</Btn>}
       {step.has_demo && <Btn variant="tertiary" onClick={() => tirarMidia('demo')}>Remover vídeo</Btn>}
     </div>}
-    <p className="g-mut g-xs">Sem mídia, o aluno não vê o botão "ver demonstração" — a etapa funciona só com o texto.</p>
+    <p className="g-mut g-sm">Compatibilidade com avaliações anteriores. Para novos exemplos, use a seção acima.</p>
+    </details>
 
     {editable && <div className="g-row ap-cap-actions">
       <Btn onClick={salvar} loading={busy} disabled={!f} data-testid={'ap-ed-save-' + step.code}>Salvar etapa</Btn>

@@ -94,6 +94,7 @@ export default function CaptureUploader({ assessmentId, step, capture, onSaved, 
       onSaved?.(saved)
     } catch (e) {
       const msg = e.message || 'Falha no envio.'
+      setPct(0)
       setError(msg)
       // item recusado continua na fila, marcado e visível — nunca descartado
       if (file?.blob) await outboxPut({ key: keyOf(assessmentId, step.id), kind: 'postural', client_id: keyOf(assessmentId, step.id), blob: file.blob, mime: file.mime, name: file.name, step_id: step.id, assessment_id: assessmentId, rejected: msg }).catch(() => {})
@@ -145,7 +146,7 @@ export default function CaptureUploader({ assessmentId, step, capture, onSaved, 
 
       {sending && <div className="ap-cap-send" aria-live="polite">
         <div className="g-bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><i style={{ width: pct + '%' }} /></div>
-        <span className="g-mut g-sm" data-testid={'cap-pct-' + step.code}>Enviando {pct}%</span>
+        <span className="g-mut g-sm" data-testid={'cap-pct-' + step.code}>{pct === 100 ? 'Confirmando o arquivo no servidor…' : `Enviando ${pct}%`}</span>
       </div>}
 
       {!sending && <p className="g-mut g-xs" data-testid={'cap-state-' + step.code}>

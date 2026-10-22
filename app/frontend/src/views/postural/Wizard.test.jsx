@@ -58,8 +58,20 @@ describe('etapa do protocolo', () => {
 
   it('oferece demonstração quando há mídia cadastrada', () => {
     const html = render(<StepCard assessmentId="a1" step={step({ has_reference: true, has_demo: true })} capture={null} />)
-    expect(html).toContain('Ver demonstração')
+    expect(html).toContain('Exemplo 1 de 2')
     expect(html).toContain('data-testid="step-ref-frontal"')
+  })
+
+  it('mostra várias demonstrações e guarda instruções adicionais em detalhes', () => {
+    const html = render(<StepCard assessmentId="a1" step={step({
+      examples: [{ id: 'e1', kind: 'foto' }, { id: 'e2', kind: 'video' }],
+      instructions: ['Primeiro.', 'Segundo.', 'Terceiro.'], cautions: ['Não force.']
+    })} capture={null} />)
+    expect(html).toContain('Exemplo 1 de 2')
+    expect(html).toContain('Próximo exemplo')
+    expect(html).toContain('Ver cuidados e detalhes')
+    expect(html).toContain('Terceiro.')
+    expect(html).toContain('Não force.')
   })
 
   it('vídeo anuncia o número de repetições', () => {

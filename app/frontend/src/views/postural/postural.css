@@ -106,6 +106,8 @@
 
 /* Leitura curta, controles claros e demonstração em foco no assistente postural. */
 .ag.ap-wizard { font-size: 17px; line-height: 1.5; }
+.ag.ap-wizard .ap-wizard-footer { position: static; margin-top: 18px; padding-bottom: calc(20px + var(--sab, 0px)); background: none; }
+.ag.ap-wizard .ap-wizard-footer .g-btn:disabled { background: var(--ag-card-2); color: var(--ag-mut); border: 1px solid var(--ag-line); box-shadow: none; opacity: 1; }
 .ag.ap-wizard .g-sm, .ag.ap-wizard .g-xs { font-size: 15px; }
 .ag.ap-wizard .g-eyebrow { font-size: 13px; }
 .ag.ap-wizard .g-field label { font-size: 15px; }

@@ -50,6 +50,10 @@ O administrador pode criar um personal interno e transferir um aluno com motivo 
 
 Quando o personal solicitar uma avaliação postural, o aluno verá **Nova avaliação postural** ao entrar no app. **Iniciar avaliação** abre as etapas; **Agora não** fecha o aviso apenas nesta abertura. A solicitação continua no cartão do **Início** e de **Acompanhamento** e o aviso volta na próxima abertura enquanto a avaliação estiver pendente. Depois do envio, cancelamento ou conclusão, esse aviso de nova solicitação deixa de aparecer. Fotos e vídeos não aparecem no popup.
 
+Na preparação, marque a lista curta e abra **Ver orientações completas** quando precisar de detalhes. Em uma etapa, use as setas em **Exemplo 1 de N** para ver outras demonstrações; **Ver cuidados e detalhes** mostra o restante das instruções. Confira sua foto ou vídeo antes de enviar. Se o armazenamento falhar, o aviso explica o problema e você pode tentar de novo.
+
+Para cadastrar demonstrações gerais, o administrador abre **Avaliação postural → Protocolos e indicadores**, escolhe a versão e a etapa e usa **Adicionar foto ou vídeo** em **Demonstrações para novas avaliações**. Para exemplos próprios, o personal abre **Avaliações posturais → Meus exemplos**, escolhe protocolo e etapa e usa o mesmo botão. As setas de ordem definem o primeiro exemplo. Mudar a lista afeta apenas avaliações solicitadas depois da mudança.
+
 Em **Perfil**, o aluno consulta assinatura, avisos e documentos. Em **Preferências** ficam o tema, o idioma e as configurações do treino (unidades, descanso, som e lembretes). Para solicitar exportação ou exclusão dos seus dados, use as ações de privacidade disponíveis na conta. Fotos e vídeos da avaliação postural não são publicações da Comunidade.
 
 Na primeira vez em cada tela aparece um guia curto, em passos, explicando o que está ali; use **Pular** para fechar. Para vê-lo de novo, abra **Perfil › Ajuda e suporte › Rever orientações**.

@@ -5,7 +5,11 @@
 // A chave NUNCA sai para o cliente. Nada de signedUrl longo do /api/media/private: aquela rota é pública e
 // valida só o HMAC; aqui a URL temporária só nasce depois da autorização e vive poucos segundos.
 import crypto from 'node:crypto'
-import { storage, mimeOf, validKey } from './storage/index.js'
+import { storage, localPrivateStorage, mimeOf, validKey } from './storage/index.js'
+
+const localPrefix = 'postural-local/'
+const newKey = key => process.env.POSTURAL_STORAGE_DRIVER === 'local' ? localPrefix + key : key
+const storeFor = key => key.startsWith(localPrefix) ? localPrivateStorage : storage()
 
 export const LIMITS = { foto: 8 * 1024 * 1024, video: 25 * 1024 * 1024 }
 // teto por avaliação: 15 fotos reencodadas + 3 vídeos cabem com folga, e segura o consumo do R2
@@ -34,9 +38,9 @@ export function sniff(buf) {
 }
 
 export const captureKey = (studentId, assessmentId, ext) =>
-  `u/${studentId}/postural/${assessmentId}/${crypto.randomBytes(18).toString('hex')}.${ext}`
+  newKey(`u/${studentId}/postural/${assessmentId}/${crypto.randomBytes(18).toString('hex')}.${ext}`)
 export const stepMediaKey = (versionId, kind, ext) =>
-  `protocolo/${versionId}/${kind}-${crypto.randomBytes(12).toString('hex')}.${ext}`
+  newKey(`protocolo/${versionId}/${kind}-${crypto.randomBytes(12).toString('hex')}.${ext}`)
 
 const tooBig = kind => kind === 'foto' ? 'Foto acima de 8 MB. Tire outra ou escolha um arquivo menor.' : 'Vídeo acima de 25 MB. Grave um vídeo mais curto.'
 
@@ -71,7 +75,7 @@ export async function putStream(req, { key, want, max, expectedSha = null, expec
   if (!validKey(key)) return { error: 'Chave de arquivo inválida.', code: 'INVALID_INPUT', status: 400 }
 
   try {
-    await storage().put('private', key, body, mimeOf(key))
+    await storeFor(key).put('private', key, body, mimeOf(key))
   } catch (e) {
     console.error('[postural] armazenamento privado indisponível:', e.message)
     return { error: 'Não foi possível guardar o arquivo no servidor. Confira o espaço e as permissões de armazenamento e tente novamente.', code: 'STORAGE_UNAVAILABLE', status: 503 }
@@ -84,7 +88,7 @@ export async function putStream(req, { key, want, max, expectedSha = null, expec
 // garante no caminho pré-assinado é: o objeto existe, tem exatamente os bytes autorizados no init e os
 // primeiros bytes são do tipo declarado. O sha256 do cliente fica registrado como declarado.
 export async function verifyObject(key, want, expectedBytes) {
-  const st = storage()
+  const st = storeFor(key)
   const h = await st.head('private', key).catch(() => null)
   if (!h) return { error: 'O arquivo não chegou ao armazenamento. Envie de novo.', code: 'UPLOAD_MISSING', status: 409 }
   if (expectedBytes != null && h.bytes !== expectedBytes)
@@ -99,13 +103,13 @@ export async function verifyObject(key, want, expectedBytes) {
 
 // URL de escrita direta no R2. Devolve null no driver local: aí o cliente usa a rota de upload da API.
 export function presignUpload(key, mime, bytes) {
-  try { return storage().presignPut('private', key, mime, bytes, TTL()) || null }
+  try { return storeFor(key).presignPut('private', key, mime, bytes, TTL()) || null }
   catch { return null }
 }
 // URL de leitura temporária (vídeo). Null no driver local → serve por proxy.
 export async function presignRead(key) {
   try {
-    const st = storage()
+    const st = storeFor(key)
     if (st.name !== 'r2') return null
     return await st.signedUrl('private', key, TTL())
   } catch { return null }
@@ -121,7 +125,7 @@ const SAFE_HEADERS = {
 // Serve os bytes por proxy autenticado, com suporte a Range (o player de vídeo depende disso).
 // Quem chamou já conferiu a autorização; aqui só sai byte.
 export async function serveMedia(req, res, key) {
-  const st = storage(), mime = mimeOf(key)
+  const st = storeFor(key), mime = mimeOf(key)
   const range = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range || '').trim())
   if (range) {
     const info = await st.head('private', key).catch(() => null)
@@ -145,4 +149,4 @@ export async function serveMedia(req, res, key) {
 }
 
 // Apaga o objeto sem derrubar o fluxo: a linha do banco é a fonte da verdade.
-export const dropMedia = key => key ? storage().delete('private', key).catch(() => {}) : Promise.resolve()
+export const dropMedia = key => key ? storeFor(key).delete('private', key).catch(() => {}) : Promise.resolve()
