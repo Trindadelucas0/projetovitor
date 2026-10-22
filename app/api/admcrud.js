@@ -28,16 +28,39 @@ export function adminCrudRoutes({ json, readBody }) {
       const b = await readBody(req), errors = {}
       if (!(await sameTenant(b.id, u.tenant_id))) return json(res, 404, { error: 'Usuário não encontrado' })
       const name = txt(b.name, 120), email = String(b.email || '').trim().toLowerCase()
+      const perfil = b.perfil === 'feminino' || b.perfil === 'masculino' ? b.perfil
+        : b.sex === 'feminino' || b.sex === 'masculino' ? b.sex : undefined
       if (name.length < 2) errors.name = 'Informe o nome'
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) errors.email = 'E-mail inválido'
+      if (b.perfil !== undefined && b.perfil !== '' && !perfil) errors.perfil = 'Escolha Homem ou Mulher'
       if (Object.keys(errors).length) return json(res, 400, { error: Object.values(errors)[0], errors })
       if ((await q('select 1 from users where lower(email)=$1 and id<>$2', [email, b.id])).rowCount) return json(res, 409, { error: 'Este e-mail já é usado por outra conta', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já é usado por outra conta' } })
-      const before = (await q('select name,email from users where id=$1', [b.id])).rows[0]
+      const before = (await q(`select u.name, u.email, up.sex from users u left join user_profiles up on up.user_id=u.id where u.id=$1`, [b.id])).rows[0]
       try { await q('update users set name=$2, email=$3 where id=$1', [b.id, name, email]) }
       catch (e) { if (e.code === '23505') return json(res, 409, { error: 'Este e-mail já é usado por outra conta', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já é usado por outra conta' } }); throw e }
       await q('update professional_profiles set display_name=coalesce(display_name,$2) where user_id=$1', [b.id, name])
-      await audit(u.tenant_id, u.id, 'usuario.editado', 'user', b.id, { before, after: { name, email } })
-      json(res, 200, { ok: true })
+      // Cor do app: grava sex sem exigir personal feminina nem transferir vínculo.
+      if (perfil) {
+        await q(`insert into user_profiles(user_id, tenant_id, sex) values($1,$2,$3)
+          on conflict (user_id) do update set sex=excluded.sex`, [b.id, u.tenant_id, perfil])
+      }
+      await audit(u.tenant_id, u.id, 'usuario.editado', 'user', b.id, { before, after: { name, email, sex: perfil || before?.sex || null } })
+      json(res, 200, { ok: true, perfil: perfil || before?.sex || null })
+    },
+    // Só cor Homem/Mulher — não mexe em nome/e-mail (evita falha silenciosa no select do painel).
+    'POST /api/adm/users/perfil': async (req, res) => {
+      const u = await admin(req, res, json); if (!u) return
+      const b = await readBody(req)
+      if (!(await sameTenant(b.id, u.tenant_id))) return json(res, 404, { error: 'Usuário não encontrado' })
+      const perfil = b.perfil === 'feminino' || b.perfil === 'masculino' ? b.perfil
+        : b.sex === 'feminino' || b.sex === 'masculino' ? b.sex : null
+      if (!perfil) return json(res, 400, { error: 'Escolha Homem ou Mulher', errors: { perfil: 'Escolha Homem ou Mulher' } })
+      const before = (await q('select sex from user_profiles where user_id=$1', [b.id])).rows[0]?.sex || null
+      const tid = (await q('select tenant_id from users where id=$1', [b.id])).rows[0]?.tenant_id || u.tenant_id
+      await q(`insert into user_profiles(user_id, tenant_id, sex) values($1,$2,$3)
+        on conflict (user_id) do update set sex=excluded.sex`, [b.id, tid, perfil])
+      await audit(u.tenant_id, u.id, 'usuario.perfil', 'user', b.id, { before, after: perfil })
+      json(res, 200, { ok: true, perfil, palette: perfil === 'feminino' ? 'feminino' : 'masculino' })
     },
     'POST /api/adm/users/delete': async (req, res) => {
       const u = await admin(req, res, json); if (!u) return

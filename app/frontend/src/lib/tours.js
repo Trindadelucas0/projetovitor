@@ -43,14 +43,14 @@ export const TOURS = {
     perfil: common.perfil
   },
   admin: {
-    welcome: [S(null, 'Central administrativa', 'Tudo o que precisa de decisão fica aqui, em grupos: Visão geral, Meus alunos, Treinos, Avaliação postural, Comunidade, Assinaturas e Sistema.'),
+    welcome: [S(null, 'Painel do personal', 'O dia a dia fica em cima: alunos, dúvidas, exercícios e fila. Em Administração ficam assinaturas, protocolos, campanha e privacidade.'),
       M('adm-dashboard', 'Visão geral', 'Indicadores, crescimento e pendências da gestão.'),
       M('adm-usuarios', 'Alunos', 'Todas as contas. Nas abas: Contas, Pendências e Suspensões de acesso.'),
-      M('adm-assinaturas', 'Assinaturas', 'A assinatura de cada conta, com troca de plano e concessões temporárias.'),
+      M('adm-cobranca', 'Assinaturas dos alunos', 'Preços de Básico e Completo, cupons e quem está pagando.'),
       M('adm-lgpd', 'Privacidade e termos', 'Pedidos de cópia e exclusão de dados e versões dos termos.')],
     usuarios: [S('dt-search', 'Buscar', 'Digite nome, e-mail ou código para achar a pessoa.'),
       S('usr-status', 'Filtrar', 'Mostre só contas pendentes, ativas ou bloqueadas.'),
-      S('nu-open', 'Novo usuário', 'Crie uma conta de aluno ou personal. O acesso seguirá o plano escolhido.'),
+      S('nu-open', 'Novo aluno', 'Crie a conta do aluno. Ele recebe um link para definir a senha.'),
       S('dt-row', 'Abrir um usuário', 'Toque na linha para abrir o painel da pessoa.')],
     usuario: [S('upn-assinatura', 'Trocar assinatura do personal', 'Escolha a assinatura no seletor para mudar quantos alunos o personal pode ter.'),
       S('upn-link-senha', 'Link de nova senha', 'Gera um link de uso único (24 h). Copie e envie para a pessoa.'),

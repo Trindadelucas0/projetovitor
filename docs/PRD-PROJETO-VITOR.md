@@ -2,7 +2,7 @@
 
 **Produto:** Projeto Vitor — aplicativo de treino de um personal trainer e seus alunos
 **Versão do documento:** 1.0 · 21/10/2026
-**Base de referência:** frontend 2.0.1 · API 2.0.1 (arquivos locais; publicação não verificada nesta revisão)
+**Base de referência:** frontend 2.0.2 · API 2.0.1 (arquivos locais; publicação não verificada nesta revisão)
 
 **Natureza deste documento:** especificação do produto desejado, com App Flow e estado de entrega. Requisitos descrevem como o Projeto Vitor deve funcionar; presença de tela, rota ou módulo não significa jornada homologada. O comportamento comprovado no código e as limitações locais ficam na [documentação oficial](../app/DOCUMENTACAO-SISTEMA.md).
 
@@ -360,7 +360,7 @@ Nova área em que o personal solicita, o aluno registra fotos e vídeos guiados 
 
 ### 6.7 Comunidade e #TáPago
 
-- RF-7.1 A área **Comunidade** contém **somente** o feed de publicações, com alternância **Todos** / **Seguindo**, filtro por **Assunto** e **Nova publicação** quando autorizado. O filtro "Minhas publicações" foi retirado.
+- RF-7.1 A área **Comunidade** contém **somente** o feed de publicações, com alternância **Todos** / **Seguindo** e **Nova publicação** quando autorizado. Os filtros "Assunto" e "Minhas publicações" foram retirados.
 - RF-7.2 Comentários encadeados, curtidas em post e comentário, seguir perfis, denúncia de conteúdo e moderação.
 - RF-7.3 No painel: **Publicações e moderação** (publicações e comentários, conteúdo oficial, moderação) e **Campanha #TáPago**.
 - RF-7.4 **#TáPago 2.0**: editor social de card, campanha de 30 dias, recompensa e publicação **opcional e confirmada** do card na Comunidade, vinculada a uma sessão concluída e limitada a **uma por treino**.
@@ -379,24 +379,20 @@ Nova área em que o personal solicita, o aluno registra fotos e vídeos guiados 
 
 ### 6.9 Painel do personal / administração
 
-Cinco grupos, mais a Visão geral:
+Dois grupos no menu de `/admin/painel`:
 
 | Grupo | Telas |
 |---|---|
-| Visão geral | Indicadores e pendências do período (7/30/90 dias) |
-| Meus alunos | Alunos (Contas, Pendências, Suspensões de acesso), Convites (vínculos e convites), Dúvidas e atendimentos |
-| Treinos | Modelos de ficha, Exercícios e vídeos, Programas |
-| Avaliação postural | Fila e análise, Protocolos e indicadores |
-| Comunidade | Publicações e moderação, Campanha #TáPago |
-| Assinaturas | Cobrança/preços/cupons, Assinaturas, Monetização |
-| Sistema | Meu perfil de personal, Dados da empresa, Privacidade e termos, Logs e auditoria, Configurações |
+| Dia a dia | Visão geral; Alunos (Contas, Pendências, Suspensões); Convites; Dúvidas e atendimentos; Exercícios e vídeos; Fila e análise; Publicações e moderação |
+| Administração | Assinaturas dos alunos (preços Básico/Completo, cupons, quem paga); Protocolos e indicadores; Campanha #TáPago; Meu perfil de personal; Dados da empresa; Privacidade e termos; Logs e auditoria; Configurações |
 
 - RF-9.1 **Meu perfil de personal** edita nome de exibição, foto, apresentação, especialidades, modalidades e registro profissional (`GET /api/pro/dashboard`, `POST /api/pro/profile`).
-- RF-9.2 **Novo aluno** cria apenas conta de aluno e enfileira link por e-mail para definir senha (não gera senha provisória visível).
-- RF-9.3 No celular, as tabelas mostram três campos por registro, com **Ver mais campos**; ordenação em seletor, busca, paginação e CSV preservados; detalhes também abrem por teclado.
-- RN-9.1 Saíram do menu as telas de marketplace (Profissionais e verificação, Limites de acompanhamento, Solicitações de vagas). Os componentes continuam no projeto e as abas antigas **redirecionam para Alunos**, em vez de abrir tela vazia.
+- RF-9.2 **Novo aluno** cria apenas conta de aluno (`POST /api/adm/users/create` com `type: aluno`) e devolve o link de primeiro acesso gerado por `queuePasswordLink` (24 h, uso único); a senha aleatória existe só no hash e **não** volta no JSON.
+- RF-9.3 No celular, as tabelas mostram três campos por registro, com **Ver mais campos**; ordenação em seletor, busca, paginação e CSV preservados; detalhes também abrem por teclado. O nome da aba aparece uma vez (no `h1`), sem repetir na barra ☰.
+- RN-9.1 Saíram do menu marketplace (Profissionais, Solicitações de vagas), Programas de catálogo, Monetização e a segunda Assinaturas. Os componentes permanecem no repositório. Abas antigas redirecionam: `programas` → Exercícios; `assinaturas` / `monetizacao` → Assinaturas dos alunos; `profissionais` / `solicitacoes` → Alunos.
 - RN-9.2 Ocultar recurso no menu é **apresentação**: autorização, vínculo, limites e bloqueios continuam sendo conferidos na API.
 - RN-9.3 O registro profissional fica guardado como **informado** — o app não consulta o conselho nem exibe selo de conferido.
+- RN-9.6 A Visão geral mostra só atenção útil (contas pendentes/suspensas e atendimentos atrasados) e indicadores de contas, cadastros, treinos, vínculos e assinaturas. Cards de vagas, verificação profissional e o gráfico de ocupação por profissional não aparecem.
 - Contrato de indicadores: `GET /api/adm/management?period=7|30|90` (padrão 30), só admin autenticado, restrito à comunidade da sessão. Período inválido → 400; anônimo → 401; aluno/profissional → 403. Resposta: `period`, `timezone`, `generated_at`, `start_date`, `end_date`, `previous_start`, `indicators`, `comparison`, `series`, `subscriptions`, `occupancy`, `capacity`, `pending`.
 - RN-9.4 Percentual = (atual − anterior) / anterior × 100, uma casa decimal; **base anterior zero resulta em `null`**, exibido como indisponível. Números apurados por consulta, não por snapshot. O dia atual pode estar incompleto.
 - RN-9.5 Quando falta esquema no banco, a API de indicadores responde **503 com aviso de atualização pendente**, em vez de apresentar métrica incompleta.
@@ -455,18 +451,15 @@ flowchart TD
   P3 --> P3a["Construtor /pro/treino"]
 
   subgraph ANAV["Personal/Admin — #/admin/painel"]
-    A0["Visão geral"]
-    A1["Meus alunos"]
-    A2["Treinos"]
-    A3["Avaliação postural"]
-    A4["Comunidade"]
-    A5["Assinaturas"]
-    A6["Sistema"]
+    A0["Dia a dia"]
+    A1["Administração"]
   end
-  A1 --> A1a["Aluno → Nova ficha"]
-  A1a --> P3a
-  A3 --> A3a["Fila e análise"]
-  A3 --> A3b["Protocolos e indicadores"]
+  A0 --> A0a["Alunos · Convites · Dúvidas"]
+  A0 --> A0b["Exercícios · Fila postural · Publicações"]
+  A0a --> A0c["Aluno → Nova ficha"]
+  A0c --> P3a
+  A1 --> A1a["Assinaturas dos alunos"]
+  A1 --> A1b["Protocolos · #TáPago · Perfil · Privacidade"]
 ```
 
 Rotas encerradas (`/grupo/:id`, `/desafio/:id`, `/desafios/criar`, `/ranking`) e rotas de catálogo (`/programas`, `/programa/:id`, `/meu-programa`, `/recomendados`, `/onboarding`) **redirecionam** para Comunidade e Treinos — app antigo em cache não abre tela vazia nem cria programa novo.

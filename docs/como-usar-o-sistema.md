@@ -24,6 +24,10 @@ O domínio e os três logins foram verificados. O aluno de teste entra com papel
    Na mesma confirmação, **Músculos trabalhados neste treino** mostra o mapa de frente e costas e o grupo com mais séries realizadas. Se o treino estiver aguardando conexão, o mapa aparece depois que o servidor confirmar o salvamento.
 8. Ao concluir, abra **Progresso**. Em **Destaques recentes**, veja no mapa de frente e costas quais grupos musculares foram trabalhados nos últimos 30 dias e qual recebeu mais séries efetivas; toque em **Ver estatísticas detalhadas** para aprofundar. O mapa também aparece para o aluno vinculado ao personal. Sem treino válido no período, o corpo fica sem áreas coloridas e a tela informa que não há músculos treinados. Comparação indisponível significa ausência de base suficiente, e não desempenho zero.
 
+## Comunidade
+
+Abra **Comunidade** para acompanhar as publicações. Use **Todos** para ver o feed geral ou **Seguindo** para mostrar somente os perfis acompanhados. O filtro por assunto não faz mais parte da tela. Quando a conta estiver autorizada a publicar, o botão **Nova publicação** continua disponível.
+
 ## Personal principal: atender
 
 1. Entre com a conta do personal no contexto **Área profissional**; o painel abre em `/pro`. Mesmo que essa conta também tenha acesso administrativo, use o contexto **Administração** apenas para abrir `/admin/painel`. Em **Alunos**, use **Adicionar aluno** para cadastrar uma conta nova ou enviar convite para uma conta existente.

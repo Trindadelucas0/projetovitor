@@ -11,6 +11,7 @@ import crypto from 'node:crypto'
 import { likeTerm, likeEsc, pageNum } from './sqlsafe.js'
 import { applyWeekdaySchedule } from './workout-schema.js'
 import { isInternalPersonal } from './internal-personal.js'
+import { queuePasswordLink } from './password-email.js'
 const genPassword = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; let p; do { p = Array.from({ length: 14 }, () => A[crypto.randomInt(A.length)]).join('') } while (!/\d/.test(p) || !/[a-z]/.test(p) || !/[A-Z]/.test(p)); return p }
 
 const qs = req => new URL(req.url, 'http://x').searchParams
@@ -586,11 +587,12 @@ export function proRoutes({ json, readBody }) {
       const st = qs(req).get('status'), s = likeTerm(qs(req).get('q'), 100)
       const r = await q(`select u.id,u.name,u.email,u.status,u.created_at,u.share_code,u.account_type,u.access_unlocked_at,u.access_suspended_at,u.access_suspension_reason,u.last_seen_at,(select m.name from users m where m.id=u.managed_by) managed_by_name,(select pp.verification_status from professional_profiles pp where pp.user_id=u.id) verification,
           coalesce((select pp.internal_managed from professional_profiles pp where pp.user_id=u.id),false) internal_managed,
+          (select up.sex from user_profiles up where up.user_id=u.id) sex,
           coalesce((select json_agg(json_build_object('audience',s.audience,'plan',p.name,'status',s.status,'over_limit',s.over_limit) order by s.audience) from subscriptions s join plans p on p.id=s.plan_id where s.user_id=u.id and s.status<>'cancelada'),'[]') subs, coalesce(array_agg(distinct ur.role_id) filter (where ur.role_id is not null),'{}') roles,
           u.access_unlocked_at, u.account_type, uap.plan_id, ap.max_professionals, (select count(*) from coach_students cs where cs.student_id=u.id and cs.status='ativo')::int links
         from users u left join user_roles ur on ur.user_id=u.id left join user_access_plans uap on uap.user_id=u.id left join access_plans ap on ap.id=uap.plan_id
         where u.tenant_id=$1 and ($2::text is null or u.status=$2) and (u.name ilike $3 or u.email ilike $3 or u.share_code ilike $3) group by u.id,uap.plan_id,ap.max_professionals order by u.created_at desc limit 200`, [u.tenant_id, st || null, s])
-      json(res, 200, { users: r.rows.map(x => ({ ...x, over_limit: x.plan_id ? x.links > x.max_professionals : false })) })
+      json(res, 200, { users: r.rows.map(x => ({ ...x, over_limit: x.plan_id ? x.links > x.max_professionals : false, perfil: x.sex || null })) })
     },
     'POST /api/adm/users/status': async (req, res) => {
       const u = await guard('admin')(req, res, json); if (!u) return
@@ -651,9 +653,19 @@ export function proRoutes({ json, readBody }) {
       } catch (e) { await c.query('rollback'); c.release(); if (e.code === '23505') return json(res, 409, { error: 'Este e-mail já tem conta. Peça para a pessoa entrar e informar o código dela.', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } }); if (e.code === 'PRINCIPAL_UNAVAILABLE') return json(res, 503, { error: e.message, code: e.code }); throw e }
       c.release()
       await audit(u.tenant_id, u.id, 'usuario.criado_admin', 'user', id, { type, plan: plan?.id || null })
-      let link = null
-      if (type === 'aluno') link = { ok: true }
-      json(res, 201, { id, email, type, temp_password: generated ? password : undefined, link })
+      let link = null, password_link = null
+      if (type === 'aluno') {
+        link = { ok: true }
+        password_link = await queuePasswordLink(id, u.id, true)
+      }
+      // Aluno: o personal copia o link de 24 h; a senha aleatória existe só no hash.
+      // Personal interno (POST direto): ainda pode devolver senha provisória.
+      json(res, 201, {
+        id, email, type, link,
+        ...(type === 'aluno'
+          ? { password_link, email_queued: !!password_link?.email_queued }
+          : { temp_password: generated ? password : undefined })
+      })
     },
     'POST /api/adm/users/same-person': async (req, res) => {
       const u = await guard('admin')(req, res, json); if (!u) return

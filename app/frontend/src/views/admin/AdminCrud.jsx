@@ -2,6 +2,9 @@
 import TimingSummary from '../../components/TimingSummary.jsx'
 import { useState } from 'react'
 import { C } from '../../lib/care.js'
+import { api } from '../../lib/api.js'
+import { applyPalette } from '../../lib/theme.js'
+import { useStore } from '../../store/useStore.js'
 import { useLoad } from '../app/kit.jsx'
 import { ask, notifyError } from '../../lib/dialog.js'
 
@@ -36,12 +39,32 @@ function useForm(init) {
 
 // ---------- conta: editar e excluir ----------
 export function UserEdit({ u, onChanged, onDeleted }) {
-  const { f, set, errs, msg, busy, run } = useForm({ name: u.name, email: u.email }), [dlg, confirmDel] = useConfirm()
+  const { f, set, errs, msg, busy, run } = useForm({ name: u.name, email: u.email, perfil: u.sex || u.perfil || '' }), [dlg, confirmDel] = useConfirm()
   return <div className="adm-card" style={{ marginTop: 12 }}><h3>Dados da conta</h3>
     <F l="Nome" err={errs.name}><input className="adm-in" value={f.name} onChange={set('name')} data-testid="ue-name" /></F>
     <F l="E-mail" err={errs.email}><input className="adm-in" value={f.email} onChange={set('email')} data-testid="ue-email" /></F>
+    <F l="Perfil (cor do app)" err={errs.perfil}>
+      <select className="adm-in" value={f.perfil} onChange={set('perfil')} data-testid="ue-perfil" aria-label="Perfil Homem ou Mulher">
+        <option value="">Não definido</option>
+        <option value="masculino">Homem (verde)</option>
+        <option value="feminino">Mulher (rosa)</option>
+      </select>
+    </F>
+    <p className="g-mut g-xs">Muda só a cor do app. Não exige personal feminina e não transfere o vínculo. Para mandar o aluno à outra personal, use o botão em Histórico de treinos e vínculos.</p>
     {msg && <p className="g-sm" role="status">{msg}</p>}
-    <div className="adm-tools"><Save busy={busy} onClick={() => run(async () => { await C.updUser({ id: u.id, ...f }); onChanged && onChanged() })} data-testid="ue-save" />
+    <div className="adm-tools"><Save busy={busy} onClick={() => run(async () => {
+      await C.updUser({ id: u.id, name: f.name, email: f.email })
+      if (f.perfil) await C.setPerfil(u.id, f.perfil)
+      const me = useStore.getState().user
+      if (me?.id && String(me.id) === String(u.id)) {
+        const r = await api('/api/me')
+        if (r?.user) {
+          useStore.getState().setUser(r.user)
+          applyPalette(r.user.palette === 'feminino' ? 'feminino' : 'masculino')
+        }
+      }
+      onChanged && onChanged()
+    })} data-testid="ue-save" />
       <button className="adm-btn danger" onClick={() => confirmDel({ title: 'Excluir conta', text: `A conta de ${u.name} será anonimizada: dados pessoais apagados, vínculos encerrados e publicações removidas. Sessões e auditoria ficam sem identificação. Não dá para desfazer.`, needReason: false, onConfirm: async reason => { await C.delUser({ id: u.id, confirm: 'EXCLUIR', reason }); onDeleted && onDeleted() } })} data-testid="ue-delete">Excluir conta</button></div>
     {dlg}</div>
 }

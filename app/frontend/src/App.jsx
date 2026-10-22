@@ -90,8 +90,9 @@ function Shell() {
   useEffect(() => { applyPrefs() }, [])
   useEffect(() => { if (user) loadTheme() }, [user?.id]) // eslint-disable-line
   useEffect(() => {
-    if (user?.palette === 'feminino') applyPalette('feminino')
-    else applyPalette('masculino')
+    // Só reaplica a cor da sessão logada (admin pode pré-visualizar outra cor no painel).
+    if (!user) return
+    applyPalette(user.palette === 'feminino' ? 'feminino' : 'masculino')
   }, [user?.id, user?.palette])
   useEffect(() => { setLang(S.lang || 'pt') }, [S.lang])
   useEffect(() => { document.documentElement.lang = (S.lang || 'pt') === 'pt' ? 'pt-BR' : S.lang }, [langV, S.lang])
@@ -131,7 +132,7 @@ function Shell() {
               <Route path="/admin/painel" element={<AdminApp />} />
               <Route path="/pro/treino" element={<Builder />} />
               <Route path="/library" element={<Library />} />
-              <Route path="/admin/programas" element={<Navigate to="/admin/painel?tab=programas" replace />} />
+              <Route path="/admin/programas" element={<Navigate to="/admin/painel?tab=exercicios" replace />} />
               <Route path="/comunidade" element={<Gate title="Comunidade" allow="comunidade"><Comunidade /></Gate>} />
               <Route path="/grupo/:id" element={<Navigate to="/comunidade" replace />} />
               <Route path="/desafio/:id" element={<Navigate to="/comunidade" replace />} />

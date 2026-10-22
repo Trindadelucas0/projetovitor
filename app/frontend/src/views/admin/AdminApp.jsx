@@ -8,21 +8,17 @@ import Icon from '../../components/Icon.jsx'
 import { useStore } from '../../store/useStore.js'
 import { C, P, GOALS, REQ_ST, dt, uploadExMedia } from '../../lib/care.js'
 import { useLoad } from '../app/kit.jsx'
-import { ask, askText, showValue, notify, notifyError } from '../../lib/dialog.js'
+import { ask, askText, notifyError } from '../../lib/dialog.js'
 // Plano único: Profissionais, Planos (limites de acompanhamento) e a verificação
 // profissional saíram do menu; os componentes continuam em AdminPanel.jsx / v3 para
 // quando o app abrir para vários personais.
-import { UserWorkouts, Vinculos, Filas, Config, EXTRA } from '../app/AdminPanel.jsx'
+import { Vinculos, Filas, Config, EXTRA } from '../app/AdminPanel.jsx'
 import '../guided/guided.css'
-import { UserEdit, ProEdit, StudentRecord, StudentTraining, Publicacoes, ConteudoOficial, ExerciseEdit } from './AdminCrud.jsx'
-import AdmSubscriptions from '../v3/AdmSubscriptions.jsx'
-import AdmUser360 from '../v3/AdmUser360.jsx'
+import { Publicacoes, ConteudoOficial, ExerciseEdit } from './AdminCrud.jsx'
 import UserPanel, { mensalidadePT } from './UserPanel.jsx'
-import AdminPrograms from '../guided/AdminPrograms.jsx'
 import AdminLogs from './AdminLogs.jsx'   // V5: logs e auditoria (request_audit + audit_log)
 import ManagementDashboard from './ManagementDashboard.jsx'
 import AdmBilling from '../billing/AdmBilling.jsx'
-import AdmMonetizacao from '../billing/AdmMonetizacao.jsx'   // Monetizacao F7   // V5 cobranca: planos, precos, cupons, parceiros, assinaturas
 import { AdmEmpresa } from '../app/Legal.jsx'
 import TapagoAdmin from './TapagoAdmin.jsx'
 import FilaAvaliacoes from '../postural/FilaAvaliacoes.jsx'   // V5-AP: operação
@@ -71,11 +67,11 @@ function Usuarios({ pendingOnly = false }) {
     { k: 'links', l: 'Vínculo comigo', r: r => r.links ? 'Sim' : 'Não' },
     { k: 'created_at', l: 'Cadastro', r: r => r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '—', sv: r => r.created_at }]
   const u = sel && (d?.users || []).find(x => x.id === sel)
-  const [novo, setNovo] = useState(false), [dtab, setDt] = useState('v360'), [pros, , reloadPros] = useLoad(() => C.admPros(), [])
+  const [novo, setNovo] = useState(false), [pros, , reloadPros] = useLoad(() => C.admPros(), [])
   return <>
     <div className="adm-tools"><button className="adm-btn" onClick={() => setNovo(true)} data-testid="nu-open">+ Novo aluno</button></div>
     {novo && <NovoUsuario onClose={() => setNovo(false)} onDone={reload} />}
-    {err ? <p className="g-warn">{err}</p> : <DataTable name="usuarios" cols={cols} rows={pendingOnly ? d?.users?.filter(u => u.status === 'pendente' || u.access_suspended_at) : d?.users} onRow={r => { setSel(r.id); setDt('v360') }}
+    {err ? <p className="g-warn">{err}</p> : <DataTable name="usuarios" cols={cols} rows={pendingOnly ? d?.users?.filter(u => u.status === 'pendente' || u.access_suspended_at) : d?.users} onRow={r => setSel(r.id)}
       filters={<select className="adm-in" value={st} onChange={e => setSt(e.target.value)} aria-label="Status" data-testid="usr-status"><option value="">Todos os status</option><option value="pendente">Pendentes</option><option value="ativo">Ativos</option><option value="bloqueado">Bloqueados</option></select>} />}
     {u && <UserPanel key={u.id} u={u} onClose={() => setSel(null)} reload={reload} pros={pros?.professionals} reloadPros={reloadPros} onDeleted={() => { setSel(null); reload() }} />}
   </>
@@ -84,34 +80,40 @@ function Usuarios({ pendingOnly = false }) {
 // O personal cadastra o aluno. A conta nasce ativa e vinculada a ele.
 // O aluno escolhe Básico ou Completo; criar a conta pelo painel não libera os treinos.
 function NovoUsuario({ onClose, onDone }) {
-  const [f, setF] = useState({ type: 'aluno', name: '', email: '', password: '' })
+  const [f, setF] = useState({ name: '', email: '' })
   const [errs, setErrs] = useState({}), [msg, setMsg] = useState(''), [busy, setBusy] = useState(false), [res, setRes] = useState(null)
   const set = k => e => setF(x => ({ ...x, [k]: e.target.value }))
   const err = k => errs[k] && <span className="g-warn g-xs" role="alert">{errs[k]}</span>
   const submit = async e => {
     e.preventDefault(); setBusy(true); setErrs({}); setMsg('')
-    try { const r = await C.createUser({ type: f.type, name: f.name, email: f.email, password: f.password || undefined }); setRes(r); onDone && onDone() }
+    try { const r = await C.createUser({ type: 'aluno', name: f.name, email: f.email }); setRes(r); onDone && onDone() }
     catch (x) { setErrs(x.errors || {}); setMsg(x.message) } finally { setBusy(false) }
   }
-  if (res) return <Drawer title="Conta cadastrada" onClose={onClose}>
-    <div data-testid="nu-done"><p><b>{res.email}</b> foi cadastrado como {res.type === 'profissional' ? 'personal interno' : 'aluno'}.</p>
-      {res.temp_password ? <><p>Senha temporária (aparece só agora; copie e entregue {res.type === 'profissional' ? 'ao personal' : 'ao aluno'}):</p><p className="adm-card" style={{ fontFamily: 'monospace', fontSize: 18, userSelect: 'all' }} data-testid="nu-pass">{res.temp_password}</p></> : <p>Senha: a que você definiu.</p>}
-      {res.type === 'profissional' ? <p>Agora vincule alunos a este personal pela tela de vínculos.</p> : res.link?.ok ? <p>O aluno já está vinculado a você e aparece na lista.</p>
-        : <p className="g-warn">A conta foi criada, mas o vínculo não: {res.link?.error || 'o personal do ambiente não está configurado'}. Crie o vínculo em Convites.</p>}
-      <p className="g-mut g-xs">{res.type === 'profissional' ? 'No primeiro acesso, o personal aceita os termos. Não precisa contratar plano.' : 'No primeiro acesso o aluno aceita os termos e escolhe Básico (R$ 49,90/mês) ou Completo (R$ 499 · 3 meses). Os treinos só liberam depois do pagamento confirmado.'}</p>
-      <div className="adm-tools"><button className="adm-btn" onClick={() => { setRes(null); setF({ type: 'aluno', name: '', email: '', password: '' }) }}>Cadastrar outro</button><button className="adm-btn ghost" onClick={onClose}>Fechar</button></div></div>
-  </Drawer>
+  if (res) {
+    const link = res.password_link?.link
+    return <Drawer title="Conta cadastrada" onClose={onClose}>
+      <div data-testid="nu-done">
+        <p><b>{res.email}</b> foi cadastrado como aluno.</p>
+        {link
+          ? <><p>Link para ela definir a senha (24 h, uso único):</p>
+            <p className="adm-card" style={{ fontFamily: 'monospace', fontSize: 14, userSelect: 'all', wordBreak: 'break-all' }} data-testid="nu-pass-link">{link}</p>
+            {res.email_queued && <p className="g-mut g-xs">O e-mail também entra na fila de envio.</p>}</>
+          : <p className="g-warn">A conta foi criada, mas o link de senha não. Gere depois em Alunos → abrir a conta → Gerar link de nova senha.</p>}
+        {res.link?.ok ? <p>O aluno já está vinculado a você e aparece na lista.</p>
+          : <p className="g-warn">A conta foi criada, mas o vínculo não: {res.link?.error || 'o personal do ambiente não está configurado'}. Crie o vínculo em Convites.</p>}
+        <p className="g-mut g-xs">No primeiro acesso o aluno aceita os termos e escolhe Básico ou Completo. Os treinos só liberam depois do pagamento confirmado.</p>
+        <div className="adm-tools"><button className="adm-btn" onClick={() => { setRes(null); setF({ name: '', email: '' }) }}>Cadastrar outro</button><button className="adm-btn ghost" onClick={onClose}>Fechar</button></div>
+      </div>
+    </Drawer>
+  }
   const L = (l, el, k) => <label className="adm-field" style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}><span className="g-xs">{l}</span>{el}{k && err(k)}</label>
   return <Drawer title="Nova conta" onClose={onClose}>
     <form onSubmit={submit} data-testid="nu-form" noValidate>
-      {L('Tipo de conta', <select className="adm-in" value={f.type} onChange={set('type')}><option value="aluno">Aluno</option><option value="profissional">Personal interno</option></select>, 'type')}
       {L('Nome', <input className="adm-in" value={f.name} onChange={set('name')} required data-testid="nu-name" />, 'name')}
       {L('E-mail', <input className="adm-in" type="email" value={f.email} onChange={set('email')} required data-testid="nu-email" />, 'email')}
-      {L('Senha temporária (vazio = gerar automaticamente)', <input className="adm-in" type="text" autoComplete="new-password" value={f.password} onChange={set('password')} data-testid="nu-pass-in" />, 'password')}
-      {err('type')}
       {msg && <p className="g-warn" role="alert">{msg}</p>}
-      <div className="adm-tools"><button className="adm-btn" disabled={busy} data-testid="nu-submit">{busy ? 'Cadastrando…' : f.type === 'profissional' ? 'Cadastrar personal' : 'Cadastrar aluno'}</button><button type="button" className="adm-btn ghost" onClick={onClose}>Cancelar</button></div>
-      <p className="g-mut g-xs">Alunos entram no personal principal. Personais internos recebem alunos somente por transferência da administração.</p>
+      <div className="adm-tools"><button className="adm-btn" disabled={busy} data-testid="nu-submit">{busy ? 'Cadastrando…' : 'Cadastrar aluno'}</button><button type="button" className="adm-btn ghost" onClick={onClose}>Cancelar</button></div>
+      <p className="g-mut g-xs">O aluno entra vinculado a você e recebe um link para definir a senha.</p>
     </form>
   </Drawer>
 }
@@ -232,20 +234,28 @@ function AuditoriaT() {
 }
 function Wrap({ children }) { return <div className="ag">{children}</div> }
 
-// Plano único (20/10/2026): este é o painel do personal, com os nomes do dia a dia.
-// Saíram do menu as telas de marketplace (profissionais e verificação, limites de
-// acompanhamento, solicitações de vagas): com um personal só, elas não têm uso. Os
-// componentes continuam no projeto e as abas antigas redirecionam por OLD_TABS.
+// Painel do personal: Dia a dia em cima, Administração embaixo. Marketplace (vagas,
+// vários personais, Programas de catálogo, Monetização) sai do menu; OLD_TABS redireciona.
 const NAV = [
- ['Visão geral', [['dashboard','Visão geral','chart']]],
- ['Meus alunos', [['usuarios','Alunos','person'],['vinculos','Convites','users'],['filas','Dúvidas e atendimentos','bell']]],
- ['Treinos', [['exercicios','Exercícios e vídeos','dumbbell'],['programas','Programas','clipboard']]],
- ['Avaliação postural', [['avaliacao','Fila e análise','clipboard'],['avaliacao-adm','Protocolos e indicadores','list']]],
- ['Comunidade', [['publicacoes','Publicações e moderação','chat'],['tapago','Campanha #TáPago','sparkles']]],
- ['Assinaturas', [['cobranca','Cobrança, preços e cupons','sparkles'],['assinaturas','Assinaturas','sparkles'],['monetizacao','Monetização','shield']]],
- ['Sistema', [['perfil','Meu perfil de personal','person'],['empresa','Dados da empresa','list'],['lgpd','Privacidade e termos','lock'],['auditoria','Logs e auditoria','list'],['config','Configurações','gear']]]]
+ ['Dia a dia', [
+   ['dashboard','Visão geral','chart'],
+   ['usuarios','Alunos','person'],
+   ['vinculos','Convites','users'],
+   ['filas','Dúvidas e atendimentos','bell'],
+   ['exercicios','Exercícios e vídeos','dumbbell'],
+   ['avaliacao','Fila e análise','clipboard'],
+   ['publicacoes','Publicações e moderação','chat']]],
+ ['Administração', [
+   ['cobranca','Assinaturas dos alunos','sparkles'],
+   ['avaliacao-adm','Protocolos e indicadores','list'],
+   ['tapago','Campanha #TáPago','sparkles'],
+   ['perfil','Meu perfil de personal','person'],
+   ['empresa','Dados da empresa','list'],
+   ['lgpd','Privacidade e termos','lock'],
+   ['auditoria','Logs e auditoria','list'],
+   ['config','Configurações','gear']]]]
 const TITLE=Object.fromEntries(NAV.flatMap(([,items])=>items.map(([k,l])=>[k,l])))
-const OLD_TABS={alunos:['usuarios','contas'],liberacoes:['usuarios','liberacoes'],verificacoes:['usuarios','contas'],profissionais:['usuarios','contas'],planos:['usuarios','contas'],solicitacoes:['usuarios','contas'],modelos:['usuarios','contas'],moderacao:['publicacoes','moderacao'],desafios:['publicacoes','publicacoes'],grupos:['publicacoes','publicacoes'],ranking:['publicacoes','publicacoes'],termos:['lgpd','termos'],visao:['dashboard','']}
+const OLD_TABS={alunos:['usuarios','contas'],liberacoes:['usuarios','liberacoes'],verificacoes:['usuarios','contas'],profissionais:['usuarios','contas'],planos:['usuarios','contas'],solicitacoes:['usuarios','contas'],modelos:['usuarios','contas'],programas:['exercicios',''],assinaturas:['cobranca',''],monetizacao:['cobranca',''],moderacao:['publicacoes','moderacao'],desafios:['publicacoes','publicacoes'],grupos:['publicacoes','publicacoes'],ranking:['publicacoes','publicacoes'],termos:['lgpd','termos'],visao:['dashboard','']}
 function SubTabs({items,current,onChange}) { return <div className="mg-subtabs" role="tablist">{items.map(([k,l])=><button key={k} role="tab" aria-selected={current===k} className={'adm-btn '+(current===k?'':'ghost')} onClick={()=>onChange(k)}>{l}</button>)}</div> }
 function ExtraSection({name}) { const Component=EXTRA[name]; return Component?<Wrap><Component/></Wrap>:<p>Indisponível.</p> }
 function AdminInvites() {
@@ -320,33 +330,26 @@ export default function AdminApp() {
       <h6>Conta</h6><button onClick={() => nav('/comunidade')} data-testid="adm-comunidade-app"><Icon name="chevronLeft" />Ver comunidade</button><button onClick={() => nav('/perfil')}><Icon name="chevronLeft" />Minha conta</button><button onClick={() => useStore.getState().signOut()} data-testid="adm-sair"><Icon name="chevronLeft" />Sair</button>
     </aside>
     <main className="adm-main">
-      <div className="adm-mtop"><button className="adm-btn ghost" style={{ minWidth: 44, minHeight: 44, fontSize: 18 }} onClick={() => setOpen(!open)} aria-label="Menu" aria-expanded={open} aria-controls="admin-navigation" data-testid="adm-menu">☰</button><b>{TITLE[tab]}</b><Brand compact /></div>
+      <div className="adm-mtop"><button className="adm-btn ghost" style={{ minWidth: 44, minHeight: 44, fontSize: 18 }} onClick={() => setOpen(!open)} aria-label="Menu" aria-expanded={open} aria-controls="admin-navigation" data-testid="adm-menu">☰</button><Brand compact /></div>
       <h1 data-testid="adm-title">{TITLE[tab]}</h1><p className="adm-sub">ORNY · painel do personal · <button className="g-link" style={{ minHeight: 32, padding: '4px 8px' }} data-testid="tour-restart" onClick={() => dispatchEvent(new Event('avagym:tour-restart'))}>Rever orientações</button></p>
       {tab === 'dashboard' && <ManagementDashboard go={go} />}
       {tab === 'usuarios' && <><SubTabs items={[['contas','Contas'],['pendencias','Pendências'],['liberacoes','Suspensões de acesso']]} current={sub} onChange={setSub}/>{sub==='liberacoes'?<AdmLiberacoes/>:<Usuarios key={sub} pendingOnly={sub==='pendencias'}/>}</>}
-
-
       {tab === 'cobranca' && <AdmBilling />}
-      {tab === 'monetizacao' && <AdmMonetizacao />}
       {tab === 'tapago' && <TapagoAdmin />}
-      {/* V5-AP: duas áreas distintas. Operação usa /api/pro/*, governança usa /api/adm/* — quando o app
-          reabrir para vários personais, a operação sai daqui sem mexer no servidor. */}
+      {/* Operação postural usa /api/pro/*; governança usa /api/adm/*. */}
       {tab === 'avaliacao' && <FilaAvaliacoes />}
       {tab === 'avaliacao-adm' && <><SubTabs items={[['protocolos','Protocolos e versões'],['indicadores','Indicadores, termo e retenção']]} current={sub} onChange={setSub}/>{sub==='indicadores'?<IndicadoresAvaliacao/>:<ProtocolEditor/>}</>}
-      {tab === 'assinaturas' && <AdmSubscriptions />}
       {tab === 'publicacoes' && <><SubTabs items={[['publicacoes','Publicações e comentários'],['oficial','Conteúdo oficial'],['moderacao','Moderação']]} current={sub} onChange={setSub}/>{sub==='moderacao'?<ExtraSection name="moderacao"/>:sub==='oficial'?<ConteudoOficial DataTable={DataTable} Drawer={Drawer}/>:<Publicacoes DataTable={DataTable} Drawer={Drawer}/>}</>}
-
       {tab === 'vinculos' && <><SubTabs items={[['vinculos','Alunos vinculados'],['convites','Convites enviados']]} current={sub} onChange={setSub}/>{sub==='convites'?<AdminInvites/>:<Wrap><Vinculos/></Wrap>}</>}
       {tab === 'filas' && <><p className="adm-sub">Dúvidas e relatos dos seus alunos, com prazo de resposta. Dor e desconforto deixam o exercício pausado até a sua orientação; dúvida não pausa o treino.</p><Wrap><Filas /></Wrap></>}
       {tab === 'perfil' && <MeuPerfilPersonal />}
       {tab === 'modelos' && <Modelos />}
-      {tab === 'programas' && <Wrap><AdminPrograms/></Wrap>}
       {tab === 'exercicios' && <Exercicios />}
       {tab === 'moderacao' && (X ? <Wrap><X /></Wrap> : <p className="g-mut">Indisponível.</p>)}
       {tab === 'auditoria' && <AdminLogs />}
       {tab === 'lgpd' && <><SubTabs items={[["lgpd","Privacidade e pedidos"],["termos","Termos de uso"]]} current={sub} onChange={setSub}/>{sub==='termos'?<Termos/>:<Lgpd/>}</>}
       {tab === 'config' && <Wrap><Config /></Wrap>}
-          {tab === 'empresa' && <AdmEmpresa />}
+      {tab === 'empresa' && <AdmEmpresa />}
     </main>
   </div>
 }

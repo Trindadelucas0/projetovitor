@@ -97,9 +97,10 @@ export const tenantScope = (alias, idx) => `(${alias}.tenant_id is null or ${ali
 export const contextOf = u => (u.active_context && u.roles.includes(u.active_context)) ? u.active_context
   : u.roles.includes('admin') ? 'admin' : u.roles.includes('aluno') ? 'aluno' : u.roles.includes('profissional') ? 'profissional' : 'aluno'
 const sign = u => jwt.sign({ sub: u.id, tid: u.tenant_id, roles: u.roles, tv: u.token_version || 0, jti: crypto.randomUUID() }, SECRET, { expiresIn: TTL_H + 'h' })
+// sex gravado (admin ou cadastro) manda na cor. Sem sex, a personal feminina do tenant fica rosa.
 const perfilOf = u => {
-  if (u.personal_feminino_id && String(u.id) === String(u.personal_feminino_id)) return 'feminino'
   if (u.sex === 'feminino' || u.sex === 'masculino') return u.sex
+  if (u.personal_feminino_id && String(u.id) === String(u.personal_feminino_id)) return 'feminino'
   return 'masculino'
 }
 export const pub = u => {

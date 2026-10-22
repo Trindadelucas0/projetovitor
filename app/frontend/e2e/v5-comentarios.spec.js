@@ -1,4 +1,4 @@
-// V5 - seletor Assunto (GSelect, teclado + bottom sheet no celular) e comentários encadeados na tela.
+// V5 - comentários encadeados na tela. O antigo filtro Assunto não faz mais parte do feed.
 // SOMENTE LOCAL: API de teste com e-mail desligado e E2E_AUTO_UNLOCK_DOMAIN=e2e.local; contas fictícias @e2e.local.
 // A publicação fictícia é criada pela rota de teste do próprio spec (via API de admin não existe) -> usa PW_POST_ID quando informado.
 import { test, expect } from '@playwright/test'
@@ -14,38 +14,8 @@ async function newUser(page, tag) {
   await page.context().addInitScript(x => { localStorage.setItem('gym_user', JSON.stringify(x)) }, u); return u
 }
 
-test.describe('celular', () => {
-  test.use({ viewport: { width: 390, height: 844 }, locale: 'pt-BR' })
-  test('Assunto abre como bottom sheet e filtra', async ({ page }) => {
-    await newUser(page, 'sheet')
-    await page.goto('/#/comunidade')
-    const cb = page.getByRole('combobox', { name: 'Assunto', exact: true })
-    await expect(cb).toBeEnabled(); await expect(cb).toHaveAttribute('aria-expanded', 'false')
-    await cb.click()
-    await expect(page.getByRole('dialog', { name: 'Assunto' })).toBeVisible()
-    await expect(page.getByRole('option', { name: 'Todos os assuntos' })).toHaveAttribute('aria-selected', 'true')
-    const opt = page.getByRole('option').nth(1), val = await opt.getAttribute('data-value')
-    await opt.click()
-    await expect(page.getByRole('dialog')).toHaveCount(0)
-    await expect(page).toHaveURL(new RegExp('cat=' + val))
-    await expect(cb).toHaveAttribute('data-value', val)
-  })
-})
 test.describe('desktop', () => {
   test.use({ viewport: { width: 1280, height: 800 }, locale: 'pt-BR' })
-  test('Assunto pelo teclado: abrir, navegar, escolher, Esc fecha', async ({ page }) => {
-    await newUser(page, 'kbd')
-    await page.goto('/#/comunidade')
-    const cb = page.getByRole('combobox', { name: 'Assunto', exact: true })
-    await expect(cb).toBeEnabled(); await cb.focus()
-    await page.keyboard.press('ArrowDown')
-    await expect(cb).toHaveAttribute('aria-expanded', 'true'); await expect(page.getByRole('listbox')).toBeVisible()
-    await page.keyboard.press('Escape'); await expect(cb).toHaveAttribute('aria-expanded', 'false'); await expect(cb).toBeFocused()
-    await page.keyboard.press('Enter'); await page.keyboard.press('ArrowDown'); await page.keyboard.press('Enter')
-    await expect(page).toHaveURL(/cat=/)
-    await cb.click(); await page.keyboard.press('Home'); await page.keyboard.press('Enter')
-    await expect(cb).toHaveAttribute('data-value', '')
-  })
   test('comentários: comentar, responder, expandir, curtir e excluir o próprio', async ({ page }) => {
     test.skip(!process.env.PW_POST_ID, 'defina PW_POST_ID com uma publicação fictícia local')
     await newUser(page, 'com')

@@ -20,6 +20,9 @@
  --orny-green:#ff4fd8;--ag-acc:#ff4fd8;--ag-acc-2:#e13bc4;--ag-focus:#ff4fd8;
  --acc:#ff4fd8;--acc-2:#e13bc4;--brand-orange:#ff4fd8;
 }
+:root[data-palette="feminino"] .adm-btn:not(.ghost):not(.danger){background:var(--ag-acc);color:#000}
+:root[data-palette="feminino"] .adm-pill.ok{background:#ff4fd81c;color:var(--ag-acc)}
+:root[data-palette="feminino"] .adm-brand b{color:var(--ag-acc)}
 :root[data-theme="light"][data-palette="feminino"],:root[data-theme="light"][data-palette="feminino"][data-accent="avagym"]{
  --orny-green:#ff4fd8;--ag-acc:#c2186a;--ag-acc-2:#ff4fd8;--ag-focus:#c2186a;
  --acc:#c2186a;--acc-2:#ff4fd8;--brand-orange:#ff4fd8;

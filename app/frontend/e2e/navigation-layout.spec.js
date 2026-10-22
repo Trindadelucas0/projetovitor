@@ -35,7 +35,7 @@ for (const role of ['aluno','profissional','admin']) for (const width of [320,39
     await page.setViewportSize({width,height:900})
     await setup(page,role,theme)
     await page.goto('/#/comunidade')
-    await expect(page.getByRole('combobox',{name:'Assunto',exact:true})).toBeEnabled()
+    await expect(page.getByRole('combobox',{name:'Assunto',exact:true})).toHaveCount(0)
     await page.evaluate(theme => document.documentElement.dataset.theme=theme,theme)
     await expect(page.getByTestId('com-shortcuts')).toHaveCount(0)
     await expect(page.getByTestId('new-post')).toHaveCount(role === 'aluno' ? 0 : 1)
@@ -43,11 +43,6 @@ for (const role of ['aluno','profissional','admin']) for (const width of [320,39
     await page.getByRole('button',{name:'Seguindo',exact:true}).click()
     await expect(page.getByRole('button',{name:'Seguindo',exact:true})).toHaveAttribute('aria-pressed','true')
     await expect(page).toHaveURL(/modo=seguindo/)
-    await page.getByRole('combobox',{name:'Assunto',exact:true}).click(); await page.locator('[role=option][data-value="technique"]').click()
-    await expect(page).toHaveURL(/modo=seguindo.*cat=technique/)
-    await page.getByRole('combobox',{name:'Assunto',exact:true}).click(); await page.locator('[role=option][data-value=""]').click()
-    await expect(page).toHaveURL(/modo=seguindo/)
-    expect(new URL(page.url()).hash).not.toContain('cat=')
     await page.getByRole('button',{name:'Todos',exact:true}).click()
     await expect(page.getByRole('button',{name:'Todos',exact:true})).toHaveAttribute('aria-pressed','true')
     await fit(page)
@@ -102,6 +97,13 @@ for (const role of ['aluno','profissional','admin']) for (const width of [320,39
     }
   })
 }
+test('comunidade descarta o filtro antigo de assunto', async ({page}) => {
+  await setup(page,'aluno','light')
+  await page.goto('/#/comunidade?cat=technique')
+  await expect(page.getByRole('combobox',{name:'Assunto',exact:true})).toHaveCount(0)
+  await expect(page).not.toHaveURL(/cat=/)
+  await expect(page.getByRole('button',{name:'Todos',exact:true})).toHaveAttribute('aria-pressed','true')
+})
 for (const width of [320,1280]) test(`biblioteca ${width}px: aluno não acessa (só personal/admin)`, async ({page}) => {
   await page.setViewportSize({width,height:900})
   await setup(page,'aluno','light')

@@ -2,7 +2,7 @@
 // seguir profissionais, denúncias. Alunos não publicam. Publicações não criam vínculo nem substituem orientação individual.
 import { isNonTrainee } from '../../lib/accounts.js'
 import { Navigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Icon from '../../components/Icon.jsx'
 import { useStore } from '../../store/useStore.js'
@@ -113,24 +113,24 @@ function Compose({ cats, post, onClose, onDone }) {
 }
 function Feed() {
   const [sp, setSp] = useSearchParams()
-  const cat = sp.get('cat') || '', mode = sp.get('modo') || ''
+  const mode = sp.get('modo') || ''
   const [meta] = useLoad(() => F.cats())
-  const [d, err, reload] = useLoad(() => F.feed({ ...(cat ? { cat } : {}), ...(mode === 'seguindo' ? { following: '1' } : {}) }), [cat, mode])
+  const [d, err, reload] = useLoad(() => F.feed({ ...(mode === 'seguindo' ? { following: '1' } : {}) }), [mode])
   const [comp, setComp] = useState(false)
   const set = (k, v) => { const n = new URLSearchParams(sp); v ? n.set(k, v) : n.delete(k); setSp(n) }
+  useEffect(() => {
+    if (!sp.has('cat')) return
+    const n = new URLSearchParams(sp)
+    n.delete('cat')
+    setSp(n, { replace: true })
+  }, [sp, setSp])
   return <div className="com-feed">
     <h2 className="com-feed-title">Publicações</h2>
     <div className="g-filters" role="group" aria-label="Filtrar publicações">
-      <button className={'g-chipbtn' + (!cat && !mode ? ' g-on' : '')} aria-pressed={!cat && !mode} onClick={() => setSp({})}>Todos</button>
+      <button className={'g-chipbtn' + (!mode ? ' g-on' : '')} aria-pressed={!mode} onClick={() => setSp({})}>Todos</button>
       <button className={'g-chipbtn' + (mode === 'seguindo' ? ' g-on' : '')} aria-pressed={mode === 'seguindo'} onClick={() => set('modo', mode === 'seguindo' ? '' : 'seguindo')}>Seguindo</button>
     </div>
-    <div className="com-feed-tools">
-      <label className="g-filter-field">Assunto
-        <GSelect label="Assunto" value={cat} onChange={v => set('cat', v)} disabled={!meta} testid="feed-cat"
-          options={[['', 'Todos os assuntos'], ...(cat && !meta?.categories?.some(c => c.id === cat) ? [[cat, 'Assunto selecionado']] : []), ...(meta?.categories || []).map(c => [c.id, c.name_pt])]} />
-      </label>
-      {meta?.can_publish && <button className="g-btn" onClick={() => setComp(true)} data-testid="new-post"><Icon name="plus" /> Nova publicação</button>}
-    </div>
+    {meta?.can_publish && <div className="com-feed-tools"><button className="g-btn" onClick={() => setComp(true)} data-testid="new-post"><Icon name="plus" /> Nova publicação</button></div>}
     {!meta?.can_publish && meta?.publish_block_reason && <div className="g-card" role="status" data-testid="publish-blocked" data-code={meta.publish_block_reason.code} style={{ marginTop: 10 }}><b className="g-sm">{meta.publish_block_reason.title}</b><p className="g-xs g-mut" style={{ margin: '4px 0 0' }}>{meta.publish_block_reason.message}</p></div>}
     <div style={{ marginTop: 10 }}>{err ? <Err msg={err} retry={reload} /> : !d ? <Load /> : d.posts.length ? d.posts.map(p => <PostCard key={p.id} p={p} onChange={reload} />)
       : <Empty icon="users">{mode === 'seguindo' ? 'Siga profissionais para ver as publicações deles aqui.' : 'Ainda não há publicações.'}</Empty>}</div>

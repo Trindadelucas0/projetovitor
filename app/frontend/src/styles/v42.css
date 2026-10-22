@@ -18,3 +18,7 @@
 .upn-danger{margin-top:14px;padding:10px;border:1px solid #ff6b6b66;border-radius:12px}
 .upn-adv{padding:14px 16px}.upn-adv summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center}
 .upn .adm-btn{min-height:44px}
+.upn-perfil-btns{display:inline-flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.upn-cor-m.on,.upn-cor-m:not(.ghost){background:#20f51b!important;color:#000!important}
+.upn-cor-f.on,.upn-cor-f:not(.ghost){background:#ff4fd8!important;color:#000!important}
+.upn-cor-f.ghost{border-color:#ff4fd866!important;color:#ff4fd8!important}

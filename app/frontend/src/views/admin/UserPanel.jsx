@@ -7,8 +7,24 @@ import { V } from '../../lib/v3.js'
 import { C } from '../../lib/care.js'
 import { useLoad } from '../app/kit.jsx'
 import { askText, showValue, notifyError } from '../../lib/dialog.js'
+import { applyPalette } from '../../lib/theme.js'
+import { useStore } from '../../store/useStore.js'
 import AdmUser360 from '../v3/AdmUser360.jsx'
 import { UserEdit, ProEdit, StudentRecord, StudentTraining } from './AdminCrud.jsx'
+
+/** Aplica a cor na tela agora e, se for a própria conta, atualiza a sessão. */
+async function applyCorNow(userId, perfil) {
+  applyPalette(perfil === 'feminino' ? 'feminino' : 'masculino')
+  const me = useStore.getState().user
+  if (!me?.id || String(me.id) !== String(userId)) return
+  try {
+    const r = await api('/api/me')
+    if (r?.user) useStore.getState().setUser({ ...r.user, perfil, palette: perfil === 'feminino' ? 'feminino' : 'masculino' })
+    else useStore.getState().setUser({ ...me, perfil, palette: perfil === 'feminino' ? 'feminino' : 'masculino' })
+  } catch {
+    useStore.getState().setUser({ ...me, perfil, palette: perfil === 'feminino' ? 'feminino' : 'masculino' })
+  }
+}
 
 const when = d => d ? new Date(d).toLocaleDateString('pt-BR') : 'nunca'
 const post = (p, b) => api(p, { method: 'POST', body: JSON.stringify(b) })
@@ -34,7 +50,31 @@ const Row = ({ k, children }) => <div className="upn-row"><span>{k}</span><b>{ch
 export default function UserPanel({ u, onClose, reload, pros, reloadPros, onDeleted }) {
   const [d, , reload360] = useLoad(() => V.admUser360(u.id), [u.id])
   const [busy, setBusy] = useState(false), [adv, setAdv] = useState('')
+  const savedPerfil = u.sex || u.perfil || ''
+  const [perfil, setPerfil] = useState(savedPerfil)
+  const [perfilMsg, setPerfilMsg] = useState('')
+  useEffect(() => { setPerfil(u.sex || u.perfil || '') }, [u.id, u.sex, u.perfil])
   const run = fn => async () => { setBusy(true); try { await fn(); reload(); reload360() } catch (e) { notifyError(e) } finally { setBusy(false) } }
+  const savePerfil = async next => {
+    if (!next || next === savedPerfil) {
+      setPerfil(next)
+      applyPalette(next === 'feminino' ? 'feminino' : 'masculino')
+      return
+    }
+    setBusy(true); setPerfilMsg(''); setPerfil(next)
+    applyPalette(next === 'feminino' ? 'feminino' : 'masculino')
+    try {
+      // Chamada direta: evita HMR antigo sem C.setPerfil
+      await api('/api/adm/users/perfil', { method: 'POST', body: JSON.stringify({ id: u.id, perfil: next }) })
+      setPerfilMsg(next === 'feminino' ? 'Salvo: Mulher (rosa).' : 'Salvo: Homem (verde).')
+      await applyCorNow(u.id, next)
+      reload(); reload360()
+    } catch (e) {
+      setPerfil(savedPerfil)
+      applyPalette(savedPerfil === 'feminino' ? 'feminino' : 'masculino')
+      notifyError(e)
+    } finally { setBusy(false) }
+  }
   useEffect(() => { const t = setTimeout(() => dispatchEvent(new CustomEvent('avagym:tour-screen', { detail: 'usuario' })), 600); return () => clearTimeout(t) }, [])
   const isPro = u.roles.includes('profissional'), m = mensalidadePT(u)
   const active = d?.active_pro_plan ? `Ficha "${d.active_pro_plan.title}" do personal ${d.active_pro_plan.owner_name}` : d?.active_program ? `Programa do sistema "${d.active_program.title}"` : 'Nenhum treino ativo'
@@ -51,6 +91,18 @@ export default function UserPanel({ u, onClose, reload, pros, reloadPros, onDele
         <Row k="Acesso">{u.access_suspended_at ? 'Suspenso pela administração' : 'Definido automaticamente pelo plano'}</Row>
         <Row k="Último acesso">{when(u.last_seen_at || d?.user?.last_seen_at)}</Row>
         <Row k="Cadastro">{when(u.created_at)}</Row>
+        <Row k="Cor do app">
+          <span className="upn-perfil-btns" role="group" aria-label="Cor do app Homem ou Mulher">
+            <button type="button" className={'adm-btn upn-cor-m' + (perfil === 'masculino' ? ' on' : ' ghost')}
+              disabled={busy} data-testid="upn-perfil-m" aria-pressed={perfil === 'masculino'}
+              onClick={() => savePerfil('masculino')}>{busy && perfil === 'masculino' ? 'Salvando…' : 'Homem · verde'}</button>
+            <button type="button" className={'adm-btn upn-cor-f' + (perfil === 'feminino' ? ' on' : ' ghost')}
+              disabled={busy} data-testid="upn-perfil-f" aria-pressed={perfil === 'feminino'}
+              onClick={() => savePerfil('feminino')}>{busy && perfil === 'feminino' ? 'Salvando…' : 'Mulher · rosa'}</button>
+          </span>
+        </Row>
+        {perfilMsg && <p className="g-acc g-sm" role="status" data-testid="upn-perfil-ok">{perfilMsg}</p>}
+        <p className="upn-help">Um toque já salva e muda a cor nesta tela. Não precisa de personal feminina e não troca o vínculo.</p>
       </Sec>
 
       <Sec id="mensalidade" title={u.roles?.includes('aluno') ? 'Plano do aluno' : 'Cobrança'} help={u.roles?.includes('aluno') ? 'Básico (mensal) ou Completo (pagamento único, 3 meses). Suspensão administrativa é excepcional e não altera a cobrança.' : 'O personal do ambiente não contrata plano. A cobrança é só do aluno.'}>

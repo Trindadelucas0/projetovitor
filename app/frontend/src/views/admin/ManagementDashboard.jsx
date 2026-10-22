@@ -37,7 +37,7 @@ export default function ManagementDashboard({ go }) {
         {k('Novos cadastros',d.comparison.signups.current,`Últimos ${period} dias`,'usuarios')}
         {k('Alunos que treinaram',d.indicators.trainees,`Pessoas únicas · últimos ${period} dias`,'usuarios')}
         {k('Vínculos ativos',d.indicators.links,'Situação atual','vinculos')}
-        {k('Assinaturas de alunos',d.indicators.subscriptions,'Básico e Completo ativos','assinaturas')}
+        {k('Assinaturas ativas',d.indicators.subscriptions,'Situação atual · Básico e Completo','cobranca')}
       </div>
       <p className="adm-sub mg-source">Alunos do personal: {num(d.indicators.personal_students)}. O personal do ambiente não contrata plano; a cobrança é só do aluno.</p>
       <details className="org-details"><summary>Análises detalhadas</summary><div className="adm-row2"><Trend title="Evolução dos cadastros" rows={d.series.signups} comparison={d.comparison.signups} period={period}/><Trend title="Treinos concluídos" rows={d.series.sessions} comparison={d.comparison.sessions} period={period}/></div>

@@ -50,7 +50,8 @@ body{background:var(--ag-bg)}
 .adm-brand{font-weight:800;font-size:18px;padding:6px 10px 16px}.adm-brand b{color:var(--ag-acc)}
 .adm-side button{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:0 12px;border:0;border-radius:12px;background:none;color:var(--ag-mut);font-size:14px;font-weight:600;cursor:pointer;text-align:left}
 .adm-side button:hover{background:#ffffff08;color:var(--ag-txt)}
-.adm-side button.on{background:#20f51b18;color:var(--ag-acc)}
+.adm-side button.on{background:color-mix(in srgb, var(--ag-acc) 10%, transparent);color:var(--ag-acc)}
+:root[data-palette="feminino"] .adm-side button.on{background:#ff4fd818;color:var(--ag-acc)}
 .adm-side button em{margin-left:auto;font-style:normal;background:var(--ag-acc);color:var(--ag-on);border-radius:99px;padding:1px 8px;font-size:11px;font-weight:800}
 .adm-side h6{margin:14px 12px 6px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ag-dim)}
 .adm-main{padding:24px 28px 80px;min-width:0}

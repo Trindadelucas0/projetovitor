@@ -11,19 +11,20 @@ function Msg({ m }) { return m ? <p className={m.ok ? 'bl-ok' : 'bl-err'} role="
 
 export default function AdmBilling() {
   const [sub, setSub] = useState('geral')
-  const T = [['geral', 'Visão geral'], ['planos', 'Planos e preços'], ['cupons', 'Cupons e campanhas'], ['parceiros', 'Parceiros'], ['assinaturas', 'Assinaturas e cobranças']]
+  const T = [['geral', 'Visão geral'], ['planos', 'Planos e preços'], ['cupons', 'Cupons'], ['assinaturas', 'Quem está pagando']]
   return <div data-testid="adm-billing">
     <div className="mg-subtabs" role="tablist">{T.map(([k, l]) => <button key={k} role="tab" aria-selected={sub === k} className={'adm-btn ' + (sub === k ? '' : 'ghost')} onClick={() => setSub(k)} data-testid={'bill-tab-' + k}>{l}</button>)}</div>
-    {sub === 'geral' && <Geral />}{sub === 'planos' && <Planos />}{sub === 'cupons' && <Cupons />}{sub === 'parceiros' && <Parceiros />}{sub === 'assinaturas' && <Assinaturas />}
+    {sub === 'geral' && <Geral />}{sub === 'planos' && <Planos />}{sub === 'cupons' && <Cupons />}{sub === 'assinaturas' && <Assinaturas />}
   </div>
 }
 
 function Geral() {
   const [d, e, load] = useGet('/api/adm/billing/overview'), [f, setF] = useState(null), [m, setM] = useState(null), [diag, setDiag] = useState(null)
-  useEffect(() => { if (d) setF({ monetizacao_ativa: !!d.policy.monetizacao_ativa, carencia_dias: d.policy.cobranca_carencia_dias, retentativas_dias: (d.policy.cobranca_retentativas_dias || []).join(','), experimental_dias: d.policy.experimental_dias, parceiros_comissao_pct: d.policy.parceiros_comissao_pct, aviso_fim_teste_dias: d.policy.aviso_fim_teste_dias }) }, [d])
+  useEffect(() => { if (d) setF({ monetizacao_ativa: !!d.policy.monetizacao_ativa, carencia_dias: d.policy.cobranca_carencia_dias, retentativas_dias: (d.policy.cobranca_retentativas_dias || []).join(','), experimental_dias: d.policy.experimental_dias, aviso_fim_teste_dias: d.policy.aviso_fim_teste_dias }) }, [d])
   if (e) return <p className="bl-err">{e}</p>; if (!d || !f) return <p>Carregando…</p>
   const pv = d.provider
-  async function save() { try { await post('/api/adm/billing/settings', { ...f, retentativas_dias: String(f.retentativas_dias).split(',').map(s => +s.trim()).filter(Boolean) }); setM({ ok: true, t: 'Política salva.' }); load() } catch (x) { setM({ ok: false, t: x.message }) } }
+  // Comissão de parceiros não aparece na tela; reenvia o valor já gravado para não zerar.
+  async function save() { try { await post('/api/adm/billing/settings', { ...f, parceiros_comissao_pct: d.policy.parceiros_comissao_pct, retentativas_dias: String(f.retentativas_dias).split(',').map(s => +s.trim()).filter(Boolean) }); setM({ ok: true, t: 'Política salva.' }); load() } catch (x) { setM({ ok: false, t: x.message }) } }
   async function reconcile() { try { const r = await post('/api/adm/billing/reconcile'); setM({ ok: true, t: 'Reconciliação concluída: ' + JSON.stringify(r.reconcile) }); load() } catch (x) { setM({ ok: false, t: x.message }) } }
   async function replay(id) { try { const r = await post('/api/adm/billing/webhooks/replay', { id }); setM({ ok: true, t: 'Reprocessado: ' + JSON.stringify(r) }); load() } catch (x) { setM({ ok: false, t: x.message }) } }
   async function diagnosticar() { try { setDiag(await api('/api/adm/billing/asaas-diagnostico')) } catch (x) { setM({ ok: false, t: x.message }) } }
@@ -42,7 +43,6 @@ function Geral() {
         <label className="adm-field">Carência (dias)<input className="adm-in" type="number" value={f.carencia_dias} onChange={e => setF({ ...f, carencia_dias: e.target.value })} /></label>
         <label className="adm-field">Retentativas (dias, separados por vírgula)<input className="adm-in" value={f.retentativas_dias} onChange={e => setF({ ...f, retentativas_dias: e.target.value })} /></label>
         <label className="adm-field">Duração padrão para cupons antigos (dias)<input className="adm-in" type="number" value={f.experimental_dias} onChange={e => setF({ ...f, experimental_dias: e.target.value })} /></label>
-        <label className="adm-field">Comissão padrão de parceiros (%)<input className="adm-in" type="number" value={f.parceiros_comissao_pct} onChange={e => setF({ ...f, parceiros_comissao_pct: e.target.value })} /></label>
         <label className="adm-field">Aviso de fim do teste (dias antes)<input className="adm-in" type="number" value={f.aviso_fim_teste_dias} onChange={e => setF({ ...f, aviso_fim_teste_dias: e.target.value })} /></label>
       </div><button className="adm-btn" onClick={save} data-testid="pol-save">Salvar política</button></div>
     <div className="adm-card"><h3>Resumo</h3>
@@ -97,12 +97,12 @@ function PlanRow({ p, onSaved }) {
 export function Planos() {
   const [d, e, load] = useGet('/api/adm/billing/plans')
   if (e) return <p className="bl-err">{e}</p>; if (!d) return <p>Carregando…</p>
-  return <div className="ag"><p className="adm-sub">Mudanças de recursos ou limites criam uma nova versão: quem já assina continua na versão contratada. Para vender, defina preço maior que zero e marque "À venda".</p>
-    {d.plans.filter(p => ['aluno_free', 'profissional_free', 'individual', 'completo', 'pro', 'pro_ilimitado'].includes(p.id)).map(p => <PlanRow key={p.id + p.version + (p.updated_at || '')} p={p} onSaved={load} />)}</div>
+  return <div className="ag"><p className="adm-sub">Básico (mensal) e Completo (pagamento único, 3 meses). Mudanças de recursos criam uma nova versão: quem já assina continua na versão contratada. Para vender, defina preço maior que zero e marque "À venda".</p>
+    {d.plans.filter(p => ['individual', 'completo'].includes(p.id)).map(p => <PlanRow key={p.id + p.version + (p.updated_at || '')} p={p} onSaved={load} />)}</div>
 }
 
 export function Cupons() {
-  const [d, e, load] = useGet('/api/adm/billing/campaigns'), [pt] = useGet('/api/adm/billing/partners'), [m, setM] = useState(null)
+  const [d, e, load] = useGet('/api/adm/billing/campaigns'), [m, setM] = useState(null)
   const [c, setC] = useState({ name: '', kind: 'oficial', benefit: 'desconto', discount_pct: 20, discount_cycles: 1, trial_days: '', partner_user_id: '', applies_to: '' })
   const [k, setK] = useState({ campaign_id: '', code: '', max_redemptions: '' })
   const [r, setR] = useState({ owner_user_id: '', audience: 'aluno', trial_days: 7, max_redemptions: 10, ends_at: '', code: '' })
@@ -120,7 +120,7 @@ export function Cupons() {
   return <div className="ag"><Msg m={m} />
     <div className="adm-card" data-testid="referral-coupon-create"><h3>Gerar cupom de indicação</h3><p className="adm-sub">Crie um código e um link para uma pessoa distribuir. Somente benefícios concedidos consomem o limite.</p><div className="adm-row2">
       <label className="adm-field">Pessoa responsável<select className="adm-in" value={r.owner_user_id} onChange={e => setR({ ...r, owner_user_id: e.target.value })} data-testid="ref-owner"><option value="">Escolha uma conta</option>{(d.owners || []).map(o => <option key={o.id} value={o.id}>{o.name} ({o.email})</option>)}</select></label>
-      <label className="adm-field">Público<select className="adm-in" value={r.audience} onChange={e => setR({ ...r, audience: e.target.value })} data-testid="ref-audience"><option value="aluno">Aluno — Individual</option><option value="profissional">Profissional — PRO</option></select></label>
+      <label className="adm-field">Público<select className="adm-in" value={r.audience} onChange={e => setR({ ...r, audience: e.target.value })} data-testid="ref-audience"><option value="aluno">Aluno — Básico / Completo</option></select></label>
       <label className="adm-field">Dias de acesso<input className="adm-in" type="number" min="1" max="90" value={r.trial_days} onChange={e => setR({ ...r, trial_days: e.target.value })} data-testid="ref-days" /></label>
       <label className="adm-field">Quantidade de cadastros beneficiados<input className="adm-in" type="number" min="1" value={r.max_redemptions} onChange={e => setR({ ...r, max_redemptions: e.target.value })} data-testid="ref-limit" /></label>
       <label className="adm-field">Validade (opcional)<input className="adm-in" type="datetime-local" value={r.ends_at} onChange={e => setR({ ...r, ends_at: e.target.value })} data-testid="ref-ends" /></label>
@@ -128,14 +128,12 @@ export function Cupons() {
     </div><button className="adm-btn" onClick={makeReferral} data-testid="ref-create">Gerar cupom e link</button></div>
     <div className="adm-card"><h3>Nova campanha</h3><div className="adm-row2">
       <label className="adm-field">Nome<input className="adm-in" value={c.name} onChange={e => setC({ ...c, name: e.target.value })} data-testid="camp-name" /></label>
-      <label className="adm-field">Tipo<select className="adm-in" value={c.kind} onChange={e => setC({ ...c, kind: e.target.value })}><option value="oficial">Oficial</option><option value="parceiro">Parceiro</option></select></label>
       <label className="adm-field">Benefício<select className="adm-in" value={c.benefit} onChange={e => setC({ ...c, benefit: e.target.value })} data-testid="camp-benefit"><option value="desconto">Desconto (%)</option><option value="trial">Acesso experimental</option></select></label>
       {c.benefit === 'desconto' ? <><label className="adm-field">Desconto (%)<input className="adm-in" type="number" value={c.discount_pct} onChange={e => setC({ ...c, discount_pct: e.target.value })} data-testid="camp-pct" /></label>
         <label className="adm-field">Por quantos meses<input className="adm-in" type="number" value={c.discount_cycles} onChange={e => setC({ ...c, discount_cycles: e.target.value })} /></label></>
         : <label className="adm-field">Dias de acesso (vazio = padrão)<input className="adm-in" type="number" value={c.trial_days} onChange={e => setC({ ...c, trial_days: e.target.value })} /></label>}
-      {c.kind === 'parceiro' && <label className="adm-field">Parceiro<select className="adm-in" value={c.partner_user_id} onChange={e => setC({ ...c, partner_user_id: e.target.value })}><option value="">Escolha</option>{pt?.partners.map(p => <option key={p.user_id} value={p.user_id}>{p.name}</option>)}</select></label>}
-      <label className="adm-field">Vale para os planos (ids, vírgula; vazio = todos)<input className="adm-in" value={c.applies_to} onChange={e => setC({ ...c, applies_to: e.target.value })} /></label>
-    </div><button className="adm-btn" data-testid="camp-save" onClick={() => run(() => post('/api/adm/billing/campaigns', { ...c, applies_to: c.applies_to.split(',').map(s => s.trim()).filter(Boolean) }), 'Campanha criada.')}>Criar campanha</button></div>
+      <label className="adm-field">Vale para os planos (ids, vírgula; vazio = Básico e Completo)<input className="adm-in" value={c.applies_to} onChange={e => setC({ ...c, applies_to: e.target.value })} placeholder="individual, completo" /></label>
+    </div><button className="adm-btn" data-testid="camp-save" onClick={() => run(() => post('/api/adm/billing/campaigns', { ...c, kind: 'oficial', applies_to: c.applies_to.split(',').map(s => s.trim()).filter(Boolean) }), 'Campanha criada.')}>Criar campanha</button></div>
     <div className="adm-card"><h3>Novo cupom</h3><div className="adm-row2">
       <label className="adm-field">Campanha<select className="adm-in" value={k.campaign_id} onChange={e => setK({ ...k, campaign_id: e.target.value })} data-testid="code-camp"><option value="">Escolha</option>{d.campaigns.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
       <label className="adm-field">Código<input className="adm-in" value={k.code} onChange={e => setK({ ...k, code: e.target.value.toUpperCase() })} data-testid="code-code" /></label>
