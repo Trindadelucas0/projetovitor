@@ -16,6 +16,7 @@ self.addEventListener('push', e => {
   const data = e.data ? e.data.json() : {}
   e.waitUntil(self.registration.showNotification(data.title || 'ORNY', {
     body: data.body || '',
+    image: data.image || undefined,
     icon: 'icon-512.png',
     badge: 'icon-180.png',
     tag: data.tag || 'avagym',

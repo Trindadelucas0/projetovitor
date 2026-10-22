@@ -11,7 +11,7 @@ export default function PerfilGate() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   const pick = v => { setPerfil(v); setMsg(''); applyPalette(v === 'feminino' ? 'feminino' : 'masculino') }
-  const confirm = async () => {
+  const saveProfile = async () => {
     if (!perfil) return setMsg('Escolha Homem ou Mulher')
     setBusy(true); setMsg('')
     try {
@@ -24,7 +24,7 @@ export default function PerfilGate() {
   }
   return (
     <div className="lg-wrap" data-testid="perfil-gate">
-      <form className="lg-card" onSubmit={e => { e.preventDefault(); confirm() }}>
+      <form className="lg-card" onSubmit={e => { e.preventDefault(); saveProfile() }}>
         <div className="lg-brand"><Brand /></div>
         <h1 style={{ fontSize: 22, margin: '0 0 8px' }}>Escolha seu perfil</h1>
         <p className="lg-sub">Vale para a cor e para a personal. Não dá para alterar sozinho depois.</p>

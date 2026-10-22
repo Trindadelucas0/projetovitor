@@ -15,6 +15,7 @@ import { proRoutes } from './pro.js';
 import { communityRoutes } from './community.js';
 import { communityWorkoutRoutes } from './community-workout-post.js';
 import { communityEditorialRoutes } from './community-editorial.js';
+import { communityNoticeRoutes, startNoticeReminderJob } from './community-notices.js';
 import { socialRoutes } from './social.js';
 import { tapagoRoutes } from './tapago.js';
 import { posturalRoutes } from './postural.js';
@@ -410,6 +411,7 @@ Object.assign(routes, proRoutes({ json, readBody }));
 Object.assign(routes, communityRoutes({ json, readBody }));  // feed, curtidas, comentários, denúncias, moderação
 Object.assign(routes, communityWorkoutRoutes({ json, readBody }));  // publicação opcional do #TáPago pelo dono do treino
 Object.assign(routes, communityEditorialRoutes({ json, readBody }));  // calendário oficial da Comunidade
+Object.assign(routes, communityNoticeRoutes({ json, readBody }, { push: sendPush }));  // avisos com banner e lembrete
 Object.assign(routes, socialRoutes({ json, readBody }));  // V5 E1: perfil social, foto, seguidores, cartões #TáPago
 Object.assign(routes, tapagoRoutes({ json, readBody }));  // #TáPago 2.0: editor, campanha e recompensa de 30 dias
 Object.assign(routes, posturalRoutes({ json, readBody }));  // Avaliação Postural: wizard do aluno, capturas privadas e devolutiva
@@ -558,5 +560,6 @@ server.listen(PORT, process.env.HOST || '0.0.0.0', () => console.log(`gym-api on
 startMailer();
 startAuditPurge();   // V5: retencao da auditoria (app_settings auditoria_retencao_dias; padrao AUDIT_RETENTION_DAYS ou 180)
 setBillingPush(sendPush);   // V5: eventos de cobranca tambem saem por push
+startNoticeReminderJob(sendPush);   // lembrete persistido dos avisos da Comunidade
 startPosturalRecurrence();   // Avaliação Postural: recorrência mensal idempotente e retenção da mídia (POSTURAL_RECURRENCE=off desliga)
 startBillingJob();          // V5: renovacao, retentativa, carencia, suspensao e reconciliacao (BILLING_TICK=off desliga)   // V4.2: fila de e-mail (só envia com SMTP configurado)

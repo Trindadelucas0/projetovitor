@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { q } from './db/pool.js'
 import { requireAuth, audit } from './auth.js'
 import { getSettings, notify } from './pro.js'
+import { canCreateNotice } from './community-notices.js'
 
 import { UPLOADS_DIR as UP, uploadFile } from './storage/index.js'   // QA BUG-013: midia no DATA_DIR (backup/redeploy), leitura com fallback da pasta antiga
 const qs = req => new URL(req.url, 'http://x').searchParams
@@ -233,7 +234,7 @@ export function communityRoutes({ json, readBody }) {
     // foto das publicações (somente quem pode publicar). Armazenamento local em api/uploads.
     'POST /api/uploads': async (req, res) => {
       const u = await requireAuth(req, res, json); if (!u) return
-      if (!(await canPublish(u))) return json(res, 403, { error: 'Somente profissionais autorizados enviam imagens', code: 'PERMISSION_DENIED' })
+      if (!(await canPublish(u)) && !(await canCreateNotice(u))) return json(res, 403, { error: 'Somente personal ativo e administração enviam imagens', code: 'PERMISSION_DENIED' })
       const b = await readBody(req)
       const m = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(b.data || ''))
       if (!m) return json(res, 400, { error: 'Envie PNG, JPEG ou WEBP', code: 'INVALID_INPUT' })
