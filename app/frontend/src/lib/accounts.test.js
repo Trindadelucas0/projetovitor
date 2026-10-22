@@ -16,6 +16,13 @@ describe('tipos de conta', () => {
     expect(isAdminAccount(personalInterno)).toBe(false)
     expect(isNonTrainee(personalInterno)).toBe(true)
   })
+  it('admin com contexto profissional abre a área profissional', () => {
+    const principal = { admin: true, pro: true, roles: ['admin', 'profissional'], context: 'profissional' }
+    expect(isProAccount(principal)).toBe(true)
+    expect(isAdminAccount(principal)).toBe(false)
+    expect(isNonTrainee(principal)).toBe(true)
+    expect(isAdminAccount({ ...principal, context: 'admin' })).toBe(true)
+  })
   it('quem também é aluno segue o fluxo de treino, não a área profissional', () => {
     expect(isProAccount(alunoEPro)).toBe(false)
     expect(isNonTrainee(alunoEPro)).toBe(false)

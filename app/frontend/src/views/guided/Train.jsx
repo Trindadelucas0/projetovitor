@@ -16,6 +16,14 @@ import { ask, notify } from '../../lib/dialog.js'
 // V4.1: fim do descanso NÃO inicia a série sozinho — o aluno toca "Iniciar série" e o cronômetro grande aparece
 const endRest = x => { x.rest = null }
 const mmss = s => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') }
+const ringProgress = (remaining, total) => total > 0 ? Math.max(0, Math.min(1, remaining / total)) : 0
+function TimerRing({ seconds, total, label, testid, countDown = true }) {
+  const value = Math.max(0, seconds)
+  const progress = countDown ? ringProgress(value, total) : 0
+  return <div className="g-timer-ring" role="timer" aria-label={`${label}: ${mmss(value)}`} style={{ '--ring-progress': `${progress * 100}%` }} data-testid={testid}>
+    <div className="g-timer-ring-inner"><span className="g-timer-ring-label">{label}</span><strong>{mmss(value)}</strong></div>
+  </div>
+}
 const beep = () => { try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = .15; o.start(); o.stop(c.currentTime + .25); navigator.vibrate?.(200) } catch { /* */ } }
 
 export default function Train() {
@@ -146,6 +154,7 @@ export default function Train() {
   const video = parseVideo(ex.video_url)
   const elapsed = elapsedOf(s)
   const setRunning = s.cur_start && !s.rest ? Math.max(0, ((s.paused_at ? new Date(s.paused_at).getTime() : Date.now()) - s.cur_start) / 1000) : null
+  const setTarget = Math.max(0, Number(ex.reps) || Number(ex.duration_sec) || 0)
   const isLastEx = s.exIdx >= s.exercises.length - 1
   const restLeft = s.rest ? (s.rest.until - Date.now()) / 1000 : 0
   const grp = groupsOf(s.exercises)[s.exIdx]
@@ -189,7 +198,10 @@ export default function Train() {
       <button className="g-icbtn" onClick={quit} aria-label="Encerrar treino"><Icon name="flag" /></button>
     </div>
 
-    <div className="g-row"><h1 style={{ fontSize: 24, margin: 0 }} data-testid="ex-name">{ex.name}</h1><span className="g-sp" /><button className="g-link" onClick={() => setHow(h => !h)}>{how ? 'Fechar' : 'Como fazer'}</button></div>
+    <div className="g-row g-run-title"><h1 data-testid="ex-name">{ex.name}</h1><span className="g-sp" /><button className="g-link" onClick={() => setHow(h => !h)} aria-expanded={how} aria-controls="exercise-guide">{how ? 'Fechar' : 'Como fazer'}</button></div>
+    {ex.cautions?.length > 0 && <p className="g-warn g-run-warning">Atenção: faça com cuidado se sente {ex.cautions.map(c => RESTR_PT[c.code]?.toLowerCase()).join(', ')}. Pare se doer.</p>}
+    <div className="g-run-guide" id="exercise-guide" hidden={!how}>
+    {how && <>
     {/* Vídeo do personal, quando a ficha tem um para este exercício: entra no lugar da
         figura, com pausa, ±10 s e velocidade. Sem vídeo, segue a imagem de sempre. */}
     {video ? <ExercisePlayer key={ex.exercise_id} url={ex.video_url} title={ex.name} onTime={setVideoSec} />
@@ -200,22 +212,22 @@ export default function Train() {
       <Icon name="stretch" /><span className="g-xs g-mut">Sem vídeo para este exercício — siga as instruções abaixo</span>
     </div>}
     {video && <button className="g-btn g-ghost g-sm" style={{ marginTop: 4 }} onClick={() => setSheet('ask')} data-testid="ask-video"><Icon name="chat" /> Tenho uma dúvida neste vídeo</button>}
-    {how && <ExtraMedia id={ex.exercise_id} />}
-    {(how || !m || bad[ex.exercise_id]) && <p className="g-mut g-sm" style={{ marginTop: 6 }}>{ex.instructions || 'Faça o movimento devagar e com controle. Pare se sentir dor.'}</p>}
-    {ex.cautions?.length > 0 && <p className="g-warn" style={{ marginTop: 6 }}>Atenção: faça com cuidado se sente {ex.cautions.map(c => RESTR_PT[c.code]?.toLowerCase()).join(', ')}. Pare se doer.</p>}
-
+    <ExtraMedia id={ex.exercise_id} />
+    <p className="g-mut g-sm" style={{ marginTop: 6 }}>{ex.instructions || 'Faça o movimento devagar e com controle. Pare se sentir dor.'}</p>
     {(s.plan_desc || s.day_desc) && s.exIdx === 0 && ex.done.length === 0 && <div className="g-card g-sm" style={{ marginTop: 8 }} data-testid="plan-desc">{s.plan_desc && <p style={{ margin: 0 }}><b>Como fazer o treino:</b> {s.plan_desc}</p>}{s.day_desc && <p style={{ margin: s.plan_desc ? '6px 0 0' : 0 }}><b>Hoje:</b> {s.day_desc}</p>}</div>}
-    {grp && <div className="g-grp" data-testid="grp-tag"><b>{grp.kind}</b> · {grp.pos + 1} de {grp.size}: {s.exercises.slice(grp.start, grp.start + grp.size).map((e, k) => <span key={k} className={k === grp.pos ? 'on' : ''}>{e.name}</span>)}<small>Faça em sequência, sem descanso; descanse ao fim da rodada.</small></div>}
-    {chips.length > 0 && <div className="g-chips" data-testid="ex-chips">{chips.map(c => <span key={c}>{c}</span>)}</div>}
-    {ex.notes && <p className="g-mut g-xs" style={{ marginTop: 4 }}>Obs.: {ex.notes}</p>}
-    {ex.per_set?.length > 0 && <table className="g-sets" data-testid="sets-table"><thead><tr><th>Série</th><th>Reps</th><th>Carga</th><th /></tr></thead><tbody>{Array.from({ length: ex.sets }, (_, k) => { const t = targetFor(ex, k), d = ex.done[k]; return <tr key={k} className={k === ex.done.length ? 'cur' : d ? 'ok' : ''}><td>{k + 1}</td><td>{t.reps}</td><td>{t.load_kg != null && t.load_kg !== '' ? t.load_kg + ' kg' : '—'}</td><td>{d ? '✓ ' + (d.weight ? d.weight + '×' : '') + d.reps : ''}</td></tr> })}</tbody></table>}
-    <div style={{ marginTop: 12 }}>
-      <div className="g-setlbl" data-testid="set-label">Série <b>{setNo}</b> de {ex.sets} · meta {ex.timed ? `${ex.duration_sec} s` : ex.per_set?.length ? `${targetFor(ex, Math.min(ex.done.length, ex.sets - 1)).reps} repetições` : `${ex.reps_min || ''}${ex.reps_max && ex.reps_max !== ex.reps_min ? '–' + ex.reps_max : ''} repetições`}</div>
-      <div className="g-dots">{Array.from({ length: ex.sets }, (_, i) => <i key={i} className={i < ex.done.length ? 'g-on' : i === ex.done.length ? 'g-cur' : ''} />)}</div>
-      {ex.last && <p className="g-dim g-xs" style={{ marginTop: 8 }}>Última vez: {ex.last.map(l => ex.timed ? `${l.reps ?? '—'}` : `${l.weight ? l.weight + ' kg × ' : ''}${l.reps}`).join(' · ')}</p>}
-      {ex.note && <p className="g-acc g-xs" style={{ marginTop: 4 }}>Sugestão: {ex.note}</p>}
+    </>}
     </div>
 
+    {grp && <div className="g-grp" data-testid="grp-tag"><b>{grp.kind}</b> · {grp.pos + 1} de {grp.size}: {s.exercises.slice(grp.start, grp.start + grp.size).map((e, k) => <span key={k} className={k === grp.pos ? 'on' : ''}>{e.name}</span>)}<small>Faça em sequência, sem descanso; descanse ao fim da rodada.</small></div>}
+    <div style={{ marginTop: 12 }}>
+      <div className="g-setlbl" data-testid="set-label">Série <b>{setNo}</b> de {ex.sets} · meta {ex.timed ? `${setTarget} s` : ex.per_set?.length ? `${targetFor(ex, Math.min(ex.done.length, ex.sets - 1)).reps} repetições` : `${ex.reps_min || ''}${ex.reps_max && ex.reps_max !== ex.reps_min ? '–' + ex.reps_max : ''} repetições`}</div>
+      <div className="g-dots">{Array.from({ length: ex.sets }, (_, i) => <i key={i} className={i < ex.done.length ? 'g-on' : i === ex.done.length ? 'g-cur' : ''} />)}</div>
+    </div>
+
+    {!isBlocked && !allDoneEx && setRunning != null && <div className="g-setclock" data-testid="set-clock">
+      <TimerRing seconds={ex.timed ? Math.max(0, setTarget - setRunning) : setRunning} total={setTarget} countDown={!!ex.timed} label={ex.timed ? 'Restam' : 'Decorrido'} testid="set-timer" />
+      <span className="g-mut g-xs">Série {setNo} de {ex.sets} · {ex.timed ? `meta ${setTarget} s` : `meta ${ex.reps} repetições${ex.weight ? ' · ' + ex.weight + ' kg' : ''}`}</span>
+    </div>}
     <div className="g-steppers" style={ex.timed ? { gridTemplateColumns: '1fr' } : null}>
       {!ex.timed && <div className="g-stp"><div className="g-lb">Carga</div>
         <div className="g-val" data-testid="weight">{ex.weight || 0}<small>kg</small></div>
@@ -227,12 +239,6 @@ export default function Train() {
 
     {isBlocked && <div className="g-blocked" data-testid="ex-blocked"><b>Exercício pausado</b><p className="g-mut g-sm">Você relatou dor ou desconforto. Ele fica bloqueado até seu profissional registrar uma orientação explícita. Siga para o próximo exercício.</p></div>}
     {flash && <p className="g-note" style={{ marginTop: 8 }}>{flash}</p>}
-    {!isBlocked && !allDoneEx && setRunning != null && <div className="g-setclock" data-testid="set-clock" role="timer" aria-live="off" aria-label={'Tempo da série ' + clock(setRunning)}>
-      <span className="g-eyebrow">Série {setNo} de {ex.sets} em andamento</span>
-      <div className="g-clock" data-testid="set-timer">{mmss(setRunning)}</div>
-      {ex.timed && ex.duration_sec ? <div className="g-bar" style={{ width: '100%', flex: 'none' }}><i style={{ width: Math.min(100, setRunning / ex.duration_sec * 100) + '%' }} /></div> : null}
-      <span className="g-mut g-xs">{ex.timed ? `Meta ${ex.duration_sec || ex.reps} s` : `Meta ${ex.reps} repetições${ex.weight ? ' · ' + ex.weight + ' kg' : ''}`}</span>
-    </div>}
     {isBlocked ? null : allDoneEx ? <button className="g-btn g-xl" onClick={goNext}>{isLastEx ? 'FINALIZAR TREINO' : 'PRÓXIMO EXERCÍCIO'}</button>
       : setRunning == null ? <>
         <button className="g-btn g-xl" onClick={startSet} data-testid="start-set"><Icon name="play" /> INICIAR SÉRIE {setNo}</button>
@@ -242,6 +248,13 @@ export default function Train() {
         <button className="g-link g-center" style={{ width: '100%', minHeight: 44 }} onClick={startSet} data-testid="restart-set">Reiniciar cronômetro da série</button>
       </>}
     <button className="g-btn g-ghost g-sm" style={{ marginTop: 10 }} onClick={goNext} data-testid="next-ex">{isLastEx ? 'Finalizar treino' : 'Pular para o próximo exercício'}</button>
+    <details className="g-run-details"><summary>Séries e última vez</summary>
+      {chips.length > 0 && <div className="g-chips" data-testid="ex-chips">{chips.map(c => <span key={c}>{c}</span>)}</div>}
+      {ex.notes && <p className="g-mut g-xs">Obs.: {ex.notes}</p>}
+      {ex.per_set?.length > 0 && <div className="g-sets-wrap"><table className="g-sets" data-testid="sets-table"><thead><tr><th>Série</th><th>Reps</th><th>Carga</th><th /></tr></thead><tbody>{Array.from({ length: ex.sets }, (_, k) => { const t = targetFor(ex, k), d = ex.done[k]; return <tr key={k} className={k === ex.done.length ? 'cur' : d ? 'ok' : ''}><td>{k + 1}</td><td>{t.reps}</td><td>{t.load_kg != null && t.load_kg !== '' ? t.load_kg + ' kg' : '—'}</td><td>{d ? '✓ ' + (d.weight ? d.weight + '×' : '') + d.reps : ''}</td></tr> })}</tbody></table></div>}
+      {ex.last && <p className="g-dim g-xs">Última vez: {ex.last.map(l => ex.timed ? `${l.reps ?? '—'}` : `${l.weight ? l.weight + ' kg × ' : ''}${l.reps}`).join(' · ')}</p>}
+      {ex.note && <p className="g-acc g-xs">Sugestão: {ex.note}</p>}
+    </details>
 
     <div className="g-actions">
       <button className="g-btn g-ghost g-sm" onClick={() => setSheet('ask')} data-testid="ask"><Icon name="chat" /> Tenho uma dúvida</button>
@@ -257,10 +270,9 @@ export default function Train() {
       <button className="g-btn g-ghost" style={{ maxWidth: 360 }} onClick={() => nav('/hoje')}>Sair (o treino continua pausado)</button></div>}
     {s.rest && !s.paused_at && <div className="g-rest" data-testid="rest">
       <span className="g-eyebrow">Descanse</span>
-      <div className="g-clock" data-testid="rest-clock">{mmss(restLeft)}</div>
-      <div className="g-bar" style={{ width: '100%', maxWidth: 360, flex: 'none' }}><i style={{ width: (1 - restLeft / s.rest.total) * 100 + '%' }} /></div>
+      <TimerRing seconds={Math.max(0, restLeft)} total={s.rest.total} label="Restam" testid="rest-clock" />
       <div className="g-pmrow">
-        <button className="g-btn g-ghost" onClick={() => { logEvent(s, 'rest_adjust', { delta: -15 }); update(x => { x.rest.until -= 15000 }) }}>−15 s</button>
+        <button className="g-btn g-ghost" onClick={() => { logEvent(s, 'rest_adjust', { delta: -15 }); update(x => { x.rest.until -= 15000; x.rest.total = Math.max(0, x.rest.total - 15) }) }}>−15 s</button>
         <button className="g-btn g-ghost" onClick={() => { logEvent(s, 'rest_adjust', { delta: 15 }); update(x => { x.rest.until += 15000; x.rest.total += 15 }) }}>+15 s</button>
       </div>
       <div className="g-nextup g-card"><span className="g-mut g-xs">{s.rest.afterNext ? 'Próximo exercício' : 'Próxima série'}</span><br /><b>{ex.name}</b> · série {setNo} de {ex.sets}</div>
@@ -273,7 +285,7 @@ export default function Train() {
 // vídeos e fotos extras cadastrados pela administração (a mídia padrão continua acima)
 function ExtraMedia({ id }) {
   const [m, setM] = useState([])
-  useEffect(() => { let on = true; C.exMedia(id).then(r => on && setM(r.media)).catch(() => on && setM([])); return () => { on = false } }, [id])
+  useEffect(() => { let on = true; C.exMedia(id).then(r => on && setM(Array.isArray(r?.media) ? r.media : [])).catch(() => on && setM([])); return () => { on = false } }, [id])
   if (!m.length) return null
   return <div className="g-scrollx" style={{ margin: '8px 0 10px', gap: 8 }} data-testid="ex-extra-media">{m.map(x => x.kind === 'video'
     ? (/youtube|youtu\.be|vimeo/.test(x.url) ? <a key={x.id} className="g-chipbtn" href={x.url} target="_blank" rel="noopener">▶ {x.caption || 'Vídeo'}</a> : <video key={x.id} src={x.url} controls playsInline preload="metadata" style={{ width: 220, borderRadius: 14, flex: 'none' }} />)

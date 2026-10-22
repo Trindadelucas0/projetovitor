@@ -61,6 +61,7 @@ import Estatisticas from './views/guided/Estatisticas.jsx'   // lote 7: progress
 import Avaliacoes from './views/postural/Avaliacoes.jsx'   // V5-AP: avaliação postural do aluno
 import PosturalWizard from './views/postural/Wizard.jsx'
 import Devolutiva from './views/postural/Devolutiva.jsx'
+import PendingAssessmentNotice from './views/postural/PendingAssessmentNotice.jsx'
 import { MustChangePassword, AccessLockHost, LockBanner, ScopeGate } from './views/v3/V42.jsx'
 import './styles/v42.css'
 import './styles/tours.css'
@@ -147,7 +148,7 @@ function Shell() {
                aluno e as rotas /pro* levam ao treino. */
             <Routes>
               <Route path="/pro/treino" element={(user?.admin || isProAccount(user)) ? <Builder /> : <Navigate to="/hoje" replace />} />
-              <Route path="/hoje" element={<Gate title="Início"><Today /></Gate>} />
+              <Route path="/hoje" element={isProAccount(user) ? <Navigate to="/pro" replace /> : <Gate title="Início"><Today /></Gate>} />
               <Route path="/treinos" element={<Gate title="Treinos"><Treinos /></Gate>} />
               <Route path="/comunidade" element={<Gate title="Comunidade"><Comunidade /></Gate>} />
               <Route path="/acompanhamento" element={<Gate title="Acompanhamento"><Acompanhamento /></Gate>} />
@@ -183,7 +184,7 @@ function Shell() {
               <Route path="/admin/programas" element={user ? <AdminPrograms /> : <Navigate to="/hoje" replace />} />
               {/* V4: sem montagem de treino nem treino livre. Rotas antigas levam às rotinas antigas (só consulta);
                   /workout só abre para concluir um treino livre que já estava em andamento no aparelho. */}
-              <Route path="/home" element={<Navigate to="/hoje" replace />} />{/* QA: /home abria o historico vazio para aluno novo */}
+              <Route path="/home" element={<Navigate to={isProAccount(user) ? '/pro' : '/hoje'} replace />} />{/* QA: /home abria o historico vazio para aluno novo */}
               <Route path="/plan" element={<Navigate to="/treinos?aba=historico" replace />} />
               <Route path="/plan/r/:id" element={<Navigate to="/treinos?aba=historico" replace />} />
               <Route path="/workout" element={<Gate title="Treinos">{S.active ? <Workout /> : <Navigate to="/treinos" replace />}</Gate>} />
@@ -213,6 +214,7 @@ function Shell() {
       {!(authed && ['/hoje', '/pro'].includes(loc.pathname) && !user?.must_change_password && !user?.needs_terms && !isAdminAccount(user)) && !['/treinar', '/concluido', '/pro/treino'].includes(loc.pathname) && !loc.pathname.startsWith('/avaliacao/') && <ThemeToggle className="g-bell g-theme-fab" />}
       <Toast />
       <DialogHost />
+      <PendingAssessmentNotice />
     </>
   )
 }

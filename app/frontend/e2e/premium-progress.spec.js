@@ -5,7 +5,7 @@ const program={id:'program-test',title:'Massa muscular — Primeiros passos',goa
 const exercise={id:'ex-1',exercise_id:'supino',name:'Supino',sets:1,reps_min:10,reps_max:10,rest_sec:30,cautions:[],suggestion:{weight:10,reps:10}}
 const active={id:'active-test',program_id:program.id,title:program.title,weeks:8,week_index:1,days_per_week:3}
 const stats={period_days:90,target_per_week:3,kpis:{n:3,vol:600,secs:1800,avg_secs:600,active_days:3,sets:3,per_week:1,weeks:3,weeks_hit:0,consistency_pct:0,avg_volume:200,records_count:2},comparison:{previous:{n:2,vol:400,secs:1200,active_days:2},change_pct:{n:50,vol:50,secs:50,active_days:50}},weeks:[{wk:'2026-09-28',n:1,vol:100,secs:600},{wk:'2026-10-05',n:0,vol:0,secs:0},{wk:'2026-10-12',n:2,vol:500,secs:1200}],days:[],weekdays:[1,2,3,4,5,6,7].map(dow=>({dow,n:dow===1?3:0})),groups:[{group_id:'peito',sets:3,vol:600}],exercises:[{exercise_id:'supino',name:'Supino',sets:3,vol:600,points:[{d:'2026-10-05',w:10,e1rm:13.3},{d:'2026-10-17',w:30,e1rm:40}]}],records:[{exercise_id:'supino',name:'Supino',weight:30,reps:10,e1rm:40,at:'2026-10-17T03:00:00Z',new:true}]}
-async function setup(page,{locked=false,scoped=false,status='ativo',welcome=false,delay=0,role='aluno'}={}){
+async function setup(page,{locked=false,scoped=false,scopedWithGroups=false,status='ativo',welcome=false,delay=0,role='aluno'}={}){
  const user={id:'premium-test',name:'Maria Teste',status,roles:[role],context:role,pro:role==='profissional',access_locked:false,access_unlocked_at:scoped?null:'2026-01-01',client_locked:scoped,account_type:scoped?'personal_client':'normal'}
  const state={locked,seen:0,starts:0,saved:0,published:0,statsFail:false,homeFail:false,welcome}
  await page.addInitScript(user=>{localStorage.setItem('gym_user',JSON.stringify(user));localStorage.setItem('gym_state_v1',JSON.stringify({lang:'pt',theme:'dark'}))},user)
@@ -29,7 +29,7 @@ async function setup(page,{locked=false,scoped=false,status='ativo',welcome=fals
   else if(p==='/api/guided/progress')data={totals:{n:state.saved?4:3,vol:600,secs:1800},weeks:[],records:[],history:[]}
   else if(p==='/api/guided/stats'){
    if(state.statsFail)return route.fulfill({status:503,json:{error:'Indisponível'}})
-   data=scoped?{...stats,groups:[]}:stats
+   data=scoped&&!scopedWithGroups?{...stats,groups:[],records:[],exercises:[]}:stats
   }
   else if(p==='/api/guided/programs')data={programs:[program,{...program,id:'strength-test',title:'Força — Base',goal:'strength',level:'intermediate',location:'home'}].filter(x=>!url.searchParams.get('goal')||x.goal===url.searchParams.get('goal'))}
   else if(p==='/api/guided/program')data={program:{...program,workouts:[{id:'workout-test',name:'Treino A',exercises:[exercise]}]}}
@@ -63,7 +63,11 @@ for(const width of [320,390,768,1280])for(const theme of ['light','dark'])test(`
  await page.goto('/#/estatisticas');await expect(page.getByTestId('st-kpis')).toBeVisible();await fit(page)
  if(width===390)await page.screenshot({path:`test-artifacts/improvements/estatisticas-${theme}.png`,fullPage:true})
  await expect(page.getByTestId('kpi-rec')).toContainText('2')
- await page.goto('/#/progresso');await expect(page.getByTestId('progress')).toBeVisible();await expect(page.getByText('Falta 2 treinos para sua meta')).toBeVisible();await fit(page)
+ await page.goto('/#/progresso');await expect(page.getByTestId('progress')).toBeVisible();await expect(page.getByText('Falta 2 treinos para sua meta')).toBeVisible()
+ await expect(page.getByTestId('progress-muscle-map').locator('.bm-v')).toHaveCount(2)
+ await expect(page.getByTestId('progress-muscle-map')).toContainText('Peito · 100% das séries efetivas')
+ await expect(page.getByTestId('progress-muscle-map').locator('.bm-m.l4')).not.toHaveCount(0)
+ await fit(page)
  if(width===390)await page.screenshot({path:`test-artifacts/improvements/progresso-${theme}.png`,fullPage:true})
  await page.goto('/#/programas');await expect(page.getByTestId('program-card')).toHaveCount(2)
  await page.getByRole('combobox',{name:'Nível',exact:true}).click();await page.locator('[role=option][data-value=beginner]').click()
@@ -72,6 +76,17 @@ for(const width of [320,390,768,1280])for(const theme of ['light','dark'])test(`
  await expect(page.getByText('Nenhum programa encontrado para esses filtros.',{exact:false})).toBeVisible()
  await fit(page);await page.goto('/#/avisos');await expect(page.getByText('Seu profissional respondeu')).toBeVisible();await fit(page)
  if(width===390)await page.screenshot({path:`test-artifacts/improvements/avisos-${theme}.png`,fullPage:true})
+})
+test('aluno do personal vê o mapa de 30 dias e o estado sem treinos, mantendo o Corpo 3D oculto',async({page})=>{
+ await setup(page,{scoped:true,scopedWithGroups:true});await page.goto('/#/progresso')
+ await expect(page.getByTestId('progress-muscle-map')).toContainText('Peito · 100% das séries efetivas')
+ await expect(page.getByTestId('progress-muscle-map').locator('.bm-v')).toHaveCount(2)
+ await expect(page.getByTestId('open-3d')).toHaveCount(0)
+ await fit(page)
+ await setup(page,{scoped:true});await page.reload()
+ await expect(page.getByTestId('progress-muscle-map')).toContainText('Nenhum músculo treinado nos últimos 30 dias')
+ await expect(page.getByTestId('progress-muscle-map').locator('.bm-m.l4')).toHaveCount(0)
+ await fit(page)
 })
 test('sem acesso: cadeados por seção e acesso direto bloqueado',async({page})=>{
  await setup(page,{locked:true});await page.goto('/#/progresso')

@@ -3,12 +3,13 @@
 // V4.1: o nome do cache leva o id do build (trocado no build) → versão nova = SW novo = PWA atualiza sozinho
 const BUILD = '__BUILD_ID__'
 const CACHE = 'avagym-rt-v41-' + BUILD
+const CACHE_PREFIX = 'avagym-rt-'
 
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('message', e => { if (e.data === 'SKIP_WAITING') self.skipWaiting() })
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    Promise.all(keys.filter(k => k.startsWith(CACHE_PREFIX) && k !== CACHE).map(k => caches.delete(k)))
   ).then(() => self.clients.claim()))
 })
 self.addEventListener('push', e => {
@@ -56,6 +57,10 @@ self.addEventListener('fetch', e => {
     e.respondWith(fetch(fresh ? new Request(e.request, { cache: 'no-store' }) : e.request).then(res => {
       if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()))
       return res
-    }).catch(() => caches.match(e.request).then(hit => hit || caches.match('index.html'))))
+    }).catch(() => caches.match(e.request).then(hit => {
+      if (hit) return hit
+      if (e.request.mode === 'navigate') return caches.match('/')
+      return Response.error()
+    })))
   }
 })

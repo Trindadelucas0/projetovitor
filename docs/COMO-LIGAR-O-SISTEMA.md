@@ -2,6 +2,57 @@
 
 Este documento ensina a ligar a cópia local em `F:\projetovitor\projetovitor`, do zero até a tela abrindo no navegador, e a desligar depois. Ele cobre **somente o ambiente local**: nada aqui publica na VPS nem aplica migrations. Para o uso das telas, consulte o [guia de uso](como-usar-o-sistema.md); para o comportamento confirmado desta cópia, a [documentação oficial](../app/DOCUMENTACAO-SISTEMA.md).
 
+## Início rápido pelo terminal (PowerShell)
+
+O sistema precisa de **dois terminais abertos ao mesmo tempo**: um mantém a API ligada; o outro mantém a interface ligada. Execute os comandos abaixo no Windows, nesta cópia do projeto.
+
+**Antes da primeira vez:** tenha Node.js, npm e PostgreSQL instalados e confira os comandos:
+
+```powershell
+node -v
+npm -v
+```
+
+O PostgreSQL precisa estar iniciado e o banco indicado em `app/api/.env` precisa existir. Se o arquivo `.env` ainda não existir, crie-o a partir do modelo e preencha nele os dados do **seu** banco e as demais configurações necessárias. Não publique esse arquivo nem coloque senhas neste guia:
+
+```powershell
+cd F:\projetovitor\projetovitor\app\api
+Copy-Item .env.example .env
+notepad .env
+```
+
+Se o `.env` já existir, **não repita** o `Copy-Item`: preserve a configuração local. No arquivo, confira principalmente `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` e `ORIGIN`. O modelo usa PostgreSQL em `localhost:5432` e a API na porta `8787`.
+
+**Terminal 1 — ligar a API:**
+
+```powershell
+cd F:\projetovitor\projetovitor\app\api
+npm install
+npm run dev
+```
+
+Deixe esse terminal aberto. `npm install` é necessário na primeira instalação ou quando as dependências mudarem; nas próximas vezes, basta entrar na pasta e executar `npm run dev`.
+
+**Terminal 2 — ligar a interface:** abra outra janela do PowerShell e execute:
+
+```powershell
+cd F:\projetovitor\projetovitor\app\frontend
+npm install
+npm run dev
+```
+
+Deixe o segundo terminal aberto e acesse **http://127.0.0.1:5551** no navegador. O Vite encaminha as chamadas da interface para a API em `127.0.0.1:8787`.
+
+**Conferir a API:** em um terceiro terminal, execute:
+
+```powershell
+Invoke-WebRequest http://127.0.0.1:8787/api/health -UseBasicParsing | Select-Object -ExpandProperty Content
+```
+
+O retorno esperado é `{"ok":true}`. Isso confirma que a API está respondendo; para conferir também a conexão com o banco, use a verificação da [seção 3](#3-conferir-se-subiu-de-verdade). Para **desligar**, pressione `Ctrl+C` no terminal da interface e depois no terminal da API.
+
+Os passos abaixo detalham os pré-requisitos, o script de inicialização alternativo, outras verificações e problemas comuns.
+
 Ligar o sistema significa subir **dois processos**:
 
 | Processo | O que é | Endereço |
