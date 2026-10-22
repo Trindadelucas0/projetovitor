@@ -6,11 +6,11 @@ Este guia descreve as ações do aplicativo de um personal e seus alunos. O nome
 
 A base local começa com **zero alunos** e duas contas separadas. O administrador entra com a conta definida em `ADMIN_EMAIL` e abre somente o painel administrativo. O personal principal entra com a conta definida em `PERSONAL_PRINCIPAL_EMAIL`, troca a senha provisória no primeiro acesso e abre a área profissional em `/pro`. Esses valores ficam somente no `.env`. A publicação na VPS e a contratação do plano exigem validação própria antes de receber alunos reais.
 
-## Acesso interno à instalação na VPS
+## Acesso à instalação na VPS
 
-Na máquina de uso, abra um terminal e mantenha `ssh -N -L 4461:127.0.0.1:4461 root@187.127.3.250` conectado. Depois abra `http://localhost:4461` no navegador. O administrador e o personal usam os endereços mostrados nos arquivos protegidos da VPS e criam uma senha nova no primeiro acesso. O responsável pela VPS pode consultar as credenciais provisórias diretamente nos arquivos protegidos `/opt/projetovitor-runtime/credentials/admin.txt` e `/opt/projetovitor-runtime/credentials/personal.txt`, sem enviá-las por chat. Fechar o terminal encerra apenas o túnel local; os serviços continuam no PM2.
+Abra `https://academia.avadesk.com.br` no navegador. O administrador e o personal usam as credenciais próprias da VPS e criam uma senha nova no primeiro acesso. As credenciais do banco **local** `avagym`, usadas em `http://127.0.0.1:5551`, não são as senhas desta instalação. O responsável pela VPS pode consultar as credenciais provisórias diretamente nos arquivos protegidos `/opt/projetovitor-runtime/credentials/admin.txt` e `/opt/projetovitor-runtime/credentials/personal.txt`, sem enviá-las por chat.
 
-Esta instalação interna usa cobrança simulada e não tem endereço público. A abertura da página e o login inicial foram verificados, mas o cadastro e pagamento de alunos reais dependem de configuração comercial, legal e validação própria antes da liberação.
+O domínio responde e aceita a origem HTTPS nas requisições de login, mas um login real pelo domínio ainda precisa ser conferido. Esta instalação usa cobrança simulada: cadastro e pagamento de alunos reais dependem de configuração comercial, legal e validação própria antes da liberação.
 
 ## Aluno: começar
 

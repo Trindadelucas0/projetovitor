@@ -73,11 +73,13 @@ Consequência a considerar: o personal principal passou a acumular `admin` + `pr
 
 ## Atualização desta fonte
 
-### Instalação interna na VPS (21/10/2026)
+### Instalação na VPS (21/10/2026; domínio atualizado em 21/10/2026)
 
 O commit público `4dd90a1` foi clonado em `/opt/projetovitor`, separado do AVAGYM. O banco PostgreSQL `projetovitor` usa o contêiner `projetovitor-postgres` e dados em `/opt/projetovitor-runtime/postgres`; recebeu 72 migrations e começou com duas contas e zero alunos. A API e o gateway web estão online no PM2 como `projetovitor-api` e `projetovitor-web`, salvos para reinício com `pm2 save`. Respondem somente em `127.0.0.1:8798` e `127.0.0.1:4461`; o PostgreSQL responde somente em `127.0.0.1:5442`. O catálogo público de imagens e GIFs foi copiado para `/opt/projetovitor-runtime/media`, sem usar a pasta de mídia do AVAGYM.
 
-O acesso escolhido é interno, por túnel SSH. Não há domínio público configurado. As contas iniciais de administrador e personal principal são separadas, exigem troca de senha no primeiro login e tiveram login e leitura de sessão verificados. As credenciais provisórias foram geradas na VPS e guardadas com permissão `0600` em `/opt/projetovitor-runtime/credentials/`; não constam no Git. O provedor de cobrança desta instalação é o simulador, sem pagamento real. A interface compilou e os testes HTTP de página, API, planos públicos e mídia retornaram `200`; o fluxo completo em navegador, a cobrança real e a avaliação postural em aparelho não foram homologados nesta instalação. O commit da VPS permanece fixo em `4dd90a1` até uma publicação separada e validada.
+O domínio público `https://academia.avadesk.com.br` foi apontado pelo responsável para o gateway em `127.0.0.1:4461`. A API passou a usar esse endereço HTTPS em `ORIGIN` e `CSRF_ALLOWED_ORIGINS`, mantendo `http://localhost:4461` como origem adicional de manutenção. Em 21/10/2026, a página e `/api/health` responderam `200` pelo domínio; um POST vazio em `/api/auth/login` passou da recusa `403 CSRF_ORIGIN` para a validação normal `400` por falta de e-mail e senha. Login real pelo domínio ainda não foi verificado.
+
+As contas iniciais de administrador e personal principal são separadas; as credenciais provisórias específicas da VPS ficam protegidas com permissão `0600` em `/opt/projetovitor-runtime/credentials/` e não constam no Git. Credenciais do banco local `avagym` não foram copiadas para a VPS. O provedor de cobrança desta instalação é o simulador, sem pagamento real. O fluxo completo em navegador, a cobrança real e a avaliação postural em aparelho não foram homologados nesta instalação; não usar com alunos reais até configurar e validar esses pontos. O commit da VPS permanece em `4dd90a1` até uma publicação separada e validada.
 
 ### Verificações no GitHub Actions
 
