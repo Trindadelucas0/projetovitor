@@ -50,6 +50,9 @@ export async function run({ adm, p1, p2, P1, get, post, check }) {
   check((await get(adm, '/api/adm/plan?id=' + r.d.id)).d.plan.days[0].exercises.length === 4, 'admin abre a ficha para editar')
   r = await post(adm, '/api/adm/templates', { title: 'Global v2 ' + t, goal: 'hypertrophy', description: 'x', days: good })
   check(r.s === 201 && (await get(p1, '/api/pro/templates')).d.templates.some(x => x.id === r.d.id), 'admin salva modelo global v2, visível ao profissional')
+  // limpeza: os dois modelos de teste saem da lista do construtor
+  check((await post(adm, '/api/adm/templates/status', { id: r.d.id, status: 'arquivado' })).s === 200, 'modelo global de teste arquivado no fim')
+  check((await post(adm, '/api/adm/templates/status', { id: tid, status: 'arquivado' })).s === 200, 'modelo pessoal de teste arquivado no fim')
   // compatibilidade: ficha antiga (reps_max) continua válida
   r = await post(adm, '/api/adm/plans/save', { student_id: sid, title: 'Antiga', status: 'rascunho', days: [{ name: 'A', exercises: [{ exercise_id: a.id, sets: 3, reps_max: 10 }] }] })
   check(r.s === 201 && (await get(adm, '/api/adm/plan?id=' + r.d.id)).d.plan.days[0].exercises[0].reps === '10', 'ficha no formato antigo continua aceita')

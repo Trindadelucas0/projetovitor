@@ -66,6 +66,8 @@ export async function run({ adm, p1, p2, stu, sid, P1, P2, get, post, check }) {
   check((await post(adm, '/api/adm/exercises/archive', { id: xid, confirm: 'EXCLUIR' })).d.archived, 'excluir exercício = arquivar')
   check(!(await get(p1, '/api/pro/library?q=' + encodeURIComponent('editado ' + t))).d.exercises.length, 'exercício arquivado sai da biblioteca')
   check((await post(adm, '/api/adm/exercises/archive', { id: xid, restore: true })).s === 200, 'admin restaura exercício')
+  // limpeza: arquiva de novo, senao o exercicio de teste fica na biblioteca do construtor
+  check((await post(adm, '/api/adm/exercises/archive', { id: xid, confirm: 'EXCLUIR' })).d.archived, 'exercício de teste arquivado no fim')
   const au = JSON.stringify((await get(adm, '/api/adm/audit')).d)
   check(['usuario.editado', 'usuario.excluido', 'treino.arquivado_admin', 'post.removido_admin', 'exercicio.arquivado'].every(a => au.includes(a)), 'tudo registrado na auditoria')
 }

@@ -63,9 +63,12 @@ export async function run({ adm, p1, p2, stu, sid, P1, get, post, check }) {
   check(r.s === 410 && r.d.code === 'FLOW_REMOVED', 'V3: pedido de vínculo pela administração removido (410 — use convites)')
   console.log('Fase 4 — modelos e KPIs')
   check((await post(p1, '/api/adm/templates', { title: 'x', days: [] })).s === 403, 'só o admin cria modelos')
-  r = await post(adm, '/api/adm/templates', { title: 'Iniciante Full Body', goal: 'hypertrophy', days: [{ name: 'A', exercises: [{ exercise_id: e1.id, name: e1.name, sets: 3, reps_max: 12 }] }] })
+  const t4 = Date.now()
+  r = await post(adm, '/api/adm/templates', { title: 'Iniciante Full Body ' + t4, goal: 'hypertrophy', days: [{ name: 'A', exercises: [{ exercise_id: e1.id, name: e1.name, sets: 3, reps_max: 12 }] }] })
   check(r.s === 201, 'admin cria modelo de treino')
   check((await get(p1, '/api/pro/templates')).d.templates.some(t => t.id === r.d.id), 'profissional usa modelo do admin')
+  // limpeza: o modelo de teste nao fica na lista do construtor
+  check((await post(adm, '/api/adm/templates/status', { id: r.d.id, status: 'arquivado' })).s === 200, 'modelo de teste arquivado no fim')
   const k = await get(adm, '/api/adm/kpis')
   check(k.s === 200 && k.d.series && Array.isArray(k.d.users) && k.d.capacity, 'KPIs e séries do painel admin')
   check((await get(p1, '/api/adm/kpis')).s === 403, 'KPIs só para admin')
