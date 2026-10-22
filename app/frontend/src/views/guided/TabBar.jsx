@@ -18,12 +18,13 @@ const HIDE = ['treinar', 'concluido', 'onboarding', 'workout']
 export const tabOf = path => studentTab(path)
 export default function GuidedTabBar() {
   const nav = useNavigate(), loc = useLocation()
-  const can = useNavigationAccess(), { locked } = usePremium()
+  const can = useNavigationAccess(), { locked, comunidade } = usePremium()
   const cur = loc.pathname.split('/')[1] || 'hoje'
   if (HIDE.includes(cur)) return null
   const group = tabOf(loc.pathname)
   const live = !!loadSession()
-  const Tab = ({ k, icon, label, to }) => <button className={group === k ? 'g-on' : ''} onClick={() => nav(to)} data-testid={'tab-' + k} aria-current={group === k ? 'page' : undefined}><Icon name={icon} /><span>{label}</span>{k === 'treinos' && live && <i className="g-live" aria-label="treino em andamento" />}{locked && PREMIUM_TABS.includes(k) && <LockBadge />}</button>
+  const showLock = k => locked && PREMIUM_TABS.includes(k) && !(k === 'comunidade' && comunidade)
+  const Tab = ({ k, icon, label, to }) => <button className={group === k ? 'g-on' : ''} onClick={() => nav(to)} data-testid={'tab-' + k} aria-current={group === k ? 'page' : undefined}><Icon name={icon} /><span>{label}</span>{k === 'treinos' && live && <i className="g-live" aria-label="treino em andamento" />}{showLock(k) && <LockBadge />}</button>
   return <nav id="agtab" aria-label="Navegação principal">
     {STUDENT_NAV.filter(([k]) => k !== 'progresso' || locked || can('progresso')).map(([k, icon, label, to]) => <Tab key={k} k={k} icon={icon} label={label} to={to} />)}
   </nav>

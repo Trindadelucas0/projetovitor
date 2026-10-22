@@ -59,12 +59,12 @@ const COMMENT_LIMIT_HOUR = 30
 // Plano único (20/10/2026): o personal do app é o administrador. O que ele publica sai
 // com o nome e a foto do perfil dele, não como "Equipe ORNY" — o aluno precisa saber
 // que é o seu personal falando. Outro administrador (suporte) continua institucional.
-const PERSONAL_SQL = `(select s.value #>> '{}' from app_settings s where s.tenant_id=p.tenant_id and s.key='personal_user_id')`
+const PERSONAL_IDS = `select s.value #>> '{}' from app_settings s where s.tenant_id=p.tenant_id and s.key in ('personal_user_id','personal_feminino_user_id')`
 const FEED_SQL = `select p.id,p.title,p.body,p.category,p.image_url,p.status,p.created_at,p.edited_at,p.publish_at,p.official,p.author_id,p.scope_pro_id,(select coalesce(sp.display_name,su.name) from users su left join professional_profiles sp on sp.user_id=su.id where su.id=p.scope_pro_id) scope_name,
-  case when p.author_id::text = ${PERSONAL_SQL} then coalesce(pp.display_name,a.name)
+  case when p.author_id::text in (${PERSONAL_IDS}) then coalesce(pp.display_name,a.name)
        when p.official then 'Equipe ORNY'
        else coalesce(pp.display_name,a.name) end author_name,
-  case when p.official and p.author_id::text <> coalesce(${PERSONAL_SQL},'') then null
+  case when p.official and p.author_id::text not in (${PERSONAL_IDS}) then null
        else coalesce((select '/api/media/pub?k=' || ua.key_128 from user_avatar ua where ua.user_id=a.id), pp.photo_url) end author_photo, has_admin.is_admin author_admin,
   coalesce((select array_agg(distinct coalesce(q.area,q.kind)) from professional_qualifications q where q.user_id=p.author_id and q.status='verificada'),'{}') verified,
   (select count(*) from post_likes l where l.post_id=p.id)::int likes, exists(select 1 from post_likes l where l.post_id=p.id and l.user_id=$2) liked,
@@ -106,11 +106,11 @@ export function communityRoutes({ json, readBody }) {
       if (!(await authorVisible(u, p.author_id, p.scope_pro_id))) return json(res, 404, { error: 'Esta publicação não está mais disponível.', code: 'NOT_FOUND' })
       const c = await q(`select c.id,c.parent_id,c.status,c.created_at,c.edited_at,c.author_id,
           case when c.status='visivel' or $3 then c.body end body,
-          case when a.id::text = (select s.value #>> '{}' from app_settings s where s.tenant_id=a.tenant_id and s.key='personal_user_id') then coalesce(pp.display_name,a.name)
+          case when a.id::text in (select s.value #>> '{}' from app_settings s where s.tenant_id=a.tenant_id and s.key in ('personal_user_id','personal_feminino_user_id')) then coalesce(pp.display_name,a.name)
                when exists(select 1 from user_roles ar where ar.user_id=a.id and ar.role_id='admin') then 'Equipe ORNY'
                else coalesce(sp.display_name,pp.display_name,a.name) end author_name, sp.handle author_handle,
           case when exists(select 1 from user_roles ar where ar.user_id=a.id and ar.role_id='admin')
-                    and a.id::text <> coalesce((select s.value #>> '{}' from app_settings s where s.tenant_id=a.tenant_id and s.key='personal_user_id'),'') then null
+                    and a.id::text not in (select s.value #>> '{}' from app_settings s where s.tenant_id=a.tenant_id and s.key in ('personal_user_id','personal_feminino_user_id')) then null
                else coalesce((select '/api/media/pub?k=' || ua.key_128 from user_avatar ua where ua.user_id=a.id), pp.photo_url) end author_photo,
           exists(select 1 from user_roles r where r.user_id=a.id and r.role_id='profissional') author_pro,
           exists(select 1 from user_roles r where r.user_id=a.id and r.role_id='admin') author_official, (c.author_id=$2) mine,

@@ -67,11 +67,15 @@ export default function Today() {
       <span className="g-sp" />
       <Bell />
     </div>
-  // lote 7: sem plano (monetizacao ligada) -> Inicio com cadeado; o acesso e negado no servidor (402)
+  // sem plano vigente -> Início com cadeado; depois do Completo a comunidade continua aberta
   if (locked && !isPending(user)) return <div className="ag" data-testid="today">{head}
-    <PremiumLock title="Escolha um plano para treinar" feature="inicio" desc="Com o plano Individual ou PRO você libera treinos guiados, programas, progresso, estatísticas e comunidade. Seus dados continuam guardados." preview={<div className="hw-grid">{['Minha semana', 'Sequência', 'Volume', 'Recordes'].map(t => <div key={t} className="hw-w"><b>—</b><span>{t}</span></div>)}</div>} />
+    <PremiumLock title="Escolha um plano para treinar" feature="inicio" desc="Com o Básico ou o Completo você libera treinos, progresso e a ficha do personal. A comunidade continua aberta se você já pagou o Completo. Seus dados continuam guardados." preview={<div className="hw-grid">{['Minha semana', 'Sequência', 'Volume', 'Recordes'].map(t => <div key={t} className="hw-w"><b>—</b><span>{t}</span></div>)}</div>} />
     <PremiumLock compact title="Músculos para o próximo treino" feature="proximo-treino" />
-    <div className="g-card g-list org-list" style={{ marginTop: 12 }}><Li icon="chat" t="Acompanhamento" s="Profissionais, conversas e ocorrências" to="/acompanhamento" testid="home-care" /></div>
+    <AvaliacaoHomeCard />
+    <div className="g-card g-list org-list" style={{ marginTop: 12 }}>
+      <Li icon="users" t="Comunidade" s="Publicações e conversa com a turma" to="/comunidade" testid="home-comunidade" />
+      <Li icon="chat" t="Acompanhamento" s="Profissionais, conversas e ocorrências" to="/acompanhamento" testid="home-care" />
+    </div>
   </div>
   if (isPending(user)) return <div className="ag" data-testid="today"><span className="g-eyebrow">Início</span><h1>Olá{user.name ? ', ' + user.name.split(' ')[0] : ''}!</h1><div style={{ marginTop: 14 }}><PendingCard /></div></div>
   if (err) return <div className="ag">{head}<p className="g-mut">{err}</p><button className="g-btn g-ghost" onClick={() => setRetry(v => v + 1)}>Tentar novamente</button>

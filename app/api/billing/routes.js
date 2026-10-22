@@ -35,11 +35,11 @@ export function providerInfo() {
     hosted_checkout: !!p.hostedCheckout, payment_types: p.hostedCheckout ? ['card', 'pix'] : ['card'] }
 }
 const pubPlan = p => ({ id: p.id, audience: p.audience, product: p.product, name: p.name, description: p.description, price_cents: p.price_cents, currency: p.currency,
-  billing_interval: p.billing_interval, trial_days: p.trial_days, benefits: (p.benefits || []).filter(x => x.state !== 'indisponivel'), limits: p.limits || {}, features: p.features || {}, is_free: p.is_free })
-// Catalogo do app do personal: um plano pago de aluno. aluno_free continua listado aqui
-// porque e o estado interno de "conta sem plano ainda" (FREE_PLAN em entitlements.js);
-// ele esta inativo no banco, entao nao aparece nas consultas publicas.
-export const CATALOG = ['aluno_free', 'individual']
+  billing_interval: p.billing_interval, access_months: p.access_months ?? 1, renews: p.renews !== false, trial_days: p.trial_days,
+  benefits: (p.benefits || []).filter(x => x.state !== 'indisponivel'), limits: p.limits || {}, features: p.features || {}, is_free: p.is_free })
+// Catalogo do aluno: Básico (mensal) e Completo (pagamento único, 3 meses).
+// aluno_free continua listado porque é o FREE_PLAN de entitlements.js; inativo, não aparece nas consultas públicas.
+export const CATALOG = ['aluno_free', 'individual', 'completo']
 const CATALOG_SQL = CATALOG.map(x => "'" + x + "'").join(',')
 const PLANS_SQL = `select p.*, v.limits, v.features, v.version from plans p left join lateral (select limits, features, version from plan_versions where plan_id=p.id order by version desc limit 1) v on true`
 
@@ -88,11 +88,13 @@ export function billingRoutes({ json, readBody }) {
     const card = s.payment_method_id ? (await q('select * from payment_methods where id=$1', [s.payment_method_id])).rows[0] : null
     const e = await resolve(u.id, audience)
     return { id: s.id, audience, plan_id: s.plan_id, plan_name: s.plan_name, product: s.product, is_free: s.is_free, status: s.status, status_label: core.STATUS_PT[s.status],
-      suspended_kind: s.suspended_kind, price_cents: s.price_cents, discount_pct: s.discount_pct, discount_cycles_left: s.discount_cycles_left,
+      suspended_kind: s.suspended_kind, price_cents: s.price_cents, catalog_price_cents: s.catalog_price_cents ?? null,
+      renews: s.renews !== false, access_months: s.access_months ?? 1,
+      discount_pct: s.discount_pct, discount_cycles_left: s.discount_cycles_left,
       current_period_start: s.current_period_start, current_period_end: s.current_period_end, trial_ends_at: s.trial_ends_at, grace_until: s.grace_until,
       next_retry_at: s.next_retry_at, retry_count: s.retry_count, cancel_at_period_end: s.cancel_at_period_end, provider: s.provider, card: core.publicCard(card),
       payment_type: s.payment_type || 'card',
-      limits: e?.limits || {}, over_limit: e?.over_limit || false }
+      limits: e?.limits || {}, over_limit: e?.over_limit || false, features: e?.features || {} }
   }
   return {
     // ===== aluno / profissional =====
@@ -102,11 +104,11 @@ export function billingRoutes({ json, readBody }) {
       const info = providerInfo()
       json(res, 200, { plans: r.rows.map(p => ({ ...pubPlan(p), purchasable: !p.is_free && !!p.sellable && p.price_cents != null })).map(p => ({ ...p, price_label: p.is_free ? 'Gratuito' : p.price_cents == null ? 'Preço a definir' : null })), test_mode: !!info.test, hosted_checkout: !!info.hosted_checkout, payment_types: info.payment_types }, { 'Cache-Control': 'public, max-age=60' })
     },
-    // Aposentada com o plano unico (20/10/2026): nao ha mais assinatura de profissional
-    // para vender. A rota continua respondendo para nao quebrar app antigo em cache.
+    // Aposentada: o personal e admin e nao contrata plano. A rota responde 410
+    // para nao quebrar app antigo em cache.
     'GET /api/billing/pro-summary': async (req, res) => {
       const u = await auth(req, res); if (!u) return
-      json(res, 410, { error: 'O app tem um plano único de aluno; não existe assinatura de profissional.', code: 'GONE' })
+      json(res, 410, { error: 'Não existe assinatura de profissional; o personal do ambiente não contrata plano.', code: 'GONE' })
     },
     'GET /api/billing/config': async (req, res) => {
       if (!await auth(req, res)) return

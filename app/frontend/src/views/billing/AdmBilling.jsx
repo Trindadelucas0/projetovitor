@@ -98,7 +98,7 @@ export function Planos() {
   const [d, e, load] = useGet('/api/adm/billing/plans')
   if (e) return <p className="bl-err">{e}</p>; if (!d) return <p>Carregando…</p>
   return <div className="ag"><p className="adm-sub">Mudanças de recursos ou limites criam uma nova versão: quem já assina continua na versão contratada. Para vender, defina preço maior que zero e marque "À venda".</p>
-    {d.plans.filter(p => ['aluno_free', 'profissional_free', 'individual', 'pro', 'pro_ilimitado'].includes(p.id)).map(p => <PlanRow key={p.id + p.version + (p.updated_at || '')} p={p} onSaved={load} />)}</div>
+    {d.plans.filter(p => ['aluno_free', 'profissional_free', 'individual', 'completo', 'pro', 'pro_ilimitado'].includes(p.id)).map(p => <PlanRow key={p.id + p.version + (p.updated_at || '')} p={p} onSaved={load} />)}</div>
 }
 
 export function Cupons() {

@@ -81,10 +81,8 @@ function Usuarios({ pendingOnly = false }) {
   </>
 }
 
-// Plano único: o personal cadastra o aluno. A conta nasce ativa, com o plano de acesso
-// padrão e já vinculada a ele — não existe mais conta de profissional para criar aqui.
-// A assinatura de R$ 39,90 continua sendo contratada pelo próprio aluno; criar a conta
-// pelo painel não libera o acesso aos treinos.
+// O personal cadastra o aluno. A conta nasce ativa e vinculada a ele.
+// O aluno escolhe Básico ou Completo; criar a conta pelo painel não libera os treinos.
 function NovoUsuario({ onClose, onDone }) {
   const [f, setF] = useState({ type: 'aluno', name: '', email: '', password: '' })
   const [errs, setErrs] = useState({}), [msg, setMsg] = useState(''), [busy, setBusy] = useState(false), [res, setRes] = useState(null)
@@ -100,7 +98,7 @@ function NovoUsuario({ onClose, onDone }) {
       {res.temp_password ? <><p>Senha temporária (aparece só agora; copie e entregue {res.type === 'profissional' ? 'ao personal' : 'ao aluno'}):</p><p className="adm-card" style={{ fontFamily: 'monospace', fontSize: 18, userSelect: 'all' }} data-testid="nu-pass">{res.temp_password}</p></> : <p>Senha: a que você definiu.</p>}
       {res.type === 'profissional' ? <p>Agora vincule alunos a este personal pela tela de vínculos.</p> : res.link?.ok ? <p>O aluno já está vinculado a você e aparece na lista.</p>
         : <p className="g-warn">A conta foi criada, mas o vínculo não: {res.link?.error || 'o personal do ambiente não está configurado'}. Crie o vínculo em Convites.</p>}
-      <p className="g-mut g-xs">{res.type === 'profissional' ? 'No primeiro acesso, o personal aceita os termos. Não precisa contratar assinatura profissional.' : 'No primeiro acesso o aluno aceita os termos e contrata a assinatura. Os treinos só liberam depois do pagamento confirmado.'}</p>
+      <p className="g-mut g-xs">{res.type === 'profissional' ? 'No primeiro acesso, o personal aceita os termos. Não precisa contratar plano.' : 'No primeiro acesso o aluno aceita os termos e escolhe Básico (R$ 49,90/mês) ou Completo (R$ 499 · 3 meses). Os treinos só liberam depois do pagamento confirmado.'}</p>
       <div className="adm-tools"><button className="adm-btn" onClick={() => { setRes(null); setF({ type: 'aluno', name: '', email: '', password: '' }) }}>Cadastrar outro</button><button className="adm-btn ghost" onClick={onClose}>Fechar</button></div></div>
   </Drawer>
   const L = (l, el, k) => <label className="adm-field" style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}><span className="g-xs">{l}</span>{el}{k && err(k)}</label>
@@ -118,8 +116,8 @@ function NovoUsuario({ onClose, onDone }) {
   </Drawer>
 }
 
-// Dormente no plano único: pedir vagas só faz sentido quando existem vários personais
-// com limite de alunos. Fica aqui, sem entrada no menu, para ser religado nesse dia.
+// Dormente: pedir vagas só faz sentido com vários personais e limite de alunos.
+// Sem entrada no menu; religar se o modelo de vagas voltar.
 function Solicitacoes() {
   const [history, setHistory] = useState(false), [group, setGroup] = useState('pendentes')
   const type = history ? '' : 'vagas'

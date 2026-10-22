@@ -3,7 +3,7 @@
 // filas com prazo configurável e auditoria. Todas as permissões são verificadas AQUI (backend), nunca só na tela.
 import { enforceOneActive } from './active-training.js'
 import { countsInMetrics } from './metrics.js'
-import { q, pool } from './db/pool.js'
+import { q, pool, transaction } from './db/pool.js'
 import { requireAuth, audit } from './auth.js'
 import { resolve as resolveEnt, checkLimitLocked, refreshUsage, capacitySummary } from './entitlements.js'
 import bcrypt from 'bcryptjs'
@@ -88,15 +88,36 @@ const PRO_SQL = `select pp.*, u.name, (select count(*) from coach_students cs wh
   (select count(*) from follows f where f.professional_id=pp.user_id) followers`
 
 
-// O personal principal é identificado por tenant. Durante a transição, o admin antigo
-// continua válido até a conta profissional separada assumir a configuração.
-export async function tenantPersonalId(tid) {
-  const r = await q(`select value #>> '{}' id from app_settings where tenant_id=$1 and key='personal_user_id'`, [tid])
+// Personais do ambiente: masculino (personal_user_id) e feminino (personal_feminino_user_id).
+const PERSONAL_KEYS = { masculino: 'personal_user_id', feminino: 'personal_feminino_user_id' }
+export function personalSettingKey(perfil) {
+  return PERSONAL_KEYS[perfil] || PERSONAL_KEYS.masculino
+}
+export async function tenantPersonalId(tid, perfil = 'masculino') {
+  const key = personalSettingKey(perfil)
+  const r = await q(`select value #>> '{}' id from app_settings where tenant_id=$1 and key=$2`, [tid, key])
   return r.rows[0]?.id || null
+}
+export async function tenantPersonalIds(tid) {
+  const r = await q(`select key, value #>> '{}' id from app_settings where tenant_id=$1 and key in ('personal_user_id','personal_feminino_user_id')`, [tid])
+  const out = { masculino: null, feminino: null }
+  for (const row of r.rows) {
+    if (row.key === 'personal_user_id') out.masculino = row.id
+    if (row.key === 'personal_feminino_user_id') out.feminino = row.id
+  }
+  return out
+}
+async function resolvePrincipal(tid, key, query) {
+  return (await query(`select u.id from app_settings s join users u
+      on u.id::text=(s.value #>> '{}') and u.tenant_id=s.tenant_id
+      join user_roles r on r.user_id=u.id and r.tenant_id=u.tenant_id and r.role_id in ('admin','profissional')
+      join professional_profiles p on p.user_id=u.id and p.tenant_id=u.tenant_id and p.state='ativo'
+      where s.tenant_id=$1 and s.key=$2 and u.status='ativo' and u.disabled_at is null`, [tid, key])).rows[0]?.id || null
 }
 export async function isTenantPersonal(tid, userId) {
   if (!userId) return false
-  if (String(await tenantPersonalId(tid)) !== String(userId)) return false
+  const ids = await tenantPersonalIds(tid)
+  if (String(ids.masculino) !== String(userId) && String(ids.feminino) !== String(userId)) return false
   return (await q(`select 1 from user_roles where user_id=$1 and tenant_id=$2 and role_id in ('admin','profissional')`, [userId, tid])).rowCount > 0
 }
 export async function isManagedPersonal(tid, userId, client) {
@@ -155,17 +176,54 @@ export async function linkToTenantPersonal(tid, studentId) {
   return createLink({ id: personal, tenant_id: tid }, studentId, personal, null, 'cadastro')
 }
 // Cadastro: vínculo obrigatório gravado na mesma transação da conta.
-export async function linkNewStudentToPrincipal(tid, studentId, actorId, client) {
+// perfil: masculino → personal_user_id; feminino → personal_feminino_user_id.
+export async function linkNewStudentToPrincipal(tid, studentId, actorId, client, perfil = 'masculino') {
   const query = client?.query?.bind(client) || q
-  const principal = (await query(`select u.id from app_settings s join users u
-      on u.id::text=(s.value #>> '{}') and u.tenant_id=s.tenant_id
-      join user_roles r on r.user_id=u.id and r.tenant_id=u.tenant_id and r.role_id in ('admin','profissional')
-      join professional_profiles p on p.user_id=u.id and p.tenant_id=u.tenant_id and p.state='ativo'
-      where s.tenant_id=$1 and s.key='personal_user_id' and u.status='ativo' and u.disabled_at is null`, [tid])).rows[0]?.id
-  if (!principal) throw Object.assign(new Error('Personal principal indisponível para receber alunos'), { code: 'PRINCIPAL_UNAVAILABLE' })
+  const sex = perfil === 'feminino' ? 'feminino' : 'masculino'
+  const key = personalSettingKey(sex)
+  const principal = await resolvePrincipal(tid, key, query)
+  if (!principal) {
+    const code = sex === 'feminino' ? 'PERSONAL_FEMININO_UNAVAILABLE' : 'PRINCIPAL_UNAVAILABLE'
+    const msg = sex === 'feminino'
+      ? 'O cadastro de mulher está indisponível agora. A personal feminina ainda não foi configurada.'
+      : 'Personal principal indisponível para receber alunos'
+    throw Object.assign(new Error(msg), { code })
+  }
   const link = (await query(`insert into coach_students(tenant_id,coach_id,student_id,created_by,origin)
     values($1,$2,$3,$4,'cadastro') returning id`, [tid, principal, studentId, actorId])).rows[0]
   return link.id
+}
+// Move o aluno entre as duas personais e grava o sex do destino. Usado pelo portão e pela correção.
+export async function transferStudentBetweenPersonals(tid, studentId, actorId, targetPerfil, origin, client) {
+  const query = client?.query?.bind(client) || q
+  const sex = targetPerfil === 'feminino' ? 'feminino' : 'masculino'
+  const key = personalSettingKey(sex)
+  const target = await resolvePrincipal(tid, key, query)
+  if (!target) {
+    const code = sex === 'feminino' ? 'PERSONAL_FEMININO_UNAVAILABLE' : 'PRINCIPAL_UNAVAILABLE'
+    const msg = sex === 'feminino'
+      ? 'O cadastro de mulher está indisponível agora. A personal feminina ainda não foi configurada.'
+      : 'Personal principal indisponível para receber alunos'
+    throw Object.assign(new Error(msg), { code, status: 503 })
+  }
+  const active = (await query(`select id, coach_id from coach_students where student_id=$1 and tenant_id=$2 and status='ativo' for update`, [studentId, tid])).rows
+  if (active.length > 1) throw Object.assign(new Error('Seu acompanhamento tem mais de um profissional. Fale com a administração antes de confirmar.'), { code: 'MULTIPLE_LINKS', status: 409 })
+  if (active.length === 1 && String(active[0].coach_id) === String(target)) {
+    await query(`insert into user_profiles(user_id, tenant_id, sex) values($1,$2,$3)
+      on conflict (user_id) do update set sex=excluded.sex`, [studentId, tid, sex])
+    return { coach_id: target, link_id: active[0].id, sex }
+  }
+  if (active.length === 1) {
+    await query(`update coach_students set status='encerrado', ended_at=now(), ended_by=$2, end_reason=$3 where id=$1`,
+      [active[0].id, actorId, origin === 'correcao_perfil' ? 'correção de perfil' : 'perfil: ' + sex])
+    await query(`update pro_plans set status='arquivado', archived_at=now(), updated_at=now()
+      where owner_id=$1 and student_id=$2 and tenant_id=$3 and status in ('ativo','rascunho')`, [active[0].coach_id, studentId, tid])
+  }
+  const next = (await query(`insert into coach_students(tenant_id,coach_id,student_id,created_by,origin)
+    values($1,$2,$3,$4,$5) returning id`, [tid, target, studentId, actorId, origin])).rows[0]
+  await query(`insert into user_profiles(user_id, tenant_id, sex) values($1,$2,$3)
+    on conflict (user_id) do update set sex=excluded.sex`, [studentId, tid, sex])
+  return { coach_id: target, link_id: next.id, sex, from: active[0]?.coach_id || null }
 }
 // Responsável padrão de ocorrência/conversa: o personal da ficha ativa (regra de um treino ativo) ou, sem ficha, o vínculo ativo MAIS RECENTE
 async function defaultResponsible(studentId) {
@@ -775,7 +833,21 @@ export function proRoutes({ json, readBody }) {
     },
     'GET /api/adm/settings': async (req, res) => {
       const u = await guard('admin')(req, res, json); if (!u) return
-      json(res, 200, { settings: { ...(await getSettings(u.tenant_id)), tenant_name: (await q('select name from tenants where id=$1', [u.tenant_id])).rows[0].name } })
+      const ids = await tenantPersonalIds(u.tenant_id)
+      const candidates = (await q(`select u.id, u.name, u.email from users u
+        join user_roles r on r.user_id=u.id and r.tenant_id=u.tenant_id and r.role_id in ('admin','profissional')
+        join professional_profiles p on p.user_id=u.id and p.tenant_id=u.tenant_id and p.state='ativo'
+        where u.tenant_id=$1 and u.status='ativo' and u.disabled_at is null
+          and ($2::text is null or u.id::text <> $2)
+        order by u.name`, [u.tenant_id, ids.masculino])).rows
+      const s = await getSettings(u.tenant_id)
+      json(res, 200, { settings: {
+        ...s,
+        tenant_name: (await q('select name from tenants where id=$1', [u.tenant_id])).rows[0].name,
+        personal_user_id: ids.masculino,
+        personal_feminino_user_id: ids.feminino,
+        personal_feminino_candidates: candidates
+      } })
     },
     'POST /api/adm/settings': async (req, res) => {
       const u = await guard('admin')(req, res, json); if (!u) return
@@ -786,11 +858,80 @@ export function proRoutes({ json, readBody }) {
         await q(`insert into app_settings(tenant_id,key,value,updated_by) values($1,$2,$3,$4) on conflict (tenant_id,key) do update set value=excluded.value, updated_by=excluded.updated_by, updated_at=now()`, [u.tenant_id, k, JSON.stringify(f(b[k])), u.id])
         await audit(u.tenant_id, u.id, 'configuracao', 'setting', k, { value: f(b[k]) })
       }
+      if (b.personal_feminino_user_id !== undefined) {
+        const raw = b.personal_feminino_user_id === null || b.personal_feminino_user_id === '' ? null : String(b.personal_feminino_user_id)
+        if (raw === null) {
+          await q(`delete from app_settings where tenant_id=$1 and key='personal_feminino_user_id'`, [u.tenant_id])
+          await audit(u.tenant_id, u.id, 'configuracao', 'setting', 'personal_feminino_user_id', { value: null })
+        } else {
+          if (!isUuid(raw)) return json(res, 400, { error: 'Escolha uma conta ativa, diferente da personal dos homens.', code: 'INVALID_INPUT' })
+          const masc = await tenantPersonalId(u.tenant_id, 'masculino')
+          if (String(raw) === String(masc)) return json(res, 400, { error: 'Escolha uma conta ativa, diferente da personal dos homens.', code: 'INVALID_INPUT' })
+          const ok = (await q(`select 1 from users u
+            join user_roles r on r.user_id=u.id and r.tenant_id=u.tenant_id and r.role_id in ('admin','profissional')
+            join professional_profiles p on p.user_id=u.id and p.tenant_id=u.tenant_id and p.state='ativo'
+            where u.id=$1 and u.tenant_id=$2 and u.status='ativo' and u.disabled_at is null`, [raw, u.tenant_id])).rowCount
+          if (!ok) return json(res, 400, { error: 'Escolha uma conta ativa, diferente da personal dos homens.', code: 'INVALID_INPUT' })
+          await q(`insert into app_settings(tenant_id,key,value,updated_by) values($1,'personal_feminino_user_id',$2,$3)
+            on conflict (tenant_id,key) do update set value=excluded.value, updated_by=excluded.updated_by, updated_at=now()`,
+            [u.tenant_id, JSON.stringify(raw), u.id])
+          await audit(u.tenant_id, u.id, 'configuracao', 'setting', 'personal_feminino_user_id', { value: raw })
+        }
+      }
       if (b.tenant_name !== undefined) {
         const n = txt(b.tenant_name, 80); if (n.length < 2) return json(res, 400, { error: 'Nome da comunidade muito curto', code: 'INVALID_INPUT' })
         await q('update tenants set name=$2 where id=$1', [u.tenant_id, n]); await audit(u.tenant_id, u.id, 'configuracao', 'tenant', u.tenant_id, { name: n })
       }
-      json(res, 200, { settings: { ...(await getSettings(u.tenant_id)), tenant_name: (await q('select name from tenants where id=$1', [u.tenant_id])).rows[0].name } })
+      const ids = await tenantPersonalIds(u.tenant_id)
+      const candidates = (await q(`select u.id, u.name, u.email from users u
+        join user_roles r on r.user_id=u.id and r.tenant_id=u.tenant_id and r.role_id in ('admin','profissional')
+        join professional_profiles p on p.user_id=u.id and p.tenant_id=u.tenant_id and p.state='ativo'
+        where u.tenant_id=$1 and u.status='ativo' and u.disabled_at is null
+          and ($2::text is null or u.id::text <> $2)
+        order by u.name`, [u.tenant_id, ids.masculino])).rows
+      json(res, 200, { settings: {
+        ...(await getSettings(u.tenant_id)),
+        tenant_name: (await q('select name from tenants where id=$1', [u.tenant_id])).rows[0].name,
+        personal_user_id: ids.masculino,
+        personal_feminino_user_id: ids.feminino,
+        personal_feminino_candidates: candidates
+      } })
+    },
+    // Personal (ou admin) corrige Homem/Mulher e envia o aluno para a outra personal.
+    'POST /api/pro/students/corrigir-perfil': async (req, res) => {
+      const u = await requireAuth(req, res, json); if (!u) return
+      const b = await readBody(req)
+      if (b.confirm !== true) return json(res, 400, { error: 'Confirme a transferência' })
+      if (!isUuid(b.student_id)) return json(res, 400, { error: 'Aluno inválido', code: 'INVALID_INPUT' })
+      const ids = await tenantPersonalIds(u.tenant_id)
+      const isPrincipal = String(u.id) === String(ids.masculino) || String(u.id) === String(ids.feminino)
+      if (!has(u, 'admin') && !isPrincipal) return json(res, 403, { error: 'Sem permissão', code: 'PERMISSION_DENIED' })
+      const link = (await q(`select id, coach_id from coach_students where student_id=$1 and tenant_id=$2 and status='ativo'`, [b.student_id, u.tenant_id])).rows
+      if (!link.length) return json(res, 404, { error: 'Vínculo ativo não encontrado', code: 'NOT_FOUND' })
+      if (link.length > 1) return json(res, 409, { error: 'O aluno precisa ter um único vínculo ativo antes da transferência', code: 'MULTIPLE_LINKS' })
+      if (!has(u, 'admin') && String(link[0].coach_id) !== String(u.id)) {
+        return json(res, 403, { error: 'Só a personal do vínculo ativo pode corrigir este aluno.', code: 'PERMISSION_DENIED' })
+      }
+      const sex = (await q('select sex from user_profiles where user_id=$1', [b.student_id])).rows[0]?.sex
+      const onFem = String(link[0].coach_id) === String(ids.feminino)
+      const target = (sex === 'feminino' || onFem) ? 'masculino' : 'feminino'
+      if (target === 'feminino' && !ids.feminino) {
+        return json(res, 503, { error: 'O cadastro de mulher está indisponível agora. A personal feminina ainda não foi configurada.', code: 'PERSONAL_FEMININO_UNAVAILABLE' })
+      }
+      if (target === 'masculino' && !ids.masculino) {
+        return json(res, 503, { error: 'Personal principal indisponível para receber alunos', code: 'PRINCIPAL_UNAVAILABLE' })
+      }
+      let result
+      try {
+        result = await transaction(async () => transferStudentBetweenPersonals(u.tenant_id, b.student_id, u.id, target, 'correcao_perfil', null))
+      } catch (e) {
+        if (e.code === 'PERSONAL_FEMININO_UNAVAILABLE' || e.code === 'PRINCIPAL_UNAVAILABLE') return json(res, 503, { error: e.message, code: e.code })
+        if (e.code === 'MULTIPLE_LINKS') return json(res, 409, { error: e.message, code: e.code })
+        throw e
+      }
+      await audit(u.tenant_id, u.id, 'vinculo.perfil_corrigido', 'link', result.link_id, { student: b.student_id, to: result.coach_id, from: result.from, sex: result.sex })
+      const student = (await q(`select u.id, u.name, up.sex from users u left join user_profiles up on up.user_id=u.id where u.id=$1`, [b.student_id])).rows[0]
+      json(res, 200, { ok: true, student: { id: student.id, name: student.name, perfil: student.sex, palette: student.sex === 'feminino' ? 'feminino' : 'masculino' }, link_id: result.link_id })
     },
     // profissional inicia conversa direta com aluno vinculado
     'POST /api/pro/threads': async (req, res) => {

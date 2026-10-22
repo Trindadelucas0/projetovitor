@@ -104,7 +104,7 @@ export function posturalProRoutes({ json, readBody }) {
       })
     },
 
-    // solicita a avaliação. Exige vínculo ativo e uma versão publicada do protocolo.
+    // solicita a avaliação. Exige vínculo ativo, versão publicada e plano do aluno com avaliacao_postural.
     'POST /api/pro/avaliacoes/solicitar': async (req, res) => {
       const u = await prof(req, res); if (!u) return
       const b = await readBody(req)
@@ -112,6 +112,9 @@ export function posturalProRoutes({ json, readBody }) {
       if (!isAdm(u) && !(await isLinked(u.id, b.student_id))) return json(res, 403, { error: 'Aluno não vinculado a você.', code: 'PERMISSION_DENIED' })
       const student = (await q('select id, name, tenant_id, disabled_at from users where id=$1', [b.student_id])).rows[0]
       if (!student || student.tenant_id !== u.tenant_id || student.disabled_at) return json(res, 404, { error: 'Aluno não encontrado.', code: 'NOT_FOUND' })
+      const { checkFeature } = await import('./entitlements.js')
+      const feat = await checkFeature(student.id, 'aluno', 'avaliacao_postural')
+      if (feat) return json(res, 403, { error: 'Este aluno está no plano Básico, sem avaliação postural.', code: 'FEATURE_NOT_INCLUDED', feature: 'avaliacao_postural', plan: feat.plan })
       // protocolo do próprio tenant ou oficial (tenant_id nulo)
       const version = (await q(`select v.id, v.protocol_id from posture_protocol_versions v join posture_protocols p on p.id = v.protocol_id
         where p.id = $1 and (p.tenant_id is null or p.tenant_id = $2) and p.active and v.status = 'publicada'

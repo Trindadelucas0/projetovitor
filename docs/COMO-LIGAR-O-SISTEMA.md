@@ -234,7 +234,7 @@ do update set status='ativa', current_period_end = now() + interval '365 days';
 insert into billing_charges(tenant_id, subscription_id, user_id, provider, kind, payment_type,
                             amount_cents, status, paid_at, period_start, period_end, idempotency_key)
 values ($tenant, $subscription, $user, 'fixture', 'primeira', 'card',
-        3990, 'paga', now(), now(), now() + interval '365 days', $chave_unica);
+        4990, 'paga', now(), now(), now() + interval '365 days', $chave_unica);
 ```
 
 Confira o resultado pela própria API, que é onde a regra mora:

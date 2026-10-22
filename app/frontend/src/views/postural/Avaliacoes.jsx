@@ -1,6 +1,5 @@
 // Tela do aluno: a avaliação aberta em destaque e o histórico dos ciclos anteriores.
-// O cartão muda conforme o estado, como a especificação pede (A01): iniciar, continuar, corrigir,
-// acompanhar, ver devolutiva. Quando não há avaliação solicitada, o cartão simplesmente não aparece.
+// Sem a feature avaliacao_postural (plano Básico): card com oferta do Completo; histórico só publicado.
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon.jsx'
 import { Btn, Empty, Err, Load, useLoad } from '../app/kit.jsx'
@@ -11,7 +10,6 @@ import './postural.css'
 const dt = s => s ? new Date(s).toLocaleDateString('pt-BR') : ''
 const mes = s => s ? new Date(s).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : ''
 
-// o cartão de destaque, exportado para o Início e o Acompanhamento reaproveitarem
 export function AvaliacaoCard({ open, onOpen }) {
   const estado = cardState(open)
   if (estado === 'ausente') return null
@@ -42,13 +40,37 @@ export function AvaliacaoCard({ open, onOpen }) {
   )
 }
 
-// Cartão para o Início e o Acompanhamento: busca sozinho e não renderiza NADA quando não há avaliação
-// solicitada, para não poluir a tela de quem não usa o módulo. 404 é tratado como "recurso ausente"
-// (API antiga), então uma API sem o módulo também não quebra o Início.
+/** Card de oferta quando o plano do aluno não inclui avaliação postural. */
+export function AvaliacaoUpgradeCard({ history = [], onPlanos, onHistorico }) {
+  const published = history.filter(h => h.status === 'publicada')
+  return (
+    <div className="g-card ap-card" data-testid="ap-card" data-state="bloqueado">
+      <div className="g-row">
+        <span className="g-eyebrow">Avaliação postural</span>
+        <span className="g-sp" />
+        <span className="g-pill" aria-label="recurso bloqueado"><Icon name="lock" /> Bloqueado</span>
+      </div>
+      <p className="g-sm">Entra no plano Completo (pagamento único · 3 meses).</p>
+      <Btn onClick={onPlanos} data-testid="ap-card-cta">Ver plano Completo</Btn>
+      {published.length > 0 && onHistorico && (
+        <button type="button" className="g-btn g-ghost g-sm" style={{ marginTop: 8 }} onClick={onHistorico} data-testid="ap-card-hist">
+          Ver devolutivas
+        </button>
+      )}
+    </div>
+  )
+}
+
+// Início: com feature e avaliação aberta → card de progresso; sem feature → oferta do Completo; senão some.
 export function AvaliacaoHomeCard() {
   const nav = useNavigate()
   const [d, err] = useLoad(() => AP.mine())
-  if (err || !d?.open) return null
+  if (err) return null
+  if (!d) return null
+  if (d.feature?.avaliacao_postural === false) {
+    return <AvaliacaoUpgradeCard history={d.history || []} onPlanos={() => nav('/planos')} onHistorico={() => nav('/avaliacao')} />
+  }
+  if (!d.open) return null
   return <AvaliacaoCard open={d.open} onOpen={p => nav(p)} />
 }
 
@@ -61,15 +83,23 @@ export default function Avaliacoes() {
   if (!d) return <div className="ag"><Load /></div>
 
   const { open, history = [] } = d
+  const semFeature = d.feature?.avaliacao_postural === false
+
   return (
     <div className="ag" data-testid="ap-avaliacoes">
       <h1>Avaliação postural</h1>
       <p className="g-mut g-sm">Fotos e vídeos guiados para o seu profissional acompanhar postura e mobilidade.</p>
 
-      <AvaliacaoCard open={open} onOpen={p => nav(p)} />
+      {semFeature
+        ? <AvaliacaoUpgradeCard history={history} onPlanos={() => nav('/planos')} />
+        : <AvaliacaoCard open={open} onOpen={p => nav(p)} />}
 
-      {!open && history.length === 0 && <Empty icon="clipboard">
+      {!open && history.length === 0 && !semFeature && <Empty icon="clipboard">
         Você ainda não tem avaliação postural. Quando seu profissional solicitar, ela aparece aqui.
+      </Empty>}
+
+      {semFeature && history.length === 0 && <Empty icon="clipboard">
+        Seu plano atual não inclui avaliação postural. Contrate o Completo para liberar.
       </Empty>}
 
       {history.length > 0 && <>
@@ -92,7 +122,6 @@ export default function Avaliacoes() {
             </button>
           ))}
         </div>
-        <p className="g-mut g-xs">A comparação lado a lado entre períodos entra na próxima etapa do módulo.</p>
       </>}
 
       {d.consent?.health === false && <div className="g-note g-sm" style={{ marginTop: 16 }}>

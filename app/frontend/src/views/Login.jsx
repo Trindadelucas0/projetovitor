@@ -5,6 +5,7 @@ import { EMPTY_CONTACT, validateContact, toApi } from '../lib/contact.js'
 import '../components/contact.css'
 import { useUI } from '../store/useUI.js'
 import { authLogin, authRegister, api } from '../lib/api.js'
+import { applyPalette } from '../lib/theme.js'
 import { t } from '../lib/i18n.js'
 import { DEMO, REPO } from '../lib/demo.js'
 import { useState, useEffect, useCallback } from 'react'
@@ -84,15 +85,17 @@ function LoginForm() {
   const reg = mode === 'register'
   // Link /convite/CODIGO: guarda a oferta e abre o cadastro com o cupom configurado pelo administrador.
   const [ref, setRef] = useState(() => readRef())
-  // Cadastro em 4 etapas; ao concluir, a conta abre diretamente Planos e pagamento.
-  const [step, setStep] = useState(1), [choice, setChoice] = useState(() => requestedPlan || ''), [plans, setPlans] = useState(null), [plansError, setPlansError] = useState(''), [plansBusy, setPlansBusy] = useState(false)
+  // Cadastro em 5 etapas (Perfil, Acesso, Seus dados, Assinatura, Confirmação).
+  const [step, setStep] = useState(1), [perfil, setPerfil] = useState(''), [choice, setChoice] = useState(() => requestedPlan || ''), [plans, setPlans] = useState(null), [plansError, setPlansError] = useState(''), [plansBusy, setPlansBusy] = useState(false)
+  const pickPerfil = v => { setPerfil(v); setMsg(''); setErrs({ ...errs, perfil: undefined }); applyPalette(v === 'feminino' ? 'feminino' : 'masculino') }
   const loadPlans = useCallback(async () => {
     setPlansBusy(true); setPlansError('')
     try { setPlans(await api('/api/public/plans')) }
     catch { setPlansError('Os planos estão temporariamente indisponíveis. Tente novamente em instantes.') }
     finally { setPlansBusy(false) }
   }, [])
-  useEffect(() => { if (mode === 'register' && step === 3 && !plans && !plansBusy && !plansError) loadPlans() }, [mode, step, plans, plansBusy, plansError, loadPlans])
+  useEffect(() => { if (mode === 'register' && step === 4 && !plans && !plansBusy && !plansError) loadPlans() }, [mode, step, plans, plansBusy, plansError, loadPlans])
+  useEffect(() => { if (mode !== 'register') applyPalette('masculino') }, [mode])
   useEffect(() => {
     if (!plans || !requestedPlan) return
     const valid = plans.plans?.some(p => p.id === requestedPlan && p.audience === 'aluno' && p.purchasable)
@@ -104,9 +107,10 @@ function LoginForm() {
   }, [])
   const set = k => e => { setF({ ...f, [k]: e.target.value }); setErrs({ ...errs, [k]: undefined }); setMsg('') }
 
-  const S1 = ['name', 'email', 'password', 'confirm']
+  const S2 = ['name', 'email', 'password', 'confirm']
   const errorsOf = () => {
     const e = {}
+    if (reg && !perfil) e.perfil = 'Escolha Homem ou Mulher'
     if (reg && f.name.trim().length < 2) e.name = 'Informe seu nome'
     if (!f.email.trim()) e.email = 'Informe seu e-mail'
     else if (!EMAIL_RE.test(f.email.trim())) e.email = 'E-mail inválido'
@@ -119,23 +123,26 @@ function LoginForm() {
     if (reg && f.birth_date && f.birth_date > maxBirth) e.birth_date = 'É preciso ter 18 anos ou mais para criar a conta'
     return e
   }
-  const stepOf = k => S1.includes(k) ? 1 : k === 'terms' ? 4 : 2
+  const stepOf = k => k === 'perfil' ? 1 : S2.includes(k) ? 2 : k === 'terms' ? 5 : 3
   const validate = () => { const e = errorsOf(); setErrs(e); if (reg && Object.keys(e).length) setStep(Math.min(...Object.keys(e).map(stepOf))); return !Object.keys(e).length }
   const next = () => {
+    if (step === 1 && !perfil) { setErrs({ perfil: 'Escolha Homem ou Mulher' }); return setMsg('Escolha Homem ou Mulher') }
     const e = Object.fromEntries(Object.entries(errorsOf()).filter(([k]) => stepOf(k) === step))
     setErrs(e); setMsg(''); if (Object.keys(e).length) return
-    if (step === 3 && !choice) return setMsg('Escolha o plano para continuar. O acesso começa após a confirmação do pagamento.')
-    if (step === 3 && !plans?.plans?.some(p => p.id === choice && p.audience === 'aluno' && p.purchasable)) return setMsg('O plano não está disponível para contratação agora. Atualize a página e tente novamente.')
+    if (step === 4 && !choice) return setMsg('Escolha o plano para continuar. O acesso começa após a confirmação do pagamento.')
+    if (step === 4 && !plans?.plans?.some(p => p.id === choice && p.audience === 'aluno' && p.purchasable)) return setMsg('O plano não está disponível para contratação agora. Atualize a página e tente novamente.')
     setStep(step + 1)
   }
   const submit = async ev => {
     ev.preventDefault()
-    if (reg && step < 4) return next()   // Enter nas etapas = Continuar
+    if (reg && step < 5) return next()   // Enter nas etapas = Continuar
     if (busy || !validate()) return
     setBusy(true); setMsg('')
     try {
-      const result = reg ? await authRegister(f.name.trim(), f.email.trim(), f.password, terms && agree ? terms.version : undefined, { accept: agree, birth_date: f.birth_date, health, contact: toApi(ct), plan_id: choice }) : null
+      const result = reg ? await authRegister(f.name.trim(), f.email.trim(), f.password, terms && agree ? terms.version : undefined, { accept: agree, birth_date: f.birth_date, health, contact: toApi(ct), plan_id: choice, perfil }) : null
       const u = reg ? result.user : await authLogin(f.email.trim(), f.password)
+      if (u?.palette === 'feminino') applyPalette('feminino')
+      else applyPalette('masculino')
       if (reg) { try { localStorage.removeItem('avagym_ref') } catch { /* */ } setUser(u); await pullState(); useUI.getState().toast(`Conta criada, ${u.name.split(' ')[0]}! Escolha seu plano para continuar.`); location.hash = '#/assinatura'; return }
       setUser(u); await pullState()
       useUI.getState().toast(reg ? `Bem-vindo(a), ${u.name}!` : `Bem-vindo(a) de volta, ${u.name}!`)
@@ -143,6 +150,7 @@ function LoginForm() {
       if (e.errors) setErrs(e.errors)
       setExists(reg && e.code === 'EMAIL_EXISTS')
       setMsg(e.status === 0 || !e.status ? 'Não foi possível conectar ao servidor' : e.message)
+      if (reg && e.code === 'PERSONAL_FEMININO_UNAVAILABLE') setStep(1)
     } finally { setBusy(false) }
   }
   const field = (k, label, type, auto, extra) => (
@@ -186,33 +194,45 @@ function LoginForm() {
       <form className="lg-card" onSubmit={submit} noValidate>
         <div className="lg-brand"><Brand /></div>
         <p className="lg-sub">{reg ? 'Crie sua conta e comece a treinar.' : 'Seu progresso começa aqui'}</p>
-        {reg && <p className="lg-sub" data-testid="signup-step" style={{ marginTop: 0 }}>Etapa {step} de 4 · {['Acesso', 'Seus dados', 'Assinatura', 'Confirmação'][step - 1]}</p>}
-        {(!reg || step === 1) && <>
+        {reg && <p className="lg-sub" data-testid="signup-step" style={{ marginTop: 0 }}>Etapa {step} de 5 · {['Perfil', 'Acesso', 'Seus dados', 'Assinatura', 'Confirmação'][step - 1]}</p>}
+        {reg && step === 1 && <div className="lg-intent" role="radiogroup" aria-label="Perfil" style={{ display: 'grid', gap: 10 }} data-testid="signup-perfil">
+          <label style={{ cursor: 'pointer', border: '1px solid var(--ag-line,#ffffff26)', borderRadius: 14, padding: 14, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <input type="radio" name="signup-perfil" checked={perfil === 'masculino'} onChange={() => pickPerfil('masculino')} data-testid="signup-perfil-homem" />
+            <span><b>Homem</b><br /><small className="lg-sub">Verde · personal atual</small></span>
+          </label>
+          <label style={{ cursor: 'pointer', border: '1px solid var(--ag-line,#ffffff26)', borderRadius: 14, padding: 14, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <input type="radio" name="signup-perfil" checked={perfil === 'feminino'} onChange={() => pickPerfil('feminino')} data-testid="signup-perfil-mulher" />
+            <span><b>Mulher</b><br /><small className="lg-sub">Rosa · personal feminina</small></span>
+          </label>
+          {errs.perfil && <em style={{ color: 'var(--ag-bad,#ff6b6b)' }}>{errs.perfil}</em>}
+        </div>}
+        {(!reg || step === 2) && <>
         {reg && field('name', 'Nome', 'text', 'name', { maxLength: 80 })}
         {field('email', 'E-mail', 'email', 'email', { inputMode: 'email', placeholder: 'Digite seu e-mail' })}
         {field('password', 'Senha', showPw ? 'text' : 'password', reg ? 'new-password' : 'current-password')}
         {reg && field('confirm', 'Confirmar senha', showPw ? 'text' : 'password', 'new-password')}
         </>}
-        {reg && (step === 1 || step === 4) && ref && <p className="lg-sub" data-testid="ref-banner">Você chegou pelo convite de <b>{ref.name || 'um amigo'}</b>. O convite não substitui a contratação: conclua o pagamento para acessar o sistema.</p>}
-        {reg && step === 2 && field('birth_date', 'Data de nascimento', 'date', 'bday', { max: maxBirth, min: '1900-01-01', 'aria-required': true, 'data-testid': 'birth-date' })}
-        {reg && step === 2 && <fieldset className="lg-contact" data-testid="signup-contact"><legend className="lg-sub">Contato e endereço <small>(privados; você escolhe o que mostrar no perfil)</small></legend>
+        {reg && (step === 2 || step === 5) && ref && <p className="lg-sub" data-testid="ref-banner">Você chegou pelo convite de <b>{ref.name || 'um amigo'}</b>. O convite não substitui a contratação: conclua o pagamento para acessar o sistema.</p>}
+        {reg && step === 3 && field('birth_date', 'Data de nascimento', 'date', 'bday', { max: maxBirth, min: '1900-01-01', 'aria-required': true, 'data-testid': 'birth-date' })}
+        {reg && step === 3 && <fieldset className="lg-contact" data-testid="signup-contact"><legend className="lg-sub">Contato e endereço <small>(privados; você escolhe o que mostrar no perfil)</small></legend>
           <ContactFields value={ct} onChange={v => { setCt(v); setErrs({}) }} errors={errs} cls="lg-in" fieldCls="lg-field" /></fieldset>}
-        {reg && step === 2 && <div className="lg-terms" data-testid="signup-consents">
+        {reg && step === 3 && <div className="lg-terms" data-testid="signup-consents">
               <label><input type="checkbox" checked={health} onChange={e => setHealth(e.target.checked)} data-testid="accept-health" />
                 <span>(Opcional) Autorizo o uso dos meus dados de saúde (dores, lesões, restrições) para adaptar os treinos. Posso retirar quando quiser.</span></label>
             </div>}
-        {reg && step === 3 && <div data-testid="signup-plans" className="lg-intent pl-signup" role="radiogroup" aria-label="Escolha o plano">
+        {reg && step === 4 && <div data-testid="signup-plans" className="lg-intent pl-signup" role="radiogroup" aria-label="Escolha o plano">
           {(plans?.plans || []).filter(p => SELLABLE.includes(p.id) && p.audience === 'aluno').map(p => <PlanCard key={p.id} p={p} compact selected={choice === p.id} onSelect={p.purchasable ? () => setChoice(p.id) : undefined} />)}
           <p className="lg-sub">É necessário contratar o plano para criar a conta. Cupom de desconto pode ser informado na contratação; o acesso só é liberado após a confirmação do pagamento.</p>
           {plansBusy && <p className="lg-sub" role="status">Carregando o plano…</p>}
           {plansError && <div className="lg-msg" role="alert" data-testid="signup-plans-error"><span>{plansError}</span><button type="button" className="lg-btn ghost" onClick={loadPlans}>Tentar novamente</button></div>}
         </div>}
-        {reg && step === 4 && <div className="lg-sub" data-testid="signup-summary" style={{ textAlign: 'left' }}>
+        {reg && step === 5 && <div className="lg-sub" data-testid="signup-summary" style={{ textAlign: 'left' }}>
           <p><b>{f.name}</b> · {f.email}</p>
+          <p>Perfil: {perfil === 'feminino' ? 'Mulher' : 'Homem'}</p>
           <p>Plano: {plans?.plans?.find(p => p.id === choice)?.name || choice} (pagamento antes de acessar o sistema)</p>
           <p data-testid="signup-pay-note">Depois de criar a conta, abrimos <b>Planos e pagamento</b> com o plano escolhido. Você conclui o pagamento por cartão ou Pix; nada é cobrado sem sua confirmação.</p>
         </div>}
-            {reg && step === 4 && <div className={'lg-terms' + (errs.terms ? ' err' : '')}>
+            {reg && step === 5 && <div className={'lg-terms' + (errs.terms ? ' err' : '')}>
           <label><input type="checkbox" checked={agree} onChange={e => { setAgree(e.target.checked); setErrs({ ...errs, terms: undefined }) }} data-testid="accept-terms" />
             <span>Li e aceito os <a href="#/legal/termos" target="_blank" rel="noopener" className="lg-forgot">Termos de Uso</a> e a <a href="#/legal/privacidade" target="_blank" rel="noopener" className="lg-forgot">Política de Privacidade</a>{terms ? <> (versão {terms.version}, <button type="button" className="lg-forgot" onClick={() => setReadTerms(!readTerms)}>ler aqui</button>)</> : null}</span></label>
           {readTerms && terms && <div className="lg-terms-box"><TermsText terms={terms} /></div>}
@@ -221,13 +241,13 @@ function LoginForm() {
         {!reg && <button type="button" className="lg-forgot" onClick={() => { setMode('forgot'); setMsg(''); setErrs({}) }}>Esqueci a senha</button>}
         {msg && <div className="lg-msg" role="alert">{msg}</div>}
         {exists && reg && <div className="lg-alt" data-testid="email-exists">
-          <button type="button" className="lg-link" onClick={() => { setMode('login'); setErrs({}); setMsg(''); setExists(false) }}>Entrar com este e-mail</button>
+          <button type="button" className="lg-link" onClick={() => { setMode('login'); setErrs({}); setMsg(''); setExists(false); applyPalette('masculino') }}>Entrar com este e-mail</button>
           <button type="button" className="lg-link" onClick={async () => { try { const r = await api('/api/auth/forgot', { method: 'POST', body: JSON.stringify({ email: f.email.trim() }) }); setMsg(r.message) } catch (e) { setMsg(e.message) } setExists(false) }}>Recuperar a senha</button>
         </div>}
-        {reg && step < 4 && <button className="lg-btn" type="button" onClick={next} data-testid="signup-next">Continuar</button>}
-        {(!reg || step === 4) && <button className="lg-btn" type="submit" disabled={busy}>{busy ? 'Aguarde…' : reg ? 'Criar conta' : 'Entrar'}</button>}
+        {reg && step < 5 && <button className="lg-btn" type="button" onClick={next} data-testid="signup-next">Continuar</button>}
+        {(!reg || step === 5) && <button className="lg-btn" type="submit" disabled={busy}>{busy ? 'Aguarde…' : reg ? 'Criar conta' : 'Entrar'}</button>}
         {reg && step > 1 && <button type="button" className="lg-btn ghost" onClick={() => { setStep(step - 1); setErrs({}); setMsg('') }} data-testid="signup-back">Voltar</button>}
-        <button type="button" className="lg-btn ghost" onClick={() => { setMode(reg ? 'login' : 'register'); setStep(1); setErrs({}); setMsg('') }}>
+        <button type="button" className="lg-btn ghost" onClick={() => { setMode(reg ? 'login' : 'register'); setStep(1); setErrs({}); setMsg(''); if (reg) applyPalette('masculino') }}>
           {reg ? 'Já tenho conta — Entrar' : 'Criar conta'}</button>
         <a className="lg-forgot" href="#/precos" data-testid="see-plans" style={{ display: 'block', textAlign: 'center', marginTop: 12 }}>Conhecer os planos e preços</a>
       </form>

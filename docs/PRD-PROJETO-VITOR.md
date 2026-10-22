@@ -10,20 +10,20 @@
 
 ## 1. Resumo executivo
 
-O Projeto Vitor é um aplicativo web instalável (PWA, com empacotamento Android/iOS via Capacitor) em que **um personal trainer atende seus alunos**. O aluno assina um plano único, recebe do personal uma **ficha de treino individual**, executa o treino no celular com cronômetro, vídeo do próprio personal por exercício e registro de séries/cargas, acompanha seu progresso, participa de uma comunidade moderada e passa por **avaliação postural** guiada por fotos e vídeos quando o personal solicita.
+O Projeto Vitor é um aplicativo web instalável (PWA, com empacotamento Android/iOS via Capacitor) em que **um personal trainer atende seus alunos**. O aluno escolhe **Básico** ou **Completo**, recebe do personal uma **ficha de treino individual**, executa o treino no celular com cronômetro, vídeo do próprio personal por exercício e registro de séries/cargas, acompanha seu progresso, participa de uma comunidade moderada e — no Completo — passa por **avaliação postural** guiada por fotos e vídeos quando o personal solicita.
 
 O produto pretendido é o aplicativo de um personal e seus alunos, sem marketplace nem catálogo de programas prontos. A implementação está em evolução nesta cópia; consulte a seção de estado de entrega antes de interpretar um requisito como concluído. Regras aprovadas:
 
-- **Um plano à venda:** `individual` — "Projeto Vitor", **R$ 39,90/mês**, audiência aluno.
-- **Um personal responsável por ambiente** (o administrador), com possibilidade de **personais internos** criados por ele.
+- **Dois planos à venda (aluno):** `individual` — **Básico**, **R$ 49,90/mês** (ficha, treino, progresso, comunidade; sem avaliação postural); `completo` — **Completo**, **R$ 499** pagamento único, **3 meses** (o mesmo do Básico + avaliação postural). Depois dos 3 meses a comunidade permanece; treino e avaliação nova bloqueiam.
+- **Um personal responsável por ambiente** (o administrador), com possibilidade de **personais internos** criados por ele. O personal **não** contrata plano.
 - **Sem programas prontos, recomendação automática, grupos, desafios, ranking, troféus ou premiações na experiência alvo.** A existência de código ou dados legados deve ser verificada separadamente antes de qualquer remoção técnica.
-- **Bloqueio comercial real:** somente assinatura paga e confirmada libera treino, progresso e comunidade.
+- **Bloqueio comercial real:** somente assinatura paga e confirmada libera treino e progresso; a comunidade pode permanecer via grant após o Completo.
 
 ### Estado da entrega nesta cópia
 
 | Jornada | O que foi encontrado | Critério para considerar pronta |
 |---|---|---|
-| Cadastro e assinatura | Cadastro de aluno, plano único e provedor InfinitePay têm implementação local. O catálogo do banco local já está conciliado: `individual` a **3990 centavos**, ativo e vendável, com `pro`, `pro_ilimitado` e `profissional_free` fora de venda. Primeira cobrança real não foi confirmada ponta a ponta | Cadastro, pagamento confirmado e liberação testados na mesma conta, sem acesso enquanto a cobrança estiver pendente |
+| Cadastro e assinatura | Cadastro de aluno, dois planos (Básico/Completo) e provedor InfinitePay têm implementação local. Catálogo alvo: `individual` a **4990** centavos e `completo` a **49900**, ambos vendáveis; `pro` / `pro_ilimitado` / `profissional_free` fora de venda. Primeira cobrança real não foi confirmada ponta a ponta | Cadastro, escolha de plano, pagamento confirmado e liberação testados na mesma conta |
 | Personal e fichas | Vínculo, construtor, agenda e vídeo estão no código; publicação completa pela interface não foi homologada | Personal publica ficha; aluno certo a recebe; ficha anterior permanece no histórico |
 | Execução e progresso | Telas e testes isolados existem; faltam cenários completos de navegador e aparelho | Treino concluído gera histórico e métricas coerentes, inclusive sem base anterior |
 | Comunidade e avaliação postural | Módulos locais existem; avaliação ainda não foi exercitada em aparelho real nem com armazenamento R2 real | Permissões, envio, revisão e devolutiva confirmados em ambiente configurado |
@@ -185,11 +185,12 @@ São 73 migrations e ~190 tabelas. As entidades que sustentam o produto atual:
 
 | Plano | Audiência | Preço | Situação |
 |---|---|---|---|
-| `individual` — **Projeto Vitor** | aluno | R$ 39,90/mês | **À venda** |
+| `individual` — **Básico** | aluno | R$ 49,90/mês | **À venda** · sem `avaliacao_postural` |
+| `completo` — **Completo** | aluno | R$ 499 uma vez · 3 meses | **À venda** · com `avaliacao_postural`; `renews=false` |
 | `aluno_free` | aluno | — | Inativo, nunca vendável. É o estado interno de "conta sem plano ainda" (`FREE_PLAN`); **não remover**, o cadastro depende dele |
 | `pro` (Personal 15), `pro_ilimitado` (Personal Ilimitado), `profissional_free` | profissional | — | `active=false, sellable=false`. Nada apagado: versões, assinaturas e cobranças anteriores seguem consultáveis |
 
-`GET /api/billing/pro-summary` responde **410 GONE** — não há assinatura de profissional para gerir.
+`GET /api/billing/pro-summary` responde **410 GONE** — não há assinatura de profissional para gerir. O personal do ambiente é admin e não paga plano.
 
 ### 5.2 Estados da assinatura
 
@@ -221,14 +222,15 @@ stateDiagram-v2
 
 ### 5.4 Regras comerciais
 
-- RN-M1: só assinatura paga e **confirmada** libera treinos, progresso e comunidade. Teste ou concessão não substituem pagamento em produção.
+- RN-M1: só assinatura paga e **confirmada** libera treinos e progresso. A comunidade entra com a assinatura; após o **Completo** expirar, a comunidade pode permanecer via grant permanente. Teste ou concessão não substituem pagamento em produção.
 - RN-M2: checkout e gestão da conta ficam abertos sem pagamento — o bloqueio é do uso, não da contratação.
-- RN-M3: criar a conta pelo painel **não** libera acesso; o aluno contrata a assinatura.
-- RN-M4: cobertura pelo personal mantém fichas e recursos do personal; áreas fora desse escopo apresentam a contratação do Individual.
-- RN-M5: administradores são isentos pelo motor central.
+- RN-M3: criar a conta pelo painel **não** libera acesso; o aluno contrata a assinatura (Básico ou Completo).
+- RN-M4: avaliação postural exige feature `avaliacao_postural` (plano Completo). No Básico o personal não solicita; devolutiva já publicada continua legível após o período.
+- RN-M5: administradores (personal do ambiente) são isentos pelo motor central e **não** contratam plano.
 - RN-M6: `client_locked` restringe programas, biblioteca, músculos, diretório e perguntas.
 - RN-M7: a Biblioteca de exercícios é ferramenta de quem monta ficha — visível só para admin/personal.
 - RN-M8: convite/indicação **não** substitui contratação; o banner do cadastro diz isso explicitamente.
+- RN-M9: o Completo não renova automaticamente; o Básico renova pelo `price_cents` do catálogo (assinaturas antigas mantêm o valor gravado até a próxima renovação).
 
 ---
 
@@ -345,6 +347,7 @@ Nova área em que o personal solicita, o aluno registra fotos e vídeos guiados 
 - RN-6.4 Envio recusado se faltar etapa obrigatória. Publicação bloqueada enquanto houver captura sem parecer ou resumo vazio. Observações internas só aparecem ao aluno **depois** da publicação.
 - RN-6.5 Recorrência mensal gera avaliações **independentes**, para comparar períodos. `POSTURAL_RECURRENCE=off` desliga geração e varredura de retenção.
 - RN-6.6 Capacidade: no plano gratuito do R2 (10 GB-mês), com vídeo limitado a 25 MB, uma avaliação ocupa ~82 MB; o painel mostra o consumo e avisa a partir de 80%.
+- RN-6.7 **Plano Completo:** solicitar, capturar e concluir exigem `avaliacao_postural`. Aluno no Básico vê oferta de upgrade; o personal não solicita. Devolutiva já publicada permanece legível depois que o Completo expira.
 
 **Estados**
 
@@ -484,7 +487,7 @@ sequenceDiagram
   API->>API: cria aluno + plano de acesso + vínculo ao personal (1 transação)
   API-->>L: conta criada (sem acesso de uso)
   L->>A: abre Planos e pagamento
-  A->>API: POST /api/billing/subscribe (plano individual, R$ 39,90)
+  A->>API: POST /api/billing/subscribe (Básico R$ 49,90/mês ou Completo R$ 499)
   API->>PAY: checkout (cartão ou Pix)
   PAY-->>API: webhook de pagamento
   API->>API: subscriptions = ativa · libera entitlements
@@ -782,7 +785,7 @@ Os itens abaixo são evidências históricas registradas nesta cópia, não nova
 - Comparação visual lado a lado entre períodos da avaliação postural **não** implementada (o histórico lista ciclos e a análise mostra a mesma etapa do ciclo anterior).
 - Cenários de navegador do cadastro em 4 etapas, do player de vídeo e da dúvida no exercício.
 - Publicação de ficha pelo personal ponta a ponta pela interface.
-- Primeira cobrança real de R$ 39,90 ponta a ponta na InfinitePay (prova operacional externa, não coberta por simulação).
+- Primeira cobrança real de Básico (R$ 49,90) ou Completo (R$ 499) ponta a ponta na InfinitePay (prova operacional externa, não coberta por simulação).
 - Instalação interna da 2.0.1 na VPS concluída no commit `4dd90a1`, em banco novo e isolado; a conferência detalhada abaixo ainda vale para o banco local e precisa ser repetida na VPS antes de uso real. Publicação pública e cobrança real seguem pendentes.
 
 **Banco local — conferência e ajuste de 21/10/2026**
@@ -791,7 +794,7 @@ Conferência somente leitura no banco `avagym` (`localhost`), mais `npm run veri
 
 - As **72 migrations** do repositório constam em `schema_migrations`; **nenhuma pendente**. A 071 (destrutiva) **já foi aplicada**: as tabelas de Grupos, Desafios, Ranking, prêmios e troféus não existem mais, e a prévia da rotina de mídias havia encontrado zero arquivos.
 - `sessions.origin` e `sessions.time_corrected_at` **existem** — a lacuna de esquema que bloqueava o painel de gestão está resolvida.
-- Catálogo conciliado: `individual` a 3990 centavos, ativo e vendável; `pro`, `pro_ilimitado` e `profissional_free` inativos e fora de venda; `aluno_free` preservado e com versão de plano.
+- Catálogo conciliado: `individual` (Básico) a 4990 centavos e `completo` a 49900, ambos ativos e vendáveis; `pro`, `pro_ilimitado` e `profissional_free` inativos e fora de venda; `aluno_free` preservado e com versão de plano.
 - `personal_user_id` definido e `personal_unico` ativo. `monetizacao_ativa=false` neste banco.
 - Duas linhas órfãs em `schema_migrations` (`034_resend_transactional.sql` e `068_dados_legais_ornygym.sql`) correspondem a arquivos renumerados no repositório. São inofensivas — o conteúdo atual consta aplicado sob os nomes novos —, mas não devem ser interpretadas como migrations existentes.
 - O verificador fechou primeiro em **17 de 19**, com duas falhas de configuração de dados (não de código): o personal principal sem papel `admin`, o que anula a isenção de vaga e de limite (RN-P3 exige `personal_user_id` **e** papel `admin`), e um aluno sem plano de acesso, pré-condição do vínculo.

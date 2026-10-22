@@ -95,15 +95,22 @@ export function portalRoutes({ json, readBody }) {
       const id = qs(req).get('id')
       if (!isUuid(id) || !(await isLinked(u.id, id))) return json(res, 403, { error: 'Aluno não vinculado a você' })
       const [s, link, plans, sessions, evo, th, occ, props] = await Promise.all([
-        q(`select x.id, x.name, o.objetivo goal, o.nivel level, o.restricoes restrictions from users x left join user_onboarding o on o.user_id=x.id where x.id=$1`, [id]),
-        q(`select area, since from coach_students where coach_id=$1 and student_id=$2 and status='ativo'`, [u.id, id]),
+        q(`select x.id, x.name, o.objetivo goal, o.nivel level, o.restricoes restrictions, up.sex from users x
+          left join user_onboarding o on o.user_id=x.id left join user_profiles up on up.user_id=x.id where x.id=$1`, [id]),
+        q(`select area, since, coach_id from coach_students where coach_id=$1 and student_id=$2 and status='ativo'`, [u.id, id]),
         q(`select p.id,p.title,p.status,p.version,p.goal,p.specialty,p.updated_at,p.created_at,p.owner_id, (p.owner_id=$2) mine from pro_plans p where p.student_id=$1 and (p.owner_id=$2 or p.status='ativo') order by p.status, p.updated_at desc`, [id, u.id]),
         q(`select id,workout_name,started_at,duration_sec,timing,sets_count,volume_kg,feeling,pro_plan_id,prescribed_count,exercises_count from sessions where user_id=$1 and status='done' order by started_at desc limit 40`, [id]),
         q(`select date_trunc('week', started_at)::date wk, count(*)::int sessions, coalesce(sum(volume_kg),0)::float volume from sessions s where user_id=$1 and ${countsInMetrics('s')} and started_at > now() - interval '12 weeks' group by 1 order by 1`, [id]),
         q(`select t.id,t.status,t.context_type,t.exercise_name,t.updated_at,(select body from messages m where m.thread_id=t.id order by id desc limit 1) last_body from threads t where t.student_id=$1 and (t.responsible_id=$2 or t.assigned_to=$2) order by t.updated_at desc`, [id, u.id]),
         q(`select id,category,exercise_name,status,description,created_at,due_at,overdue_flagged_at from occurrences where student_id=$1 and (responsible_id=$2 or assigned_to=$2) order by created_at desc`, [id, u.id]),
         q(`select cp.id,cp.description,cp.status,cp.created_at from change_proposals cp join pro_plans p on p.id=cp.plan_id where p.student_id=$1 and (cp.author_id=$2 or cp.decider_id=$2) order by cp.created_at desc`, [id, u.id])])
-      json(res, 200, { student: s.rows[0], link: link.rows[0], plans: plans.rows, sessions: sessions.rows, evolution: evo.rows, threads: th.rows, occurrences: occ.rows, proposals: props.rows })
+      const personalsRows = (await q(`select key, value #>> '{}' id from app_settings where tenant_id=$1 and key in ('personal_user_id','personal_feminino_user_id')`, [u.tenant_id])).rows
+      const personals = { masculino: null, feminino: null }
+      for (const row of personalsRows) {
+        if (row.key === 'personal_user_id') personals.masculino = row.id
+        if (row.key === 'personal_feminino_user_id') personals.feminino = row.id
+      }
+      json(res, 200, { student: s.rows[0], link: link.rows[0], plans: plans.rows, sessions: sessions.rows, evolution: evo.rows, threads: th.rows, occurrences: occ.rows, proposals: props.rows, personals })
     },
     // biblioteca (somente leitura, com filtros) para montar a ficha sem digitar exercícios
     'GET /api/pro/library': async (req, res) => {

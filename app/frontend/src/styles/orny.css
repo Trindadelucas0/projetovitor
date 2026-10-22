@@ -15,6 +15,15 @@
  --label:#171717;--label-2:#525252;--label-3:#626262;--label-4:#737373;--sep:#00000030;--sep-op:#0000001f;
  --acc:#176d14;--acc-2:#20f51b;--on-acc:#fff;--navy:#171717;
 }
+/* Perfil Mulher: rosa neon no app logado e no preview do cadastro */
+:root[data-palette="feminino"],:root[data-palette="feminino"][data-accent="avagym"]{
+ --orny-green:#ff4fd8;--ag-acc:#ff4fd8;--ag-acc-2:#e13bc4;--ag-focus:#ff4fd8;
+ --acc:#ff4fd8;--acc-2:#e13bc4;--brand-orange:#ff4fd8;
+}
+:root[data-theme="light"][data-palette="feminino"],:root[data-theme="light"][data-palette="feminino"][data-accent="avagym"]{
+ --orny-green:#ff4fd8;--ag-acc:#c2186a;--ag-acc-2:#ff4fd8;--ag-focus:#c2186a;
+ --acc:#c2186a;--acc-2:#ff4fd8;--brand-orange:#ff4fd8;
+}
 h1,h2,h3,h4,.sec,button,.g-btn{font-family:var(--font-head)}
 .orny-brand{display:inline-flex;align-items:center;justify-content:center;background:#000;border-radius:10px;padding:8px 12px;max-width:100%;box-sizing:border-box;vertical-align:middle}
 .orny-brand img{display:block;width:160px;max-width:100%;height:auto;object-fit:contain}

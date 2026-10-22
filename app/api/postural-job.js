@@ -9,6 +9,7 @@ import { q, transaction } from './db/pool.js'
 import { notify } from './pro.js'
 import { audit } from './auth.js'
 import { storage } from './storage/index.js'
+import { checkFeature } from './entitlements.js'
 
 const SEIS_HORAS = 6 * 3600e3
 const RETENTION_KEY = 'avaliacao_postural_retencao_dias'
@@ -86,6 +87,9 @@ export async function tickOnce() {
   for (const r of devidas) {
     out.avaliadas++
     try {
+      // Sem avaliacao_postural no plano do aluno (Básico): não cria nem notifica; a recorrência fica ativa.
+      const feat = await checkFeature(r.student_id, 'aluno', 'avaliacao_postural')
+      if (feat) { out.puladas++; continue }
       const res = await gerar(r)
       if (res.criada) {
         out.criadas++

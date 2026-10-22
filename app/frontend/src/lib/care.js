@@ -22,6 +22,7 @@ export const C = {
   record: id => api('/api/adm/student/record?id=' + id), saveRecord: b => post('/api/adm/student/record', b), saveRestr: b => post('/api/adm/restrictions/save', b), delRestr: b => post('/api/adm/restrictions/delete', b),
   training: id => api('/api/adm/student/training?id=' + id), admSavePlan: b => post('/api/adm/plans/save', b), admDelPlan: b => post('/api/adm/plans/delete', b),
   endProgram: b => post('/api/adm/user-programs/end', b), voidSession: b => post('/api/adm/sessions/void', b), transfer: b => post('/api/adm/links/transfer', b),
+  corrigirPerfil: student_id => post('/api/pro/students/corrigir-perfil', { student_id, confirm: true }),
   admPosts: (st, q) => api(`/api/adm/posts?status=${st || ''}&q=${encodeURIComponent(q || '')}`), updPost: b => post('/api/adm/posts/update', b), delPost: b => post('/api/adm/posts/delete', b),
   officialPosts: state => api('/api/adm/community/editorial' + (state ? '?state=' + encodeURIComponent(state) : '')),
   seedOfficialPosts: () => post('/api/adm/community/editorial/seed', {}),

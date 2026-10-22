@@ -1,5 +1,6 @@
 import Brand, { BrandLoading } from './components/Brand.jsx'
-import { applyTheme, loadTheme } from './lib/theme.js'
+import { applyTheme, applyPalette, loadTheme } from './lib/theme.js'
+import PerfilGate from './components/PerfilGate.jsx'
 import { useEffect, lazy, Suspense } from 'react'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from './store/useStore.js'
@@ -88,6 +89,10 @@ function Shell() {
   useEffect(() => { setNav(navigate) }, [navigate])
   useEffect(() => { applyPrefs() }, [])
   useEffect(() => { if (user) loadTheme() }, [user?.id]) // eslint-disable-line
+  useEffect(() => {
+    if (user?.palette === 'feminino') applyPalette('feminino')
+    else applyPalette('masculino')
+  }, [user?.id, user?.palette])
   useEffect(() => { setLang(S.lang || 'pt') }, [S.lang])
   useEffect(() => { document.documentElement.lang = (S.lang || 'pt') === 'pt' ? 'pt-BR' : S.lang }, [langV, S.lang])
   // every tab/route change starts at the top of the page
@@ -121,13 +126,13 @@ function Shell() {
         {authed && !user?.must_change_password && <LockBanner />}
         {authed && user?.profile_incomplete && !user?.must_change_password && !user?.needs_terms && <ProfileNotice />}
         <ErrorBoundary>
-          {!authed ? <Login /> : user?.must_change_password ? <MustChangePassword /> : user?.needs_terms ? <LegalGate onAccepted={() => useStore.getState().setUser({ ...user, needs_terms: false })} /> : isAdminAccount(user) ? (
+          {!authed ? <Login /> : user?.must_change_password ? <MustChangePassword /> : user?.needs_terms ? <LegalGate onAccepted={() => useStore.getState().setUser({ ...user, needs_terms: false })} /> : user?.needs_perfil ? <PerfilGate /> : isAdminAccount(user) ? (
             <Routes>
               <Route path="/admin/painel" element={<AdminApp />} />
               <Route path="/pro/treino" element={<Builder />} />
               <Route path="/library" element={<Library />} />
               <Route path="/admin/programas" element={<Navigate to="/admin/painel?tab=programas" replace />} />
-              <Route path="/comunidade" element={<Gate title="Comunidade"><Comunidade /></Gate>} />
+              <Route path="/comunidade" element={<Gate title="Comunidade" allow="comunidade"><Comunidade /></Gate>} />
               <Route path="/grupo/:id" element={<Navigate to="/comunidade" replace />} />
               <Route path="/desafio/:id" element={<Navigate to="/comunidade" replace />} />
               <Route path="/desafios/criar" element={<Navigate to="/comunidade" replace />} />
@@ -150,15 +155,15 @@ function Shell() {
               <Route path="/pro/treino" element={(user?.admin || isProAccount(user)) ? <Builder /> : <Navigate to="/hoje" replace />} />
               <Route path="/hoje" element={isProAccount(user) ? <Navigate to="/pro" replace /> : <Gate title="Início"><Today /></Gate>} />
               <Route path="/treinos" element={<Gate title="Treinos"><Treinos /></Gate>} />
-              <Route path="/comunidade" element={<Gate title="Comunidade"><Comunidade /></Gate>} />
+              <Route path="/comunidade" element={<Gate title="Comunidade" allow="comunidade"><Comunidade /></Gate>} />
               <Route path="/acompanhamento" element={<Gate title="Acompanhamento"><Acompanhamento /></Gate>} />
               <Route path="/conversa/:id" element={<Gate title="Conversa"><Conversa /></Gate>} />
               <Route path="/avisos" element={<Avisos />} />
               <Route path="/grupo/:id" element={<Navigate to="/comunidade" replace />} />
               <Route path="/desafio/:id" element={<Navigate to="/comunidade" replace />} />
               <Route path="/desafios/criar" element={<Navigate to="/comunidade" replace />} />
-              <Route path="/post/:id" element={<Gate title="Comunidade"><PostPage /></Gate>} />
-              <Route path="/profissional/:id" element={<Gate title="Comunidade"><ProfessionalPage /></Gate>} />
+              <Route path="/post/:id" element={<Gate title="Comunidade" allow="comunidade"><PostPage /></Gate>} />
+              <Route path="/profissional/:id" element={<Gate title="Comunidade" allow="comunidade"><ProfessionalPage /></Gate>} />
               <Route path="/ranking" element={<Navigate to="/comunidade" replace />} />
               <Route path="/pro" element={isProAccount(user) ? <ProPortal /> : <Navigate to="/hoje" replace />} />
               <Route path="/pro/programas" element={<Navigate to={user?.admin ? '/admin/painel?tab=usuarios' : '/hoje'} replace />} />
@@ -174,10 +179,10 @@ function Shell() {
           <Route path="/compartilhar" element={<Gate title="Progresso"><ShareCard /></Gate>} />
               <Route path="/progresso" element={<Gate title="Progresso"><Progress /></Gate>} />
               <Route path="/estatisticas" element={<Gate title="Estatísticas"><Estatisticas /></Gate>} />
-              {/* V5-AP: avaliação postural. O wizard é tela cheia (a barra de abas sai em /avaliacao/<id>). */}
-              <Route path="/avaliacao" element={<Gate title="Avaliação postural"><Avaliacoes /></Gate>} />
+              {/* Avaliação: lista e devolutiva abrem para leitura; o wizard exige plano com a feature. */}
+              <Route path="/avaliacao" element={<Gate title="Avaliação postural" free><Avaliacoes /></Gate>} />
               <Route path="/avaliacao/:id" element={<Gate title="Avaliação postural"><PosturalWizard /></Gate>} />
-              <Route path="/avaliacao/:id/devolutiva" element={<Gate title="Avaliação postural"><Devolutiva /></Gate>} />
+              <Route path="/avaliacao/:id/devolutiva" element={<Gate title="Avaliação postural" free><Devolutiva /></Gate>} />
               <Route path="/perfil" element={<Profile />} /><Route path="/perfil/social" element={<SocialProfile />} /><Route path="/u/:id" element={<SocialPublic />} />
               <Route path="/planos" element={<Plans />} /><Route path="/assinatura" element={<Subscription />} /><Route path="/pro/assinatura" element={<Navigate to="/assinatura" replace />} />
               <Route path="/convite/:code" element={<AcceptInvite />} />

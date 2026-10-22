@@ -148,6 +148,21 @@ export function StudentTraining({ u, pros }) {
         {!s.voided_at && <button className="adm-btn danger" onClick={() => confirmDel({ title: 'Anular sessão', text: 'A sessão fica no histórico marcada como anulada e deixa de entrar nas métricas.', needReason: true, onConfirm: async reason => { await C.voidSession({ id: s.id, confirm: 'EXCLUIR', reason }); reload() } })}>Anular</button>}</div>)}
       {!d.sessions.length && <p className="g-mut g-xs">Nenhuma sessão.</p>}</div>
     <div className="adm-card" style={{ marginTop: 12 }}><h3>Vínculos</h3>
+      {(() => {
+        const ativo = d.links.find(l => l.status === 'ativo')
+        const onFem = ativo && d.personals?.feminino && String(ativo.coach_id) === String(d.personals.feminino)
+        const toHomens = d.sex === 'feminino' || onFem
+        const destOk = toHomens ? !!d.personals?.masculino : !!d.personals?.feminino
+        const label = toHomens ? 'Enviar para a personal dos homens' : 'Enviar para a personal das mulheres'
+        return ativo ? <p className="g-mut g-xs" style={{ marginBottom: 8 }}>Perfil: {d.sex === 'feminino' ? 'Mulher' : d.sex === 'masculino' ? 'Homem' : 'não definido'}
+          <button className="adm-btn ghost" style={{ marginLeft: 8 }} disabled={!destOk} data-testid="lk-corrigir-perfil"
+            title={destOk ? undefined : 'A outra personal ainda não foi configurada.'}
+            onClick={async () => {
+              if (!destOk) return
+              if (!await ask('Transferir o aluno e arquivar a ficha atual? O histórico será preservado.')) return
+              try { await C.corrigirPerfil(u.id); reload() } catch (e) { notifyError(e) }
+            }}>{destOk ? label : 'A outra personal ainda não foi configurada.'}</button></p> : null
+      })()}
       {d.links.map(l => <div key={l.id} className="adm-tools" style={{ marginTop: 6 }}><span style={{ flex: 1 }}>{l.coach} · {l.area || '—'} · {l.status}</span>
         {l.status === 'ativo' && <><button className="adm-btn ghost" onClick={() => setTf({ link: l, coach_id: '', reason: '' })} data-testid="lk-transfer">Transferir</button>
           <button className="adm-btn danger" onClick={() => confirmDel({ title: 'Encerrar vínculo', text: `O vínculo com ${l.coach} será encerrado e o plano desse profissional arquivado. O histórico do aluno fica.`, needReason: true, onConfirm: async reason => { await C.endLink(l.id, reason); reload() } })}>Encerrar</button></>}</div>)}

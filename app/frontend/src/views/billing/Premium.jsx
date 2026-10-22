@@ -31,9 +31,9 @@ const exempt = u => !u || u.admin || (u.roles || []).includes('admin') || !((u.r
 export function usePremium(aud) {
   const user = useStore(s => s.user), state = usePremiumStore()
   const acc = state.owner === user?.id ? state.acc : null, denied = state.owner === user?.id && state.denied
-  if (exempt(user)) return { locked: false, ready: true, acc }
+  if (exempt(user)) return { locked: false, ready: true, acc, comunidade: true }
   const noAccess = !!acc?.monetized && (aud === 'profissional' ? !acc.audiences?.profissional?.has : !acc.has_any)
-  return { locked: noAccess || denied, ready: !!acc || denied, acc, error: state.owner === user?.id && state.error }
+  return { locked: noAccess || denied, ready: !!acc || denied, acc, comunidade: !!acc?.comunidade, error: state.owner === user?.id && state.error }
 }
 
 export function PremiumLoading() {

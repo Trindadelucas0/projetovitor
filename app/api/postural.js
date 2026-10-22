@@ -115,15 +115,21 @@ export function posturalRoutes({ json, readBody }) {
     // painel do aluno: a avaliação aberta, o histórico e o estado do consentimento
     'GET /api/avaliacao-postural': async (req, res) => {
       const u = await auth(req, res); if (!u) return
-      const open = (await q(`${SELECT_ASSESSMENT} where a.student_id=$1 and a.tenant_id=$2 and a.status = any($3) order by a.requested_at desc limit 1`,
-        [u.id, u.tenant_id, OPEN_STATUS])).rows[0] || null
-      const history = (await q(`${SELECT_ASSESSMENT} where a.student_id=$1 and a.tenant_id=$2 and a.status in ('publicada','cancelada','expirada') order by coalesce(a.published_at, a.updated_at) desc limit 24`,
+      const { checkFeature } = await import('./entitlements.js')
+      const hasFeature = !(await checkFeature(u.id, 'aluno', 'avaliacao_postural'))
+      const open = hasFeature
+        ? (await q(`${SELECT_ASSESSMENT} where a.student_id=$1 and a.tenant_id=$2 and a.status = any($3) order by a.requested_at desc limit 1`,
+          [u.id, u.tenant_id, OPEN_STATUS])).rows[0] || null
+        : null
+      // Sem a feature: só devolutivas publicadas (plano Básico ou Completo vencido).
+      const history = (await q(`${SELECT_ASSESSMENT} where a.student_id=$1 and a.tenant_id=$2 and a.status ${hasFeature ? "in ('publicada','cancelada','expirada')" : "= 'publicada'"} order by coalesce(a.published_at, a.updated_at) desc limit 24`,
         [u.id, u.tenant_id])).rows
       const health = await healthConsentOf(u.id)
       json(res, 200, {
         open: open ? { ...publicAssessment(open), progress: await progressOf(open) } : null,
         history: history.map(publicAssessment),
-        consent: { health, version: await docVersionOf(u.tenant_id).catch(() => null) }
+        consent: { health, version: await docVersionOf(u.tenant_id).catch(() => null) },
+        feature: { avaliacao_postural: hasFeature }
       })
     },
 

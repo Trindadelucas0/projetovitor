@@ -35,7 +35,7 @@ export function PlansCompare({ plans, cta, current = {}, testMode, initialAud, h
   return <div className="bl-wrap" data-testid="plans-compare">
     {testMode && <p className="bl-test" data-testid="billing-test-banner"><Icon name="info" /> Ambiente de teste: nenhum valor real é cobrado.</p>}
     <PlanGrid plans={plans} cta={cta} current={current} initialAud={initialAud} />
-    <p className="pl-note">{hostedCheckout ? 'Cobrança mensal por cartão ou Pix. A cada renovação, conclua a nova cobrança; o acesso continua até o fim do período pago e seus dados ficam salvos.' : 'Cobrança mensal recorrente no cartão. Seus dados ficam salvos mesmo após o cancelamento.'}</p>
+    <p className="pl-note">{hostedCheckout ? 'Básico: cobrança mensal. Completo: pagamento único, 3 meses. Cartão ou Pix no checkout; o acesso continua até o fim do período pago e seus dados ficam salvos.' : 'Básico: cobrança mensal no cartão. Completo: pagamento único por 3 meses. Seus dados ficam salvos mesmo após o encerramento.'}</p>
   </div>
 }
 
@@ -237,14 +237,17 @@ export function Subscription() {
     {note && <p className={note.ok ? 'bl-ok' : 'bl-err'} role="status" data-testid="billing-note">{note.t}</p>}
     {me.access?.message && <p className="bl-info" data-testid="access-msg">{me.access.message}</p>}
     <TrialCard onChange={load} />
-    {me.subscriptions.profissional !== undefined && <p><a href="#/pro/assinatura" className="adm-btn ghost" data-testid="link-pro-subscription">Minha assinatura PRO: alunos e vagas</a></p>}
-    {Object.entries(me.subscriptions).filter(([, s]) => s).map(([aud, s]) => <section key={aud} className="bl-sub" data-testid={'my-sub-' + aud}>
+    {Object.entries(me.subscriptions).filter(([aud, s]) => s && aud === 'aluno').map(([aud, s]) => {
+      const unico = s.renews === false
+      const proximoCatalogo = !unico && s.catalog_price_cents != null && s.price_cents != null && s.catalog_price_cents > s.price_cents
+      return <section key={aud} className="bl-sub" data-testid={'my-sub-' + aud}>
       <div className="bl-row"><div><span className="g-eyebrow">{AUD[aud]}</span><h3>{s.plan_name}</h3></div><span className="bl-sp" /><span className={'bl-st ' + (ST_CLS[s.status] || '')} data-testid={'sub-status-' + aud}>{s.status_label || s.status}</span></div>
       {!s.is_free && <dl className="bl-dl">
-        {s.price_cents != null && <><dt>Valor</dt><dd>{brl(s.price_cents)}/mês{s.discount_pct ? ` (${+s.discount_pct}% off por mais ${s.discount_cycles_left} ciclo(s))` : ''}</dd></>}
+        {s.price_cents != null && <><dt>Valor</dt><dd>{unico ? `${brl(s.price_cents)} · pagamento único` : `${brl(s.price_cents)}/mês`}{s.discount_pct ? ` (${+s.discount_pct}% off por mais ${s.discount_cycles_left} ciclo(s))` : ''}</dd></>}
+        {proximoCatalogo && <><dt>Na próxima cobrança</dt><dd>{brl(s.catalog_price_cents)}/mês</dd></>}
         <dt>Pagamento</dt><dd>{s.provider === 'infinitepay' ? 'Checkout InfinitePay (cartão ou Pix)' : s.payment_type === 'pix' ? 'Pix legado' : 'Cartão de crédito'}</dd>
         {s.status === 'trial' && <><dt>Teste até</dt><dd>{dBR(s.trial_ends_at)}</dd></>}
-        {s.current_period_end && <><dt>{s.cancel_at_period_end ? 'Acesso até' : 'Próxima cobrança'}</dt><dd>{dBR(s.current_period_end)}</dd></>}
+        {s.current_period_end && <><dt>{unico || s.cancel_at_period_end ? 'Acesso até' : 'Próxima cobrança'}</dt><dd>{dBR(s.current_period_end)}</dd></>}
         {s.next_retry_at && <><dt>Nova tentativa</dt><dd>{dBR(s.next_retry_at)}</dd></>}
         {s.grace_until && s.status === 'carencia' && <><dt>Carência até</dt><dd>{dBR(s.grace_until)}</dd></>}
         {s.card && <><dt>Cartão</dt><dd>{(s.card.brand || 'Cartão') + ' final ' + s.card.last4}</dd></>}
@@ -252,18 +255,20 @@ export function Subscription() {
       {s.payment_type === 'pix' && <p className="bl-warn">O Pix foi desativado. Adicione um cartão para manter ou reativar esta assinatura; o período já pago continua até a data indicada.</p>}
       {['inadimplente', 'carencia'].includes(s.status) && <p className="bl-warn">Não conseguimos confirmar a cobrança. Atualize o cartão ou pague agora para não perder o acesso.</p>}
       {s.status === 'suspensa' && <p className="bl-warn">Assinatura suspensa por falta de pagamento. Seus dados estão salvos: pague para reativar.</p>}
-      {s.cancel_at_period_end && <p className="bl-info">Cancelamento agendado. Você pode desfazer até {dBR(s.current_period_end)}.</p>}
+      {s.cancel_at_period_end && !unico && <p className="bl-info">Cancelamento agendado. Você pode desfazer até {dBR(s.current_period_end)}.</p>}
+      {unico && s.current_period_end && <p className="bl-info">Plano Completo: acesso até {dBR(s.current_period_end)}. Depois disso a comunidade continua; treino e avaliação nova pedem um novo plano.</p>}
       {!s.is_free && s.provider && <div className="bl-actions">
         {['inadimplente', 'carencia', 'suspensa'].includes(s.status) && <button className="bl-btn" disabled={busy} onClick={async () => { setBusy(true); setNote(null); try { const r = await post('/api/billing/pay-now', { audience: aud }); if (r.checkout_url) window.location.assign(r.checkout_url); else { setNote({ ok: true, t: r.result === 'ativa' ? 'Pagamento aprovado. Assinatura em dia.' : 'Pagamento em análise.' }); await load() } } catch (e) { setNote({ ok: false, t: e.message }) } finally { setBusy(false) } }} data-testid={'pay-now-' + aud}>Pagar agora</button>}
         {!cfg.hosted_checkout && <button className="g-btn" onClick={() => setCardFor(cardFor === aud ? null : aud)} data-testid={'change-card-' + aud}>{s.payment_type === 'pix' ? 'Adicionar cartão' : 'Trocar cartão'}</button>}
-        {s.cancel_at_period_end ? <button className="g-btn" disabled={busy} onClick={() => act('/api/billing/reactivate', { audience: aud }, 'Cancelamento desfeito.')} data-testid={'reactivate-' + aud}>Desfazer cancelamento</button>
-          : s.status !== 'cancelada' && <button className="g-btn bl-danger" disabled={busy} onClick={async () => { const reason = await askText('Quer nos contar o motivo? (opcional)', { ok: 'Cancelar assinatura', cancel: 'Voltar' }); if (reason === null || reason === undefined) return; act('/api/billing/cancel', { audience: aud, reason }, r => r.result === 'agendado' ? `Cancelamento agendado: acesso até ${dBR(r.until)}.` : 'Assinatura encerrada.') }} data-testid={'cancel-' + aud}>Cancelar assinatura</button>}
+        {!unico && s.cancel_at_period_end ? <button className="g-btn" disabled={busy} onClick={() => act('/api/billing/reactivate', { audience: aud }, 'Cancelamento desfeito.')} data-testid={'reactivate-' + aud}>Desfazer cancelamento</button>
+          : !unico && s.status !== 'cancelada' && <button className="g-btn bl-danger" disabled={busy} onClick={async () => { const reason = await askText('Quer nos contar o motivo? (opcional)', { ok: 'Cancelar assinatura', cancel: 'Voltar' }); if (reason === null || reason === undefined) return; act('/api/billing/cancel', { audience: aud, reason }, r => r.result === 'agendado' ? `Cancelamento agendado: acesso até ${dBR(r.until)}.` : 'Assinatura encerrada.') }} data-testid={'cancel-' + aud}>Cancelar assinatura</button>}
       </div>}
       {cardFor === aud && <div className="bl-cardpick">
         {me.cards.filter(c => c.id !== s.card?.id).map(c => <button key={c.id} className="g-btn" onClick={() => act('/api/billing/change-card', { audience: aud, card_id: c.id }, 'Cartão atualizado.').then(() => setCardFor(null))}>Usar {(c.brand || 'cartão') + ' final ' + c.last4}</button>)}
         <NewCard cfg={cfg} onCancel={() => setCardFor(null)} onSaved={c => act('/api/billing/change-card', { audience: aud, card_id: c.id }, 'Cartão atualizado.').then(() => setCardFor(null))} />
       </div>}
-    </section>)}
+    </section>
+    })}
 
     {me.access?.coupon_card && <section className="bl-sub" data-testid="trial-coupon"><h3>Tem um cupom de acesso experimental?</h3>
       <div className="bl-row bl-coupon"><input className="g-in" placeholder="Código do cupom" value={code} onChange={e => setCode(e.target.value)} /><button className="g-btn" disabled={busy || !code.trim()} onClick={() => act('/api/billing/coupon/redeem', { code: code.trim() }, 'Acesso experimental ativado.')}>Ativar</button></div></section>}

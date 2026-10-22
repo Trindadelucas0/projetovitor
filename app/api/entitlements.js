@@ -139,6 +139,15 @@ export const ROUTE_RULES = {
   // volta a valer sozinho quando o app reabrir para varios profissionais.
   'POST /api/pro/avaliacoes/solicitar': { audience: 'profissional', feature: 'prescrever' },
   'POST /api/invites/accept': { audience: 'aluno', feature: 'receber_ficha_profissional' },
+  // Avaliação postural: só no plano Completo (feature avaliacao_postural). Admin passa no gate;
+  // a checagem no aluno do Básico fica em postural-pro.js (solicitar) e aqui nos POST do aluno.
+  'POST /api/avaliacao-postural/start': { audience: 'aluno', feature: 'avaliacao_postural' },
+  'POST /api/avaliacao-postural/consent': { audience: 'aluno', feature: 'avaliacao_postural' },
+  'POST /api/avaliacao-postural/dados': { audience: 'aluno', feature: 'avaliacao_postural' },
+  'POST /api/avaliacao-postural/captura/init': { audience: 'aluno', feature: 'avaliacao_postural' },
+  'POST /api/avaliacao-postural/captura/skip': { audience: 'aluno', feature: 'avaliacao_postural' },
+  'POST /api/avaliacao-postural/captura/remove': { audience: 'aluno', feature: 'avaliacao_postural' },
+  'POST /api/avaliacao-postural/duvida': { audience: 'aluno', feature: 'avaliacao_postural' },
   // V5 billing: publicar programa/ficha publica na biblioteca e recurso dos planos PRO pagos (so vale com monetizacao_ativa=true)
   'POST /api/pro/programs/submit': { audience: 'profissional', feature: 'fichas_publicas', whenMonetized: true },
   // V5 monetizacao: paywall do catalogo oficial - so vale com monetizacao_ativa=true (painel admin)

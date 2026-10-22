@@ -1,5 +1,5 @@
-// Confere, SOMENTE LEITURA, o resultado das migrations 068 (plano único) e
-// 069 (personal do ambiente) no banco apontado por DB_NAME.
+// Confere, SOMENTE LEITURA, o catálogo de dois planos do aluno (075) e o personal
+// do ambiente (069) no banco apontado por DB_NAME.
 //
 // Uso (num banco isolado, nunca no banco de uso):
 //   DB_NAME=orny_plano_unico_test node scripts/verificar-plano-unico.mjs
@@ -14,15 +14,30 @@ const check = (ok, label, detail = '') => (ok ? oks : fails).push(label + (detai
 try {
   console.log('banco:', process.env.DB_NAME || 'avagym', '\n')
 
-  // ---- 068: catálogo ----
-  const plans = (await q(`select id, name, price_cents, sellable, active, is_free from plans order by sort, id`)).rows
+  // ---- 075: catálogo Básico + Completo ----
+  const plans = (await q(`select id, name, price_cents, sellable, active, is_free,
+    coalesce(access_months,1) access_months, coalesce(renews,true) renews, billing_interval
+    from plans order by sort, id`)).rows
   const vendaveis = plans.filter(p => p.active && p.sellable && !p.is_free && p.price_cents != null)
 
-  check(vendaveis.length === 1, 'existe exatamente um plano à venda',
+  check(vendaveis.length === 2, 'existem exatamente dois planos à venda',
     vendaveis.length ? vendaveis.map(p => `${p.id}=${p.price_cents}`).join(', ') : 'nenhum plano vendável')
-  const unico = vendaveis[0]
-  check(unico?.id === 'individual', "o plano à venda é 'individual'", unico?.id || '—')
-  check(unico?.price_cents === 3990, 'o preço é R$ 39,90 (3990 centavos)', String(unico?.price_cents))
+
+  const basico = vendaveis.find(p => p.id === 'individual')
+  const completo = vendaveis.find(p => p.id === 'completo')
+  check(!!basico, "o plano Básico ('individual') está à venda")
+  check(basico?.price_cents === 4990, 'Básico custa R$ 49,90 (4990 centavos)', String(basico?.price_cents))
+  check(basico?.renews === true && basico?.access_months === 1, 'Básico renova mensalmente',
+    `renews=${basico?.renews} months=${basico?.access_months}`)
+  check(!!completo, "o plano Completo ('completo') está à venda")
+  check(completo?.price_cents === 49900, 'Completo custa R$ 499,00 (49900 centavos)', String(completo?.price_cents))
+  check(completo?.renews === false && completo?.access_months === 3, 'Completo é pagamento único de 3 meses',
+    `renews=${completo?.renews} months=${completo?.access_months}`)
+
+  const featBasico = (await q(`select features from plan_versions where plan_id='individual' order by version desc limit 1`)).rows[0]?.features || {}
+  const featCompleto = (await q(`select features from plan_versions where plan_id='completo' order by version desc limit 1`)).rows[0]?.features || {}
+  check(featBasico.avaliacao_postural !== true, 'Básico não inclui avaliacao_postural', String(featBasico.avaliacao_postural))
+  check(featCompleto.avaliacao_postural === true, 'Completo inclui avaliacao_postural', String(featCompleto.avaliacao_postural))
 
   for (const id of ['pro', 'pro_ilimitado', 'profissional_free']) {
     const p = plans.find(x => x.id === id)

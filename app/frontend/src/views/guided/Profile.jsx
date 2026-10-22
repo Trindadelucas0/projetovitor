@@ -33,14 +33,14 @@ export default function Profile() {
         <Li icon="person" t="Conta" s="Identificação e convites" to="/perfil?secao=dados" />
         <Li icon="person" t="Perfil social" s="Foto, nome, @identificador e privacidade" to="/perfil/social" testid="profile-social" />
         <Li icon="gear" t="Preferências" s="Aparência, idioma e treino" to="/perfil?secao=preferencias" testid="profile-preferences" />
-        {user && <Li icon="sparkles" t="Meu plano" s="Acesso, recursos e limites" to="/planos" testid="my-plan" />}
+        {user && !user.admin && (user.roles || []).includes('aluno') && <Li icon="sparkles" t="Meu plano" s="Básico ou Completo" to="/planos" testid="my-plan" />}
         {user && <Li icon="lock" t="Privacidade e segurança" s="Senha, aparelhos e seus dados" to="/perfil?secao=privacidade" testid="profile-security" />}
         <Li icon="bell" t="Notificações" to="/avisos" />
         <Li icon="chat" t="Ajuda e suporte" s="Orientações e contato por e-mail" to="/perfil?secao=ajuda" />
       </div>
-      {user && user.status === 'ativo' && <ReferralPanel compact />}
-      {user?.admin && <div className="org-list"><Li icon="shield" t="Painel administrativo" to="/admin/painel" testid="admin-area" /></div>}
-      {user?.pro && !proAcc && <Li icon="clipboard" t="Área profissional" to="/pro" testid="pro-area" />}
+      {user && user.status === 'ativo' && !user.admin && <ReferralPanel compact />}
+      {user?.admin && <div className="org-list"><Li icon="shield" t="Painel administrativo" s="Alunos, fichas e meu perfil de personal" to="/admin/painel" testid="admin-area" /></div>}
+      {user?.pro && !proAcc && !user?.admin && <Li icon="clipboard" t="Área profissional" to="/pro" testid="pro-area" />}
       {user && <button className="g-btn g-ghost org-list" onClick={signOut}>Sair da conta</button>}
     </>}
     {section === 'indicacoes' && user && <ReferralPanel />}

@@ -75,8 +75,20 @@ export async function notifyBilling(userId, ev, vars, dedupe) {
 
 // ---------- leitura ----------
 export async function openSub(userId, audience, c) {
-  return (await (c || { query: q }).query(`select s.*, p.name plan_name, p.is_free, p.product from subscriptions s join plans p on p.id=s.plan_id
+  return (await (c || { query: q }).query(`select s.*, p.name plan_name, p.is_free, p.product, p.price_cents catalog_price_cents,
+      coalesce(p.access_months, 1) access_months, coalesce(p.renews, true) renews
+    from subscriptions s join plans p on p.id=s.plan_id
     where s.user_id=$1 and s.audience=$2 and s.status<>'cancelada' order by s.started_at desc limit 1`, [userId, audience])).rows[0] || null
+}
+
+/** Grant permanente de comunidade após pagamento confirmado do Completo (renews=false). */
+export async function grantComunidade(c, { tenantId, userId, reason = 'plano_completo' }) {
+  const db = c || { query: q }
+  const exists = await db.query(`select 1 from entitlement_grants where user_id=$1 and audience='aluno' and kind='feature' and key='comunidade'
+    and revoked_at is null and starts_at<=now() and (expires_at is null or expires_at>now()) limit 1`, [userId])
+  if (exists.rowCount) return
+  await db.query(`insert into entitlement_grants(tenant_id,user_id,audience,kind,key,value,reason,starts_at,expires_at)
+    values($1,$2,'aluno','feature','comunidade','true',$3,now(),null)`, [tenantId, userId, reason])
 }
 const cardOf = (id, c) => id ? (c || { query: q }).query('select * from payment_methods where id=$1', [id]).then(r => r.rows[0] || null) : null
 async function customerId(provider, user) {
@@ -262,6 +274,10 @@ export async function applyChargeResult(chargeId, result, source) {
           after.push(() => audit(charge.tenant_id, s.user_id, 'acesso.liberado_pagamento', 'user', s.user_id, { charge_id: charge.id }))
         }
       }
+      // Completo (pagamento único): comunidade permanente; endSubscription não revoga este grant.
+      if (charge.meta?.grant_comunidade) {
+        await grantComunidade(c, { tenantId: charge.tenant_id, userId: s.user_id, reason: 'plano_completo:' + (charge.meta.activate_plan || s.plan_id) })
+      }
       if (sub.status !== 'ativa') await ev('status', { from: sub.status, to: 'ativa' })
       // comissao do parceiro (prevista; liberacao e repasse fora do app ou via split no Asaas)
       if (charge.provider !== 'infinitepay' && charge.split?.pct > 0 && s.partner_user_id && charge.amount_cents > 0) {
@@ -411,16 +427,25 @@ export async function subscribe(user, b, ip) {
   const provider = getProvider()
   const paymentType = provider.hostedCheckout ? 'card' : normalizePaymentType(b.payment_type)
   if (!paymentType) return { status: 400, error: 'Meio de pagamento indisponível.', code: 'PAYMENT_METHOD_DISABLED' }
-  const plan = (await q(`select p.*, (select v.id from plan_versions v where v.plan_id=p.id order by v.version desc limit 1) version_id from plans p where p.id=$1`, [String(b.plan_id || '')])).rows[0]
+  const plan = (await q(`select p.*, coalesce(p.access_months,1) access_months, coalesce(p.renews,true) renews,
+    (select v.id from plan_versions v where v.plan_id=p.id order by v.version desc limit 1) version_id from plans p where p.id=$1`, [String(b.plan_id || '')])).rows[0]
   if (!plan || !plan.active || !plan.sellable || plan.price_cents == null || plan.is_free) return { status: 404, error: 'Este plano não está disponível para contratação.', code: 'PLAN_UNAVAILABLE' }
   if (!user.roles.includes(plan.audience)) return { status: 403, error: plan.audience === 'profissional' ? 'Planos PRO são para contas profissionais.' : 'Este plano é para contas de aluno.', code: 'PERMISSION_DENIED' }
   const pm = provider.hostedCheckout ? null : (await q('select * from payment_methods where id=$1 and user_id=$2 and removed_at is null', [b.card_id, user.id])).rows[0]
   if (!provider.hostedCheckout && paymentType === 'card' && !pm) return { status: 400, error: 'Escolha um cartão.', code: 'CARD_REQUIRED' }
   await ensureSubscription(user.id, plan.audience)
   const sub = await openSub(user.id, plan.audience)
-  if (!sub.is_free && OPEN_PAID.includes(sub.status) && sub.provider) {
+  const months = Math.max(1, Math.min(36, +plan.access_months || 1))
+  // Plano sem renovação (Completo): sempre cobra. Troca sem cobrança só entre planos mensais.
+  if (!sub.is_free && OPEN_PAID.includes(sub.status) && sub.provider && plan.renews !== false) {
     if (sub.plan_id === plan.id) return { status: 409, error: 'Você já tem este plano.', code: 'ALREADY_SUBSCRIBED' }
+    if (sub.renews === false && new Date(sub.current_period_end) > new Date()) {
+      return { status: 409, error: `Seu plano Completo vale até ${dBR(sub.current_period_end)}. Depois dessa data você pode contratar o Básico.`, code: 'COMPLETO_ATIVO', until: sub.current_period_end }
+    }
     return changePlan(user, sub, plan, pm)
+  }
+  if (!sub.is_free && OPEN_PAID.includes(sub.status) && sub.provider && plan.renews === false && sub.plan_id === plan.id && new Date(sub.current_period_end) > new Date()) {
+    return { status: 409, error: 'Você já tem este plano.', code: 'ALREADY_SUBSCRIBED' }
   }
   // cupom de desconto (opcional)
   let disc = null
@@ -434,7 +459,8 @@ export async function subscribe(user, b, ip) {
   }
   const partner = disc?.campaign.partner_user_id || await partnerFor(user.id, user.tenant_id)
   const meta = { activate_plan: plan.id, plan_version_id: plan.version_id, plan_name: plan.name, price_cents: plan.price_cents, payment_method_id: pm?.id || null,
-    promotion_code_id: disc?.code.id || null, discount_pct: disc ? +disc.campaign.discount_pct : null, discount_cycles: disc ? disc.campaign.discount_cycles || 1 : null, partner_user_id: partner }
+    promotion_code_id: disc?.code.id || null, discount_pct: disc ? +disc.campaign.discount_pct : null, discount_cycles: disc ? disc.campaign.discount_cycles || 1 : null, partner_user_id: partner,
+    access_months: months, renews: plan.renews !== false, grant_comunidade: plan.renews === false }
   if (disc) {   // registra o uso do cupom de desconto (um por conta e cupom)
     const r = await q(`insert into promotion_redemptions(tenant_id,code_id,campaign_id,user_id,benefit,status) values($1,$2,$3,$4,'desconto','pendente_assinatura') on conflict (code_id,user_id) do nothing returning id`, [user.tenant_id, disc.code.id, disc.campaign.id, user.id])
     if (r.rowCount) await q('update promotion_codes set redemptions_count=redemptions_count+1 where id=$1', [disc.code.id])
@@ -443,7 +469,7 @@ export async function subscribe(user, b, ip) {
   const now = new Date()
   let r
   try {
-    r = await chargeNow({ sub: { ...sub, plan_name: plan.name }, kind: 'primeira', amountCents: amount, discountCents: plan.price_cents - amount, periodStart: now, periodEnd: addMonths(now, 1),
+    r = await chargeNow({ sub: { ...sub, plan_name: plan.name }, kind: 'primeira', amountCents: amount, discountCents: plan.price_cents - amount, periodStart: now, periodEnd: addMonths(now, months),
       meta, key: `sub:${sub.id}:primeira:${b.idempotency_key ? String(b.idempotency_key).slice(0, 64) : now.getTime()}`, ip, paymentType })
   } catch (e) {
     if (e.code === 'PROVIDER_AUTH') return { status: 503, error: 'O checkout está temporariamente indisponível. A equipe responsável já pode verificar a configuração.', code: e.code }
@@ -530,6 +556,7 @@ export async function cancel(user, b) {
 }
 export async function reactivate(user, b) {
   const s = await paidSub(user, b.audience); if (!s || !s.cancel_at_period_end) return { status: 409, error: 'Não há cancelamento agendado.', code: 'NOTHING_TO_UNDO' }
+  if (s.renews === false) return { status: 409, error: 'O plano Completo não renova. Quando o prazo acabar, escolha Básico ou Completo de novo.', code: 'NO_RENEW' }
   await q(`update subscriptions set cancel_at_period_end=false, cancel_reason=null, updated_at=now() where id=$1`, [s.id])
   await q(`insert into subscription_events(subscription_id,action,actor_id) values($1,'cancelamento_desfeito',$2)`, [s.id, user.id])
   await audit(user.tenant_id, user.id, 'cobranca.reativacao', 'subscription', s.id)
@@ -556,17 +583,22 @@ export async function tick({ only } = {}) {
     if (!lock) return { busy: true }
     try {
       const sel = (sql, p = []) => q(sql + (only ? ` and s.id=$${p.length + 1}` : ''), only ? [...p, only] : p).then(r => r.rows)
-      const base = `select s.*, p.name plan_name from subscriptions s join plans p on p.id=s.plan_id where s.provider is not null and not p.is_free`
-      // 1) fim do periodo com cancelamento agendado
-      for (const s of await sel(base + ` and s.status in ('ativa','trial','inadimplente') and s.cancel_at_period_end and s.current_period_end <= now()`)) { await endSubscription(s, 'fim_periodo_cancelado'); out.encerradas++ }
+      const base = `select s.*, p.name plan_name, p.price_cents catalog_price_cents, coalesce(p.access_months,1) access_months, coalesce(p.renews,true) renews
+        from subscriptions s join plans p on p.id=s.plan_id where s.provider is not null and not p.is_free`
+      // 1) fim do periodo com cancelamento agendado, ou plano sem renovação (Completo) vencido
+      for (const s of await sel(base + ` and s.status in ('ativa','trial','inadimplente') and s.current_period_end <= now() and (s.cancel_at_period_end or not coalesce(p.renews,true))`)) {
+        await endSubscription(s, s.cancel_at_period_end ? 'fim_periodo_cancelado' : 'fim_periodo_unico'); out.encerradas++
+      }
       // Assinaturas Pix legadas não geram novas cobranças. Avise uma vez para migração para cartão.
-      for (const s of await sel(base + ` and s.payment_type='pix' and s.status in ('ativa','trial') and not s.cancel_at_period_end and s.current_period_end <= now()+interval '5 days'`))
+      for (const s of await sel(base + ` and s.payment_type='pix' and s.status in ('ativa','trial') and coalesce(p.renews,true) and not s.cancel_at_period_end and s.current_period_end <= now()+interval '5 days'`))
         await notifyBilling(s.user_id, 'pix_desativado', { plan: s.plan_name }, `legacy-pix:${s.id}:${new Date(s.current_period_end).toISOString()}`)
-      // 3) InfinitePay: nova cobranca antes do vencimento, sem debito automatico.
-      if (getProvider().hostedCheckout) for (const s of await sel(base + ` and s.status in ('ativa','trial') and not s.cancel_at_period_end and s.current_period_end <= now()+interval '5 days'`)) {
-        const amount = s.discount_cycles_left > 0 && s.discount_pct ? Math.round(s.price_cents * (1 - s.discount_pct / 100)) : s.price_cents
+      // 3) InfinitePay: nova cobranca antes do vencimento, só planos que renovam. Valor = preço atual do catálogo.
+      if (getProvider().hostedCheckout) for (const s of await sel(base + ` and s.status in ('ativa','trial') and coalesce(p.renews,true) and not s.cancel_at_period_end and s.current_period_end <= now()+interval '5 days'`)) {
+        const catalog = s.catalog_price_cents != null ? s.catalog_price_cents : s.price_cents
+        const amount = s.discount_cycles_left > 0 && s.discount_pct ? Math.round(catalog * (1 - s.discount_pct / 100)) : catalog
         const ps = new Date(s.current_period_end)
-        const r = await chargeNow({ sub: s, kind: 'renovacao', amountCents: amount, discountCents: s.price_cents - amount, periodStart: ps, periodEnd: addMonths(ps, 1), key: `sub:${s.id}:periodo:${ps.toISOString()}`, paymentType: 'card' })
+        await q(`update subscriptions set price_cents=$2, updated_at=now() where id=$1 and coalesce(price_cents,0)<>$2`, [s.id, catalog])
+        const r = await chargeNow({ sub: { ...s, price_cents: catalog }, kind: 'renovacao', amountCents: amount, discountCents: catalog - amount, periodStart: ps, periodEnd: addMonths(ps, s.access_months || 1), key: `sub:${s.id}:periodo:${ps.toISOString()}`, paymentType: 'card' })
         if (r.charge?.checkout_url) await notifyBilling(s.user_id, 'renovacao_disponivel', { plan: s.plan_name, next: dBR(s.current_period_end) }, `renewal:${r.charge.id}`)
         out.renovadas++
       }
@@ -583,11 +615,13 @@ export async function tick({ only } = {}) {
           await notifyBilling(s.user_id, 'renovacao_vencida', { plan: s.plan_name }, `infinitepay-grace:${s.id}:${new Date(s.current_period_end).toISOString()}`)
         }
       }
-      // Asaas/simulador: renovacao no vencimento e retentativas automaticas.
-      if (!getProvider().hostedCheckout) for (const s of await sel(base + ` and s.payment_type='card' and s.status in ('ativa','trial') and not s.cancel_at_period_end and s.current_period_end <= now()`)) {
-        const amount = s.discount_cycles_left > 0 && s.discount_pct ? Math.round(s.price_cents * (1 - s.discount_pct / 100)) : s.price_cents
+      // Asaas/simulador: renovacao no vencimento (só planos que renovam) e retentativas automaticas.
+      if (!getProvider().hostedCheckout) for (const s of await sel(base + ` and s.payment_type='card' and s.status in ('ativa','trial') and coalesce(p.renews,true) and not s.cancel_at_period_end and s.current_period_end <= now()`)) {
+        const catalog = s.catalog_price_cents != null ? s.catalog_price_cents : s.price_cents
+        const amount = s.discount_cycles_left > 0 && s.discount_pct ? Math.round(catalog * (1 - s.discount_pct / 100)) : catalog
         const ps = new Date(s.current_period_end)
-        await chargeNow({ sub: s, kind: s.status === 'trial' ? 'primeira' : 'renovacao', amountCents: amount, discountCents: s.price_cents - amount, periodStart: ps, periodEnd: addMonths(ps, 1), key: `sub:${s.id}:periodo:${ps.toISOString()}`, paymentType: 'card' })
+        await q(`update subscriptions set price_cents=$2, updated_at=now() where id=$1 and coalesce(price_cents,0)<>$2`, [s.id, catalog])
+        await chargeNow({ sub: { ...s, price_cents: catalog }, kind: s.status === 'trial' ? 'primeira' : 'renovacao', amountCents: amount, discountCents: catalog - amount, periodStart: ps, periodEnd: addMonths(ps, s.access_months || 1), key: `sub:${s.id}:periodo:${ps.toISOString()}`, paymentType: 'card' })
         out.renovadas++
       }
       if (!getProvider().hostedCheckout) for (const s of await sel(base + ` and s.payment_type='card' and s.status='inadimplente' and s.next_retry_at <= now()`)) {

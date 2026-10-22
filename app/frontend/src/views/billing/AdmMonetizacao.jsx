@@ -39,7 +39,7 @@ function Geral() {
     <div className="adm-row2" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
       <label className="adm-field">De<input className="adm-in" type="date" value={f.from} onChange={x => setF({ ...f, from: x.target.value })} /></label>
       <label className="adm-field">Até<input className="adm-in" type="date" value={f.to} onChange={x => setF({ ...f, to: x.target.value })} /></label>
-      <label className="adm-field">Plano<select className="adm-in" value={f.plan} onChange={x => setF({ ...f, plan: x.target.value })}><option value="">Todos</option><option value="individual">Individual</option><option value="pro">Personal 15</option><option value="pro_ilimitado">Personal Ilimitado</option></select></label>
+      <label className="adm-field">Plano<select className="adm-in" value={f.plan} onChange={x => setF({ ...f, plan: x.target.value })}><option value="">Todos</option><option value="individual">Básico</option><option value="completo">Completo</option></select></label>
       <label className="adm-field">Canal<input className="adm-in" value={f.channel} placeholder="ex.: instagram" onChange={x => setF({ ...f, channel: x.target.value })} /></label>
     </div>
     {e ? <p className="bl-err">{e}</p> : !d ? <p>Carregando…</p> : <>

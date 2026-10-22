@@ -95,11 +95,15 @@ function StudentDetail({ id, go, sub }) {
   if (err) return <Err msg={err} retry={reload} />
   if (!d) return <Load />
   const s = d.student, mine = d.plans.filter(p => p.mine)
+  const onFem = d.link?.coach_id && d.personals?.feminino && String(d.link.coach_id) === String(d.personals.feminino)
+  const toHomens = s.sex === 'feminino' || onFem
+  const destOk = toHomens ? !!d.personals?.masculino : !!d.personals?.feminino
+  const corrigirLabel = toHomens ? 'Enviar para a personal dos homens' : 'Enviar para a personal das mulheres'
   return <>
     <button className="g-link" onClick={() => go('alunos')}>← Meus alunos</button>
     <div className="av-hero" style={{ display: 'flex', gap: 14, alignItems: 'center', marginTop: 6 }}>
       <Av name={s.name} size={64} /><div style={{ minWidth: 0 }}><h2 style={{ margin: 0 }}>{s.name}</h2>
-        <p className="g-mut g-xs" style={{ margin: '4px 0 0' }}>{goal(s.goal)} · vínculo ativo desde {new Date(d.link.since).toLocaleDateString('pt-BR')}{d.link.area ? ' · ' + d.link.area : ''}</p></div>
+        <p className="g-mut g-xs" style={{ margin: '4px 0 0' }}>{goal(s.goal)} · vínculo ativo desde {new Date(d.link.since).toLocaleDateString('pt-BR')}{d.link.area ? ' · ' + d.link.area : ''} · perfil {s.sex === 'feminino' ? 'Mulher' : s.sex === 'masculino' ? 'Homem' : 'não definido'}</p></div>
     </div>
     <div className="g-scrollx" style={{ marginTop: 12 }}>{[['resumo', 'Resumo'], ['treinos', 'Treinos'], ['evolucao', 'Evolução'], ['atendimento', 'Atendimento']].map(([k, l]) =>
       <button key={k} className={'g-chipbtn' + (group === k ? ' g-on' : '')} onClick={() => setTab(k)} data-testid={'sd-' + k}>{l}</button>)}</div>
@@ -110,6 +114,13 @@ function StudentDetail({ id, go, sub }) {
       <div className="g-actions" style={{ marginTop: 12 }}>
         <button className="g-btn" onClick={() => go('novo', { student: id })} data-testid="sd-criar">Criar treino</button>
         <button className="g-btn g-ghost" onClick={async () => { const m = await askText('Mensagem para ' + s.name, { multiline: true, required: true, ok: 'Enviar' }); if (m?.trim()) { try { const r = await C.proThread(id, m.trim()); nav('/conversa/' + r.thread.id) } catch (e) { notifyError(e) } } }} data-testid="sd-msg">Enviar mensagem</button>
+        <button className="g-btn g-ghost" disabled={!destOk} data-testid="sd-corrigir-perfil"
+          title={destOk ? undefined : 'A outra personal ainda não foi configurada.'}
+          onClick={async () => {
+            if (!destOk) return
+            if (!await ask('Transferir o aluno e arquivar a ficha atual? O histórico será preservado.')) return
+            try { await C.corrigirPerfil(id); reload() } catch (e) { notifyError(e) }
+          }}>{destOk ? corrigirLabel : 'A outra personal ainda não foi configurada.'}</button>
       </div></>}
     {tab === 'treinos' && <div className="g-card g-list">{d.plans.length ? d.plans.map(p => <button key={p.id} className="g-li" onClick={() => p.mine && go('novo', { id: p.id })}>
       <span className="g-ico"><Icon name="clipboard" /></span><span><b>{p.title}</b><br /><span className="g-mut g-xs">v{p.version} · {p.mine ? 'seu' : 'de outro profissional (leitura)'} · {dt(p.updated_at)}</span></span>

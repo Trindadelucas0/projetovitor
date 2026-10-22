@@ -145,12 +145,19 @@ export function adminCrudRoutes({ json, readBody }) {
     'GET /api/adm/student/training': async (req, res) => {
       const u = await admin(req, res, json); if (!u) return
       const id = qs(req).get('id'); if (!(await sameTenant(id, u.tenant_id))) return json(res, 404, { error: 'Usuário não encontrado' })
-      const [plans, progs, sess, links] = await Promise.all([
+      const [plans, progs, sess, links, sexRow, personalsRows] = await Promise.all([
         q(`select p.id,p.title,p.goal,p.status,p.version,p.days,p.notes,p.owner_id,o.name owner,p.updated_at from pro_plans p join users o on o.id=p.owner_id where p.student_id=$1 order by p.updated_at desc`, [id]),
         q(`select up.id, up.status, up.started_at, up.ended_at, pr.title from user_programs up left join programs pr on pr.id=up.program_id where up.user_id=$1 order by up.started_at desc nulls last`, [id]),
         q(`select id, workout_name, started_at, status, duration_sec, timing, voided_at, void_reason, ranking_invalid_at from sessions where user_id=$1 order by started_at desc limit 50`, [id]),
-        q(`select c.id, c.coach_id, x.name coach, c.area, c.status, c.since from coach_students c join users x on x.id=c.coach_id where c.student_id=$1 order by c.status, c.since desc`, [id])])
-      json(res, 200, { plans: plans.rows, programs: progs.rows, sessions: sess.rows, links: links.rows })
+        q(`select c.id, c.coach_id, x.name coach, c.area, c.status, c.since from coach_students c join users x on x.id=c.coach_id where c.student_id=$1 order by c.status, c.since desc`, [id]),
+        q(`select sex from user_profiles where user_id=$1`, [id]),
+        q(`select key, value #>> '{}' id from app_settings where tenant_id=$1 and key in ('personal_user_id','personal_feminino_user_id')`, [u.tenant_id])])
+      const personals = { masculino: null, feminino: null }
+      for (const row of personalsRows.rows) {
+        if (row.key === 'personal_user_id') personals.masculino = row.id
+        if (row.key === 'personal_feminino_user_id') personals.feminino = row.id
+      }
+      json(res, 200, { plans: plans.rows, programs: progs.rows, sessions: sess.rows, links: links.rows, sex: sexRow.rows[0]?.sex || null, personals })
     },
     'POST /api/adm/plans/save': async (req, res) => {
       const u = await admin(req, res, json); if (!u) return

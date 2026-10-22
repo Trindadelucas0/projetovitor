@@ -7,7 +7,7 @@ import { MOBILE, nativeLoad, nativeSave, syncReminder } from '../lib/mobile.js'
 import { importLegacyLocal } from '../lib/localImport.js'
 
 const KEY = 'gym_state_v1'
-const USER_CACHE_KEYS = ['id', 'roles', 'capacities', 'context', 'admin', 'pro', 'status', 'needs_terms', 'needs_legal', 'must_change_password', 'account_type', 'managed_by']
+const USER_CACHE_KEYS = ['id', 'roles', 'capacities', 'context', 'admin', 'pro', 'status', 'needs_terms', 'needs_legal', 'must_change_password', 'account_type', 'managed_by', 'needs_perfil', 'perfil', 'palette']
 export const DEF = {
   unit: 'kg', restSec: 90, sound: true, keepAwake: true, lang: 'pt',
   theme: 'dark', accent: 'avagym', body: 'male', targetW: null,
@@ -75,6 +75,7 @@ export const useStore = create((set, get) => {
   // Everything a sign-out leaves behind on this device, whichever way it was triggered.
   const clearLocalSession = () => {
     get().setUser(null)
+    try { import('../lib/theme.js').then(m => m.applyPalette('masculino')) } catch { /* */ }
     localStorage.removeItem('gym_guest')
     localStorage.removeItem('gym_dirty')
     localStorage.removeItem(KEY)

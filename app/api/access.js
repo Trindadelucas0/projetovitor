@@ -25,9 +25,27 @@ export const ALWAYS_ALLOWED = [
   // Decisao consciente: deixar foto corporal pendurada em limbo e pior que o prejuizo comercial de um ciclo -
   // o dado pessoal sensivel ficaria no aparelho do aluno, sem chegar ao profissional nem poder ser apagado.
   // Comecar avaliacao nova continua exigindo acesso (as outras rotas do modulo nao estao aqui).
-  /^POST \/api\/avaliacao-postural\/(submit|captura\/(upload|confirm))$/
+  /^POST \/api\/avaliacao-postural\/(submit|captura\/(upload|confirm))$/,
+  // Leitura do histórico / devolutiva publicada: aluno do Completo vencido ainda abre o que já foi publicado.
+  /^GET \/api\/avaliacao-postural(\/devolutiva)?$/
 ]
 export const isAlwaysAllowed = key => ALWAYS_ALLOWED.some(r => r.test(key))
+
+/** Grant permanente de comunidade após pagamento do Completo (renews=false). */
+export async function hasComunidadeGrant(userId, c) {
+  const r = await db(c).query(`select 1 from entitlement_grants where user_id=$1 and audience='aluno' and kind='feature' and key='comunidade'
+    and revoked_at is null and starts_at<=now() and (expires_at is null or expires_at>now()) limit 1`, [userId])
+  return r.rowCount > 0
+}
+
+const COMMUNITY_PATHS = [
+  /^GET \/api\/feed(\/categories)?$/,
+  /^GET \/api\/post$/,
+  /^POST \/api\/posts(\/delete|\/like)?$/,
+  /^POST \/api\/comments(\/like|\/delete)?$/,
+  /^POST \/api\/(follows|reports|uploads)$/
+]
+export const isCommunityPath = key => COMMUNITY_PATHS.some(r => r.test(key))
 
 export async function monetizationOn() { return true }
 export const clearMonetizationCache = () => {}
@@ -62,6 +80,7 @@ export async function accessOf(user, c) {
     out.audiences[a] = { has: sources.length > 0, sources, commercial_status: await commercialStatus(c, user.id, a, sources) }
   }
   out.has_any = Object.values(out.audiences).some(x => x.has)
+  out.comunidade = roles.includes('aluno') ? await hasComunidadeGrant(user.id, c) : false
   return out
 }
 
@@ -97,6 +116,8 @@ export async function monetizationGate(key, user, res, json) {
   const ok = professionalRoute ? !!acc.audiences.profissional?.has
     : roles.includes('aluno') ? !!acc.audiences.aluno?.has : acc.has_any
   if (ok) return true
+  // Depois do Completo: comunidade permanece aberta via grant permanente.
+  if (roles.includes('aluno') && acc.comunidade && isCommunityPath(key)) return true
   json(res, 402, { error: NO_ACCESS_MSG, code: 'ACCESS_REQUIRED', audience: path.startsWith('/api/pro/') ? 'profissional' : null })
   return false
 }
