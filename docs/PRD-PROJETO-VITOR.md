@@ -150,7 +150,7 @@ flowchart TD
 
 ## 4. Modelo de dados (entidades centrais)
 
-São 73 migrations e ~190 tabelas. As entidades que sustentam o produto atual:
+São 76 migrations versionadas e ~190 tabelas antes da aplicação da 077. As entidades que sustentam o produto atual:
 
 | Domínio | Tabelas principais |
 |---|---|
@@ -744,7 +744,7 @@ Para o R2: bucket **privado**, sem domínio personalizado e sem URL pública de 
 ### 10.3 Migrations e rollback
 
 - `npm run migrate` (`api/db/migrate.js`) é idempotente — rodar duas vezes não duplica registro.
-- Toda migration tem `down` correspondente em `api/db/down/`.
+- Toda migration tem `down` correspondente em `api/db/down/`; Avisos usa `077_avisos_comunidade.sql` e `077_down.sql`.
 - `071_remover_grupos_desafios_ranking.sql` é **destrutiva**: apaga dados de grupos/desafios/ranking e suas concessões. **Já aplicada no banco local**, após backup validado e com a prévia da rotina de mídias acusando zero arquivos. Também foi aplicada na VPS sobre um banco recém-criado, sem dados anteriores. Em qualquer base já utilizada, aplicar só com backup confirmado e rodando antes `api/scripts/remover-midias-desafios.mjs`, que lista em modo seguro e só remove arquivos com confirmação explícita.
 - Rollback do módulo postural: `072_down.sql` devolve `threads` e `legal_acceptances` aos CHECK anteriores e remove as sete tabelas. `pg_dump` validado antes, como em qualquer migration.
 - `068_down.sql` religa Individual a R$ 12,90 e os planos de personal; `069_down.sql` remove `personal_user_id`. Campanhas reescritas pela 068 **não** voltam ao plano antigo automaticamente — conferir cupons depois de uma volta.

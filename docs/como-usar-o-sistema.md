@@ -10,6 +10,8 @@ A base local começa com **zero alunos** e duas contas separadas. O administrado
 
 Abra `https://academia.avadesk.com.br` no navegador. As três contas solicitadas (administração, personal principal e aluno de teste) foram configuradas na VPS. O responsável pode consultar os arquivos protegidos `/opt/projetovitor-runtime/credentials/admin.txt`, `/opt/projetovitor-runtime/credentials/personal.txt` e `/opt/projetovitor-runtime/credentials/aluno.txt` diretamente na VPS, sem enviar as senhas por chat. Após entrar, aceite os documentos pendentes e troque a senha em **Perfil**.
 
+Se a tela de aceite já estava aberta antes da configuração dos dados da empresa em 22/10/2026, atualize a página uma vez. Marque os documentos obrigatórios e use **Continuar**; o consentimento de dados de saúde continua opcional. Se voltar a aparecer **Aguardando dados da empresa**, o administrador deve conferir **Administração → Empresa / Dados da empresa**, sem contornar o aceite.
+
 O domínio e os três logins foram verificados. O aluno de teste entra com papel de aluno e já está vinculado ao personal principal, mas as áreas internas continuam bloqueadas até um pagamento confirmado; a conta não recebeu cobrança fictícia. Esta instalação usa cobrança simulada: cadastro e pagamento de alunos reais dependem de configuração comercial, legal e validação própria antes da liberação.
 
 ## Aluno: começar

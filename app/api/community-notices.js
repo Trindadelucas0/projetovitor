@@ -151,8 +151,10 @@ export function communityNoticeRoutes({ json, readBody }, deps = {}) {
         await (deps.audit || audit)(user.tenant_id, user.id, 'comunidade.aviso_editado', 'community_notice', id, { reminder_at: row.reminder_at })
         return json(res, 200, { notice: row, recipient_count: row.recipient_count })
       }
-      const recent = +(await query(`select count(*) from community_notices where author_id=$1 and created_at>now()-interval '24 hours'`, [user.id])).rows[0].count
-      if (recent >= NOTICE_LIMIT_DAY) return json(res, 429, { error: 'Limite de 5 novos avisos em 24 horas atingido.', code: 'RATE_LIMITED' })
+      if (!has(user, 'admin')) {
+        const recent = +(await query(`select count(*) from community_notices where author_id=$1 and created_at>now()-interval '24 hours'`, [user.id])).rows[0].count
+        if (recent >= NOTICE_LIMIT_DAY) return json(res, 429, { error: 'Limite de 5 novos avisos em 24 horas atingido.', code: 'RATE_LIMITED' })
+      }
       const scope = has(user, 'admin') ? 'tenant_students' : 'author_students'
       let notice
       const delivered = await transact(async () => {

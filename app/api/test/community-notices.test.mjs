@@ -60,6 +60,29 @@ test('personal ativo publica somente para alunos com vínculo e envia uma vez', 
   assert.equal(notification.params[4], `community-notice:${NOTICE}:initial`)
 })
 
+test('admin alcança todos os alunos ativos do ambiente sem usar o limite do personal', async () => {
+  const calls = [], pushes = []
+  let response
+  const notice = { id: NOTICE, tenant_id: TENANT, author_id: AUTHOR, title: 'Comunicado geral', notification_body: 'Confira a novidade', destination_url: 'https://example.com/comunicado', image_url: null, image_source: 'none', audience_scope: 'tenant_students', status: 'ativo', recipient_count: 0 }
+  const query = async (sql, params = []) => {
+    calls.push({ sql, params })
+    if (sql.includes('insert into community_notices')) return { rows: [notice], rowCount: 1 }
+    if (sql.includes('join user_roles r')) return { rows: [{ id: STUDENT }], rowCount: 1 }
+    if (sql.includes('insert into notifications')) return { rows: [{ user_id: STUDENT }], rowCount: 1 }
+    if (sql.includes('update community_notices set recipient_count')) return { rows: [{ ...notice, recipient_count: 1 }], rowCount: 1 }
+    throw new Error('Query inesperada: ' + sql)
+  }
+  const routes = communityNoticeRoutes({ json: (_res, status, value) => { response = { status, body: value } }, readBody: async () => ({ title: notice.title, notification_body: notice.notification_body, destination_url: notice.destination_url, image_mode: 'none' }) }, {
+    requireAuth: async () => ({ id: AUTHOR, tenant_id: TENANT, roles: ['admin'] }), query,
+    transaction: work => work(), push: async userId => pushes.push(userId), audit: async () => {}
+  })
+  await routes['POST /api/community/notices/save']({}, {})
+  assert.equal(response.status, 201)
+  assert.equal(pushes.length, 1)
+  assert.equal(calls.some(call => call.sql.includes('select count(*)')), false)
+  assert.match(calls.find(call => call.sql.includes('join user_roles r')).sql, /u\.tenant_id=\$1.*u\.status='ativo'/s)
+})
+
 test('varredura marca lembrete no banco e não repete depois do reinício lógico', async () => {
   let due = true
   const pushes = []
