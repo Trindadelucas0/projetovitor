@@ -25,12 +25,13 @@ O domínio responde e aceita a origem HTTPS nas requisições de login, mas um l
 ## Personal principal: atender
 
 1. Entre com a conta do personal e abra **Alunos**. Use **Adicionar aluno** para cadastrar uma conta nova ou enviar convite para uma conta existente.
-2. Abra o aluno e use **Criar treino**. Em **Dados da ficha**, confira o aluno, dê um nome à ficha e preencha objetivo e orientação geral. Toque em **Continuar**.
-3. Em **Dias e exercícios**, nomeie os treinos, marque um dia da semana ou deixe **Livre**, escolha os exercícios na biblioteca e ajuste séries, repetições, descanso, carga, vídeo e orientações. Use **Continuar** para abrir **Revisar e enviar**.
-4. Confira o resumo de cada dia. Use **Editar** se precisar corrigir um treino; quando estiver certo, use **Enviar para aluno** ou **Salvar e enviar nova versão**. A ficha anterior deve permanecer no histórico. Confirme na conta do aluno antes de considerar a entrega validada. Modelos antigos ficam guardados, mas não aparecem mais no painel nem na criação da ficha.
-5. Em **Atendimentos**, responda mensagens, ocorrências e propostas. Dor e desconforto exigem orientação antes da retomada do exercício afetado.
-6. Em **Avaliações**, abra **Nova solicitação**, escolha aluno e protocolo e defina prazo ou repetição. Depois do envio do aluno, revise cada captura, peça recaptura com motivo quando necessário e publique a devolutiva escrita.
-7. O personal não entra nas telas administrativas de usuários, cobrança, configurações ou governança dos protocolos.
+2. Abra o aluno e use **Criar treino**. A etapa **Para quem** já vem com o aluno escolhido; dê um nome à ficha, toque no objetivo e, se quiser partir de algo pronto, use **Começar de um modelo** — a lista abre com busca e separa os seus dos compartilhados. Toque em **Dias e exercícios**.
+3. Em **Dias e exercícios**, cada dia tem um menu (ícone à direita do nome) com **Renomear**, **Duplicar dia**, **Copiar exercícios de…**, **Limpar** e **Remover**. Marque o dia da semana ou deixe **Livre**. Na biblioteca, um toque na linha põe o exercício no dia; quem já está lá aparece marcado como **no dia**. Abra um exercício para ajustar séries, repetições ou tempo, carga, descanso, vídeo e orientações, e use **Montar bi-set** para juntar 2 ou 3 exercícios em sequência. O limite é 7 dias e 40 exercícios por dia.
+4. Em **Revisar e enviar**, o topo lista o que falta; tocar numa pendência leva direto ao campo que a causou. Abaixo vem a ficha como o aluno vai ver. Quando não houver pendência, use **Enviar para <aluno>** ou **Salvar e enviar nova versão**; **Salvar como modelo** guarda a ficha para reaproveitar (se já existir um modelo com o mesmo nome, o app pergunta se é para atualizar ou criar outro). A ficha anterior do aluno fica no histórico. Confirme na conta do aluno antes de considerar a entrega validada.
+5. Saindo no meio, o app pergunta antes de descartar. O que foi digitado fica guardado neste aparelho: ao reabrir, aparece a faixa **Retomar / Descartar** rascunho.
+6. Em **Atendimentos**, responda mensagens, ocorrências e propostas. Dor e desconforto exigem orientação antes da retomada do exercício afetado.
+7. Em **Avaliações**, abra **Nova solicitação**, escolha aluno e protocolo e defina prazo ou repetição. Depois do envio do aluno, revise cada captura, peça recaptura com motivo quando necessário e publique a devolutiva escrita.
+8. O personal não entra nas telas administrativas de usuários, cobrança, configurações ou governança dos protocolos.
 
 ## Administrador: governar o sistema
 

@@ -1,13 +1,8 @@
 /* Avaliação Postural — só o que não existia nas folhas atuais. Usa os tokens da marca (--ag-*),
    nada de cor literal, e respeita claro/escuro porque os tokens já mudam com o tema. */
 
-.ap-wizard { padding-bottom: calc(96px + var(--sab, 0px)); }
-.ap-wizard-footer {
-  position: sticky; bottom: 0; display: grid; gap: 8px;
-  padding: 12px 0 calc(12px + var(--sab, 0px));
-  background: linear-gradient(to top, var(--ag-bg) 70%, transparent);
-}
-.ap-wizard-footer .g-btn { width: 100%; }
+/* .ap-wizard e .ap-wizard-footer moraram aqui; foram para views/guided/guided.css
+   porque o construtor de treino tambem usa o WizardShell e nao importa esta folha. */
 
 .ap-h2 { font-size: 1rem; margin: 18px 0 8px; }
 .ap-pre { white-space: pre-wrap; }

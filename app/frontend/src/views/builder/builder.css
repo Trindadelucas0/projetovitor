@@ -1,70 +1,203 @@
-.wb{min-height:100vh;background:#0b0d10;color:#e9ecef;display:flex;flex-direction:column;font-size:14px;max-width:none}
-.wb-top{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #1f242b;position:sticky;top:0;background:#0b0d10;z-index:5}
-.wb-ttl{flex:1;display:flex;flex-direction:column}.wb-ttl span,.wb-xs{font-size:12px;color:#8a949e}
-.wb-btn{min-height:44px;min-width:44px;padding:0 14px;border-radius:12px;border:0;background:#20f51b;color:#11140a;font-weight:700;cursor:pointer}
-.wb-btn:disabled{opacity:.45;cursor:not-allowed}.wb-btn.ghost{background:#1a1f25;color:#e9ecef;border:1px solid #2a3038}.wb-btn.danger{color:#ff8b8b}
-.wb-in{min-height:44px;background:#14181d;border:1px solid #2a3038;border-radius:10px;color:#e9ecef;padding:0 10px;font:inherit;width:100%;box-sizing:border-box}
-textarea.wb-in{padding:8px 10px}.wb-in.err{border-color:#ff6b6b}
-.wb-head{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;padding:12px 16px}
-.wb-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:16px;max-width:1100px;width:100%;box-sizing:border-box;margin:0 auto}
-.wb-step{display:flex;align-items:center;gap:9px;min-height:48px;padding:8px 12px;text-align:left;color:#9aa4ae;background:#14181d;border:1px solid #2a3038;border-radius:12px;font:inherit;font-weight:600;cursor:pointer}
-.wb-step span{display:grid;place-items:center;width:26px;height:26px;flex:none;border-radius:50%;background:#2a3038;color:#e9ecef}
-.wb-step.on{border-color:#20f51b;color:#e9ecef}.wb-step.on span{background:#20f51b;color:#11140a}
-.wb-section-title{font-size:18px;margin:8px 16px 0}.wb-review{width:min(100%,900px);box-sizing:border-box;padding:8px 16px 150px;margin:0 auto}.wb-review h2{font-size:20px}.wb-review-day{background:#14181d;border:1px solid #2a3038;border-radius:14px;padding:14px;margin:10px 0}.wb-review-day>div{display:flex;flex-direction:column;gap:4px}.wb-review-day>div span{color:#9aa4ae;font-size:12px}.wb-review-day>.wb-btn{float:right;margin-top:-40px}.wb-review-day ol{clear:both;margin:18px 0 0;padding-left:22px;line-height:1.7}
-.wb-head{width:min(100%,1000px);box-sizing:border-box;margin:0 auto;padding-bottom:150px}.wb-head .wb-f:first-child{grid-column:1/-1}.wb-head .wb-f:first-child .wb-in{max-width:500px}
-.wb-f{display:flex;flex-direction:column;gap:4px}.wb-f>span{font-size:12px;color:#9aa4ae}.wb-full{grid-column:1/-1}
-.wb-days{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 16px 16px}
-.wb-day{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid #2a3038;background:#14181d;color:#e9ecef;font-weight:600;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
-.wb-day small{margin-left:6px;color:#8a949e}.wb-day.on{background:#20f51b;color:#11140a;border-color:#20f51b}.wb-day.on small{color:#11140a}.wb-day.add{border-style:dashed}.wb-sp{flex:1}
-.wb-cols{display:grid;grid-template-columns:380px 1fr;gap:16px;padding:0 16px 120px;flex:1}
-.wb-lib{background:#11151a;border:1px solid #1f242b;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px;position:sticky;top:70px;max-height:calc(100vh - 90px)}
-.wb-lib-h{display:flex;align-items:center;gap:8px}.wb-lib-h b{flex:1}
-.wb-filters{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
-.wb-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;overflow:auto;flex:1;padding-right:2px}
-.wb-tile{position:relative;background:#14181d;border:1px solid #2a3038;border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:4px;cursor:pointer}
-.wb-tile.on{border-color:#20f51b;box-shadow:0 0 0 1px #20f51b}.wb-tile input{position:absolute;top:8px;left:8px;width:22px;height:22px;accent-color:#20f51b}
-.wb-tile img,.wb-tile .wb-noimg{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#fff}.wb-tn{font-weight:600;font-size:13px;line-height:1.2}
-.wb-noimg{display:grid;place-items:center;color:#666;font-size:11px;background:#1a1f25 !important}
-.wb-addsel{width:100%}
-.wb-main{display:flex;flex-direction:column;gap:10px;min-width:0}
-.wb-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.wb-bar .wb-xs{flex:1}
-.wb-empty{border:1px dashed #2a3038;border-radius:14px;padding:24px;text-align:center;color:#8a949e}
-.wb-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.wb-card{background:#14181d;border:1px solid #2a3038;border-radius:14px;padding:10px}
-.wb-card.sel{border-color:#20f51b}.wb-card.grp{border-left:4px solid #8b7cf6;border-radius:6px 14px 14px 6px}
-.wb-card.grp:not(.glast){margin-bottom:-6px;border-bottom-left-radius:0;border-bottom-right-radius:0}.wb-card.grp:not(.gfirst){border-top-left-radius:0;border-top-right-radius:0}
-.wb-gtag{font-size:12px;color:#b9b0ff;font-weight:700;margin-bottom:6px;display:flex;gap:8px;align-items:center}
-.wb-link{background:none;border:0;color:#20f51b;text-decoration:underline;min-height:32px;cursor:pointer}
-.wb-ch{display:flex;align-items:center;gap:8px}.wb-ch>input{width:22px;height:22px;accent-color:#20f51b}
-.wb-grip{cursor:grab;color:#5b6570;user-select:none}.wb-thumb{width:52px;height:52px;border-radius:10px;object-fit:cover;background:#fff;flex:none}
-.wb-cn{flex:1;text-align:left;background:none;border:0;color:inherit;display:flex;flex-direction:column;min-height:44px;justify-content:center;cursor:pointer;min-width:0}
-.wb-mv{display:flex;gap:4px}
-.wb-cb{margin-top:10px;display:flex;flex-direction:column;gap:10px}
-.wb-fields{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.wb-chk{display:flex;gap:8px;align-items:center;min-height:44px}.wb-chk input{width:20px;height:20px;accent-color:#20f51b}
-.wb-per{border-collapse:collapse;width:100%;max-width:420px}.wb-per th{font-size:12px;color:#9aa4ae;text-align:left;padding:4px}.wb-per td{padding:3px}
-.wb-foot{position:fixed;left:0;right:0;bottom:0;background:#0b0d10ee;border-top:1px solid #1f242b;padding:10px 16px;z-index:6;backdrop-filter:blur(6px)}
-.wb-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center}.wb-actions .wb-in{max-width:280px}
-.wb-msg{margin:0 0 8px;font-size:13px}.wb-msg.bad{color:#ff8b8b}.wb-msg.ok{color:#20f51b;font-weight:700}
-.wb .mob{display:none}
-.wb>.wb-bar{padding:0 16px 12px}.wb>.wb-bar .wb-f{width:min(360px,100%)}
-.wb-btn:focus-visible,.wb-step:focus-visible,.wb-day:focus-visible,.wb-cn:focus-visible,.wb-in:focus-visible{outline:2px solid #20f51b;outline-offset:2px}
-@media (max-width:900px){
-  .wb-head{grid-template-columns:1fr}.wb-cols{grid-template-columns:1fr;padding-bottom:170px}
-  .wb-lib{display:none;position:fixed;inset:0;max-height:none;border-radius:0;z-index:20;top:0}.wb-lib.open{display:flex}
-  .wb .mob{display:inline-flex;align-items:center}.wb-fields{grid-template-columns:1fr 1fr}
-  .wb-actions{flex-wrap:wrap}.wb-actions .wb-in{max-width:none;flex:1 1 100%}.wb-actions .wb-btn{flex:1}
-  .wb-days .wb-btn{padding:0 10px}
-  .wb-steps{gap:5px;padding:10px}.wb-step{flex-direction:column;justify-content:center;text-align:center;font-size:11px;padding:6px 2px;line-height:1.2;min-height:58px}.wb-head{padding-bottom:180px}.wb-review{padding-bottom:180px}.wb-foot{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+/* Construtor de treino. Só tokens da marca (--ag-*), nenhuma cor literal — a folha
+   anterior cravava #0b0d10 / #20f51b / #14181d e por isso esta era a única tela do app
+   que não funcionava no tema claro.
+
+   Mobile-first. A partir de 900 px a etapa 2 abre em duas colunas (ficha + biblioteca),
+   como a etapa da avaliação postural faz no mesmo ponto. */
+
+/* A moldura do assistente é .ag (560 px); o construtor precisa de mais espaço. */
+.ag.wb { max-width: 1180px; }
+
+.wb-etapa { display: grid; gap: 14px; }
+
+/* ---------------- campos ---------------- */
+
+.wb-campo { display: grid; gap: 6px; min-width: 0; }
+.wb-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.wb-fieldset { border: 0; padding: 0; margin: 0; }
+.wb-fieldset > legend { padding: 0; }
+.wb-obrig { color: var(--ag-warn); }
+.wb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.wb-chip-sel { flex: 1 1 110px; min-width: 0; }
+.wb-chip-equip { flex: 1 1 100%; }
+.wb-chip-sel .gs-btn { min-height: 44px; font-size: 14px; }
+
+/* ---------------- trilha de dias ----------------
+   flex-wrap é requisito de teste: e2e/navigation-layout.spec.js mede .wb-days em 320 px
+   com 7 dias e exige que nada role na horizontal. */
+.wb-days { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.wb-day {
+  min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--ag-line);
+  background: var(--ag-card); color: var(--ag-txt); font-weight: 600; font-size: 14px;
+  white-space: normal; overflow-wrap: anywhere; cursor: pointer;
 }
-@media (max-width:600px){.wb-days{flex-wrap:wrap}.wb-days .wb-sp{display:none}.wb-days .wb-btn{flex:none}.wb-card .wb-ch{flex-wrap:wrap}.wb-card .wb-cn{min-width:calc(100% - 120px)}.wb-card .wb-mv{width:100%;justify-content:flex-end}.wb-fields{grid-template-columns:1fr 1fr}.wb-f{min-width:0}.wb-review-day>.wb-btn{float:none;margin:12px 0 0;width:100%}.wb-review-day ol{margin-top:10px}.wb-actions .wb-btn{min-width:0}}
-#app:has(.wb){max-width:none !important;padding:0 !important;margin:0 !important}
-.wb-dlg-bg{position:fixed;inset:0;background:#000a;display:grid;place-items:center;z-index:40;padding:16px}.wb-dlg{background:#14181d;border:1px solid #2a3038;border-radius:16px;padding:18px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:10px}.wb-dlg h3{margin:0}.wb-dlg p{margin:0;color:#c3cad1}
+.wb-day small { margin-left: 6px; color: var(--ag-mut); font-weight: 700; }
+.wb-day.on { background: var(--ag-acc); color: var(--ag-on); border-color: transparent; }
+.wb-day.on small { color: var(--ag-on); }
+.wb-day.add { border-style: dashed; color: var(--ag-mut); }
 
-.wb-advanced{grid-column:1/-1;width:100%}.wb-advanced>summary{cursor:pointer;min-height:44px;display:flex;align-items:center}.wb-advanced .wb-fields{margin-top:12px}
+.wb-dia { display: grid; gap: 12px; }
+.org-details.wb-detalhe { margin: 0; padding: 0; border-bottom: 0; }
+.org-details.wb-detalhe > summary { font-weight: 600; font-size: 13px; color: var(--ag-mut); min-height: 36px; }
+.org-details.wb-detalhe textarea { margin-top: 8px; }
+.wb-acoes-dia { display: flex; flex-wrap: wrap; gap: 8px; }
+.wb-acoes-dia .g-btn { width: auto; flex: 1 1 auto; min-width: 150px; }
 
-/* Vídeo do personal no exercício: campo em destaque, não escondido em avançados. */
-.wb-video{gap:6px;margin-top:10px;padding:10px;border:1px solid #2a3038;border-radius:12px}
-.wb-video>span:first-child{font-size:12px;color:#9aa4ae}
-.wb-video .wb-f{margin-top:6px}
-.wb-bad{color:#ff8a8a}
+.wb-vazio {
+  border: 1px dashed var(--ag-line); border-radius: var(--ag-radius, 20px); padding: 28px 18px;
+  text-align: center; color: var(--ag-mut); display: grid; gap: 10px; justify-items: center;
+}
+.wb-vazio .icn { font-size: 28px; color: var(--ag-dim); }
+.wb-vazio p { margin: 0; }
+.wb-vazio .g-btn { width: auto; padding: 0 18px; }
+
+/* ---------------- cartão do exercício ---------------- */
+
+.wb-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.wb-card { background: var(--ag-card); border: 1px solid var(--ag-line); border-radius: 16px; padding: 10px; }
+.wb-card.sel { border-color: var(--ag-acc); }
+.wb-card.ruim { border-color: var(--ag-bad); }
+/* Um grupo (bi/tri-set) é um bloco: barra na lateral e cantos colados entre os membros. */
+.wb-card.grp { border-left: 3px solid var(--ag-warn); border-radius: 6px 16px 16px 6px; }
+.wb-card.grp:not(.glast) { margin-bottom: -6px; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.wb-card.grp:not(.gfirst) { border-top-left-radius: 0; border-top-right-radius: 0; }
+.wb-gtag { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px; font-weight: 700; color: var(--ag-warn); margin-bottom: 8px; }
+.wb-gtag .g-link { color: var(--ag-acc); }
+
+.wb-cab { display: flex; align-items: center; gap: 8px; }
+.wb-cab-txt {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; justify-content: center;
+  min-height: 44px; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; font: inherit;
+}
+.wb-cab-txt b { overflow-wrap: anywhere; }
+.wb-cab-acoes { display: flex; gap: 2px; flex: none; }
+.wb-card-erro { margin: 8px 0 0; }
+
+.wb-thumb { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; background: var(--ag-card-2); flex: none; }
+.wb-semimg { display: grid; place-items: center; color: var(--ag-dim); background: var(--ag-card-2); }
+
+.wb-corpo { margin-top: 12px; display: grid; gap: 12px; border-top: 1px solid var(--ag-line); padding-top: 12px; }
+.wb-modo { width: 100%; }
+.wb-chk { display: flex; gap: 10px; align-items: center; min-height: 44px; cursor: pointer; }
+.wb-check { width: 22px; height: 22px; accent-color: var(--ag-acc); flex: none; }
+.wb-per { border-collapse: collapse; width: 100%; max-width: 460px; }
+.wb-per th { font-size: 12px; color: var(--ag-mut); text-align: left; padding: 4px; font-weight: 600; }
+.wb-per td { padding: 3px; }
+.wb-avancado { grid-column: 1 / -1; width: 100%; margin: 0; }
+
+/* NumberField (components/ui.jsx) nao tem estilo proprio fora das telas de treino:
+   sem isto, "Carga (kg)" aparece como um input cru ao lado dos campos .g-in. */
+.wb-campo > .num, .wb-campo .stp .num {
+  width: 100%; min-height: 48px; border-radius: 14px; border: 1px solid var(--ag-line);
+  background: var(--ag-card-2); color: var(--ag-txt); padding: 12px 14px; font: inherit; font-size: 16px;
+  box-sizing: border-box; text-align: left;
+}
+.wb-campo .stp .num { border: 0; background: none; min-height: 0; padding: 0; text-align: center; }
+
+/* Vídeo do personal: campo em destaque, não escondido nos ajustes avançados. */
+.wb-video { display: grid; gap: 6px; padding: 12px; border: 1px solid var(--ag-line); border-radius: 14px; background: var(--ag-card-2); }
+
+/* ---------------- erros ---------------- */
+
+.wb-erro { color: var(--ag-bad); font-size: 13px; margin: 0; overflow-wrap: anywhere; }
+.wb-in-erro, input.wb-in-erro, .wb-in-erro.num { border-color: var(--ag-bad) !important; }
+.wb-alerta { border: 1px solid var(--ag-bad); border-radius: 14px; padding: 10px 12px; }
+.wb-li-ruim b { color: var(--ag-bad); }
+.wb-li-ruim .g-ico { color: var(--ag-bad); }
+
+/* ---------------- rascunho ---------------- */
+
+.wb-rascunho {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
+  border: 1px solid var(--ag-line); border-radius: 14px; padding: 10px 12px;
+  background: var(--ag-card); color: var(--ag-txt); font-size: 14px;
+}
+.wb-rascunho .icn { color: var(--ag-warn); flex: none; }
+
+/* ---------------- escolher aluno / modelo ---------------- */
+
+.wb-picker { max-height: 60vh; overflow: auto; }
+.wb-picker-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wb-picker-txt b { overflow-wrap: anywhere; }
+
+/* ---------------- biblioteca ---------------- */
+
+.wb-lib {
+  background: var(--ag-card); border: 1px solid var(--ag-line); border-radius: var(--ag-radius, 20px);
+  padding: 12px; display: none; flex-direction: column; gap: 10px; min-width: 0;
+}
+.wb-lib.open { display: flex; }
+.wb-lib-top { display: flex; align-items: center; gap: 8px; }
+.wb-lib-filtros { display: grid; gap: 8px; }
+.wb-lib-conta { margin: 0; }
+.wb-lib-lista { display: grid; gap: 6px; overflow: auto; flex: 1; min-height: 0; align-content: start; }
+.wb-lib-foot { padding-top: 6px; border-top: 1px solid var(--ag-line); }
+
+/* Uma linha por exercício, com um toque para adicionar — a versão anterior pedia marcar
+   a caixinha e descer até "Adicionar selecionados". */
+.wb-exrow {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 60px; padding: 7px;
+  background: var(--ag-card-2); border: 1px solid transparent; border-radius: 14px;
+  color: var(--ag-txt); text-align: left; font: inherit; cursor: pointer;
+}
+.wb-exrow:hover:not(:disabled) { border-color: var(--ag-acc); }
+.wb-exrow:disabled { opacity: .5; cursor: not-allowed; }
+.wb-exrow.posto { opacity: .62; cursor: default; }
+.wb-exthumb { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; background: var(--ag-card); flex: none; display: grid; place-items: center; }
+.wb-exinfo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wb-exnome { font-weight: 600; font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
+.wb-exmais { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--ag-acc); color: var(--ag-on); }
+.wb-pill-ok { flex: none; font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: var(--ag-card); color: var(--ag-acc); border: 1px solid var(--ag-line); }
+
+/* ---------------- revisar ---------------- */
+
+.wb-review { display: grid; gap: 14px; }
+.wb-pend { display: grid; gap: 10px; border-color: var(--ag-bad); }
+.wb-pend .icn { color: var(--ag-bad); }
+.wb-pend-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.wb-pend-ir {
+  display: flex; gap: 8px; align-items: flex-start; width: 100%; min-height: 44px; padding: 8px 0;
+  background: none; border: 0; color: var(--ag-bad); text-align: left; font: inherit; cursor: pointer;
+}
+.wb-pend-ir .icn { flex: none; margin-top: 2px; }
+.wb-pend-ir span { overflow-wrap: anywhere; }
+.wb-pend-ir:hover { text-decoration: underline; }
+.wb-pend-txt { color: var(--ag-mut); font-size: 13px; }
+
+.wb-previa { display: grid; gap: 6px; }
+.wb-previa-ttl { font-size: 17px; }
+.wb-previa-desc { margin: 4px 0 0; color: var(--ag-mut); font-size: 13px; white-space: pre-line; }
+.wb-previa-dia { border-top: 1px solid var(--ag-line); padding-top: 10px; margin-top: 8px; display: grid; gap: 6px; }
+.wb-previa-exs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.wb-previa-exs li { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.wb-previa-nome { font-weight: 600; font-size: 14px; }
+.wb-pill { flex: none; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--ag-acc); color: var(--ag-on); }
+.wb-pill.livre { background: var(--ag-card-2); color: var(--ag-mut); }
+.wb-tag-grp { font-size: 11px; font-weight: 700; color: var(--ag-warn); }
+
+/* ---------------- celular ---------------- */
+
+/* No celular a biblioteca é uma tela cheia; no desktop, uma coluna ao lado da ficha. */
+@media (max-width: 899px) {
+  .wb-lib.open {
+    position: fixed; inset: 0; z-index: 30; border-radius: 0; border: 0;
+    padding: calc(12px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));
+    max-height: none;
+  }
+  .wb-campos { grid-template-columns: 1fr; }
+  .wb-acoes-dia .g-btn { min-width: 0; flex: 1 1 100%; }
+}
+
+@media (min-width: 900px) {
+  .wb-only-mob { display: none !important; }
+  .wb-step2 { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; column-gap: 24px; }
+  .wb-step2-main { display: grid; gap: 14px; min-width: 0; }
+  /* A biblioteca fica sempre visível no desktop: é o painel de trabalho da etapa. */
+  .wb-step2 .wb-lib { display: flex; position: sticky; top: 16px; max-height: calc(100dvh - 120px); }
+  .wb-campos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .wb-modo { width: auto; justify-self: start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wb-exrow, .wb-card { transition: none !important; }
+}

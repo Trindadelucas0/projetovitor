@@ -7,12 +7,12 @@ import Icon from './Icon.jsx'
 
 export default function WizardShell({
   eyebrow, title, step = 0, total = 1, onBack, onJump, labels = null,
-  footer = null, children, testid = 'wizard'
+  footer = null, children, testid = 'wizard', className = ''
 }) {
   const pos = Math.min(step + 1, total)
   const pct = total ? Math.round(pos / total * 100) : 0
   return (
-    <div className="ag ap-wizard" data-testid={testid}>
+    <div className={'ag ap-wizard ' + className} data-testid={testid}>
       <div className="g-ob-top">
         {onBack
           ? <button className="g-icbtn" onClick={onBack} aria-label="Voltar" data-testid={testid + '-back'}><Icon name="chevronLeft" /></button>

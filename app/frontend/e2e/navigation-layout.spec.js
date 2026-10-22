@@ -75,11 +75,15 @@ for (const role of ['aluno','profissional','admin']) for (const width of [320,39
     }
     if (role !== 'aluno') {
       await page.goto('/#/pro/treino')
-      await expect(page.getByTestId('wb-template')).toHaveCount(0)
+      // Etapa 1: aluno e modelo sao linhas que abrem uma folha com busca (nao <select>),
+      // e "Salvar como modelo" so existe na etapa de revisao.
       await expect(page.getByTestId('wb-save-tpl')).toHaveCount(0)
-      await page.getByTestId('wb-student').selectOption('11111111-1111-4111-8111-111111111111')
+      await expect(page.getByTestId('wb-template')).toBeVisible()
+      await page.getByTestId('wb-student').click()
+      await page.locator('[data-testid="wb-student-pick-item"][data-value="11111111-1111-4111-8111-111111111111"]').click()
       await page.getByTestId('wb-title').fill('Ficha de teste')
-      await page.getByRole('button',{name:'Continuar'}).click()
+      await page.getByTestId('wb-goal-hypertrophy').click()
+      await page.getByTestId('wb-next-0').click()
       await expect(page.getByTestId('wb-day-add')).toBeVisible()
       for(let day=0;day<6;day++) await page.getByTestId('wb-day-add').click()
       await expect(page.getByTestId('wb-day-6')).toBeVisible()
