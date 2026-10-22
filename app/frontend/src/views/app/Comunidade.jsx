@@ -11,7 +11,8 @@ import { Av, Empty, Load, Err, useLoad, Sheet, Field } from './kit.jsx'
 import { buildThreads, visibleCount, REPLIES_PREVIEW } from '../../lib/commentTree.js'
 import GSelect from '../../components/GSelect.jsx'
 import './comments.css'
-import { ask, notifyError } from '../../lib/dialog.js'
+import { ask, notify, notifyError } from '../../lib/dialog.js'
+import { localDateTime, youtubeThumbnail } from '../../lib/communityNotices.js'
 
 // V5: comentário com curtir, responder, excluir o próprio e denunciar
 function CommentItem({ c, user, canReply, onReply, reload, reply }) {
@@ -111,6 +112,106 @@ function Compose({ cats, post, onClose, onDone }) {
       <button className="g-btn g-sm" disabled={busy} onClick={() => save('publicado')} data-testid="post-publish">Publicar</button></div>
   </Sheet>
 }
+
+function NoticeCard({ notice, focused, onEdit, onCancel, preview = false }) {
+  const image = notice.image_url || youtubeThumbnail(notice.destination_url)
+  const active = notice.status !== 'encerrado'
+  return <article className={'g-card com-notice' + (focused ? ' com-notice-focus' : '')} id={preview ? undefined : `aviso-${notice.id}`} data-testid="notice-card">
+    {image ? <img className="com-notice-img" src={image} alt={`Banner do aviso: ${notice.title}`} loading={preview ? undefined : 'lazy'} />
+      : <div className="com-notice-img com-notice-placeholder" aria-hidden="true"><Icon name="bell" /></div>}
+    <div className="com-notice-body">
+      <div className="g-row" style={{ alignItems: 'flex-start' }}><div style={{ minWidth: 0 }}><h3>{notice.title || 'Título do aviso'}</h3><p className="g-xs g-mut">{notice.author_name || 'Seu perfil'} · {dt(notice.published_at || new Date())}</p></div><span className="g-sp" />{!active && <span className="g-pill g-warn2">Encerrado</span>}</div>
+      <p className="g-sm com-notice-message">{notice.notification_body || 'Mensagem que o aluno receberá na notificação.'}</p>
+      {notice.can_manage && !preview && <div className="com-notice-meta" aria-label="Resumo do envio">
+        <span><Icon name="users" /> {notice.recipient_count} aluno(s) notificado(s)</span>
+        {notice.reminder_at && <span><Icon name="bell" /> {notice.reminder_sent_at ? 'Lembrete enviado' : `Lembrete: ${dt(notice.reminder_at)}`}</span>}
+      </div>}
+      <div className="g-actions com-notice-actions">
+        {active && notice.destination_url && <a className="g-btn g-sm" href={notice.destination_url} target="_blank" rel="noopener noreferrer" data-testid="notice-open"><Icon name="link" /> Abrir live ou conteúdo</a>}
+        {notice.can_manage && active && !preview && <><button className="g-btn g-ghost g-sm" onClick={() => onEdit(notice)}><Icon name="pencil" /> Editar</button><button className="g-link g-xs com-notice-end" onClick={() => onCancel(notice)}>Encerrar aviso</button></>}
+      </div>
+    </div>
+  </article>
+}
+
+function NoticeForm({ notice, recipientCount, onClose, onDone }) {
+  const originalMode = notice?.image_source === 'upload' ? 'upload' : notice?.image_source === 'none' ? 'none' : 'auto'
+  const [form, setForm] = useState({
+    title: notice?.title || '', destination_url: notice?.destination_url || '', notification_body: notice?.notification_body || '',
+    image_mode: originalMode, image_url: notice?.image_source === 'upload' ? notice.image_url || '' : '',
+    remind: !!notice?.reminder_at, reminder_at: localDateTime(notice?.reminder_at)
+  })
+  const [showPreview, setShowPreview] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('')
+  const automatic = youtubeThumbnail(form.destination_url)
+  const previewImage = form.image_mode === 'upload' ? form.image_url : form.image_mode === 'auto' ? automatic : ''
+  const set = (key, value) => setForm(current => ({ ...current, [key]: value }))
+  const pick = event => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) return setError('Escolha uma imagem PNG, JPEG ou WebP.')
+    if (file.size > 2.5 * 1024 * 1024) return setError('A imagem deve ter no máximo 2,5 MB.')
+    setBusy(true); setError('')
+    const reader = new FileReader()
+    reader.onload = async () => { try { const uploaded = await F.upload(reader.result); setForm(current => ({ ...current, image_mode: 'upload', image_url: uploaded.url })) } catch (e) { setError(e.message) } finally { setBusy(false) } }
+    reader.onerror = () => { setBusy(false); setError('Não foi possível ler a imagem escolhida.') }
+    reader.readAsDataURL(file)
+  }
+  const save = async event => {
+    event.preventDefault(); if (busy) return
+    setBusy(true); setError('')
+    try {
+      await F.saveNotice({
+        id: notice?.id, title: form.title, destination_url: form.destination_url, notification_body: form.notification_body,
+        image_mode: form.image_mode, image_url: previewImage || null,
+        reminder_at: form.remind && form.reminder_at ? new Date(form.reminder_at).toISOString() : null
+      })
+      notify(notice ? 'Aviso atualizado.' : 'Aviso publicado e notificações enviadas.'); onDone()
+    } catch (e) { setError(e.message || 'Não foi possível salvar o aviso.') } finally { setBusy(false) }
+  }
+  const preview = { ...notice, ...form, image_url: previewImage, published_at: notice?.published_at || new Date(), author_name: notice?.author_name || 'Seu perfil', status: 'ativo' }
+  return <Sheet title={notice ? 'Editar aviso' : 'Novo aviso'} onClose={onClose}>
+    {showPreview ? <><NoticeCard notice={preview} preview /><button className="g-btn g-ghost" style={{ marginTop: 12 }} onClick={() => setShowPreview(false)}>Voltar a editar</button></>
+      : <form onSubmit={save} className="com-notice-form" data-testid="notice-form">
+        <Field label="Título do aviso *"><input className="g-in" value={form.title} onChange={e => set('title', e.target.value)} maxLength={140} required data-testid="notice-title" /></Field>
+        <Field label="Link HTTPS *"><input className="g-in" type="url" inputMode="url" value={form.destination_url} onChange={e => set('destination_url', e.target.value)} placeholder="https://youtube.com/..." required data-testid="notice-url" /></Field>
+        <fieldset className="com-notice-fieldset"><legend>Imagem do card</legend>
+          <label className="g-chk"><input type="radio" name="notice-image" checked={form.image_mode === 'auto'} onChange={() => set('image_mode', 'auto')} /> Automática do YouTube</label>
+          <label className="g-chk"><input type="radio" name="notice-image" checked={form.image_mode === 'upload'} onChange={() => set('image_mode', 'upload')} /> Enviar minha imagem</label>
+          <label className="g-chk"><input type="radio" name="notice-image" checked={form.image_mode === 'none'} onChange={() => set('image_mode', 'none')} /> Usar banner padrão</label>
+          {form.image_mode === 'auto' && <p className="g-xs g-mut">{automatic ? 'Miniatura encontrada. Você pode conferir na pré-visualização.' : 'Cole um link de vídeo do YouTube ou escolha outra opção.'}</p>}
+          {form.image_mode === 'upload' && <label className="g-btn g-ghost g-sm com-file">{form.image_url ? 'Trocar imagem' : 'Escolher imagem'}<input type="file" hidden accept="image/png,image/jpeg,image/webp" onChange={pick} /></label>}
+        </fieldset>
+        <Field label="Mensagem da notificação *"><textarea className="g-in" rows={4} value={form.notification_body} onChange={e => set('notification_body', e.target.value)} maxLength={240} required data-testid="notice-message" /></Field>
+        <label className="g-chk com-notice-remind"><input type="checkbox" checked={form.remind} disabled={!!notice?.reminder_sent_at} onChange={e => set('remind', e.target.checked)} /> Notificar novamente</label>
+        {form.remind && <Field label="Data e hora do lembrete *"><input className="g-in" type="datetime-local" value={form.reminder_at} min={localDateTime(new Date(Date.now() + 60000))} disabled={!!notice?.reminder_sent_at} onChange={e => set('reminder_at', e.target.value)} required data-testid="notice-reminder" /></Field>}
+        {notice?.reminder_sent_at && <p className="g-xs g-mut">O lembrete já foi enviado e não pode ser reagendado.</p>}
+        {!notice && <p className="g-note" role="status">Este aviso será enviado a <b>{recipientCount}</b> aluno(s). A publicação envia a primeira notificação imediatamente.</p>}
+        {error && <p className="g-warn g-sm" role="alert">{error}</p>}
+        <div className="g-actions"><button type="button" className="g-btn g-ghost g-sm" onClick={() => setShowPreview(true)}>Pré-visualizar</button><button className="g-btn g-sm" disabled={busy} aria-busy={busy}>{busy ? 'Salvando…' : notice ? 'Salvar alterações' : 'Publicar aviso'}</button></div>
+      </form>}
+  </Sheet>
+}
+
+function Notices({ focusedId }) {
+  const [data, error, reload] = useLoad(() => F.notices())
+  const [editing, setEditing] = useState(null), [creating, setCreating] = useState(false)
+  useEffect(() => {
+    if (!focusedId || !data) return
+    requestAnimationFrame(() => document.getElementById(`aviso-${focusedId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+  }, [focusedId, data])
+  const cancel = async notice => {
+    if (!await ask(`Encerrar “${notice.title}”?`, { text: 'O card será encerrado e um lembrete pendente não será enviado.', ok: 'Encerrar aviso', danger: true })) return
+    try { await F.cancelNotice(notice.id); notify('Aviso encerrado.'); reload() } catch (e) { notifyError(e) }
+  }
+  if (error) return <Err msg={error} retry={reload} />
+  if (!data) return <Load />
+  return <section className="com-notices" aria-labelledby="com-notices-title">
+    <div className="g-row com-notices-head"><div><h2 id="com-notices-title">Avisos</h2><p className="g-xs g-mut">Lives, vídeos, promoções e comunicados do seu personal.</p></div><span className="g-sp" />{data.can_publish && <button className="g-btn" onClick={() => setCreating(true)} data-testid="new-notice"><Icon name="plus" /> Novo aviso</button>}</div>
+    {!data.can_publish && data.publish_block_reason && isNonTrainee(useStore.getState().user) && <div className="g-card" role="status"><b className="g-sm">Criação de avisos indisponível</b><p className="g-xs g-mut">{data.publish_block_reason}</p></div>}
+    <div className="com-notice-list">{data.notices.length ? data.notices.map(notice => <NoticeCard key={notice.id} notice={notice} focused={notice.id === focusedId} onEdit={setEditing} onCancel={cancel} />) : <Empty icon="bell">Ainda não há avisos para você.</Empty>}</div>
+    {(creating || editing) && <NoticeForm notice={editing} recipientCount={data.recipient_count_preview || 0} onClose={() => { setCreating(false); setEditing(null) }} onDone={() => { setCreating(false); setEditing(null); reload() }} />}
+  </section>
+}
 function Feed() {
   const [sp, setSp] = useSearchParams()
   const mode = sp.get('modo') || ''
@@ -147,14 +248,19 @@ export function Profissionais() {
     {p.following && <span className="g-pill g-ok" style={{ marginLeft: 'auto' }}>seguindo</span>}</button>) : <Empty icon="users">Nenhum profissional ativo ainda.</Empty>}</div>
 }
 export default function Comunidade() {
-  const [sp] = useSearchParams()
+  const [sp, setSp] = useSearchParams()
   const user = useStore(s => s.user)
   const tab = sp.get('tab') || 'feed'
   if (tab === 'profissionais' && !isNonTrainee(user)) return <Navigate to="/acompanhamento?aba=profissionais" replace />
-  if (tab !== 'feed' && tab !== 'profissionais') return <Navigate to="/comunidade" replace />
+  if (tab !== 'feed' && tab !== 'profissionais' && tab !== 'avisos') return <Navigate to="/comunidade" replace />
+  const changeTab = next => setSp(next === 'feed' ? {} : { tab: next })
   return <div className="ag" data-testid="comunidade">
     <span className="g-eyebrow">Comunidade</span><h1>Comunidade</h1>
-    {tab === 'feed' && <Feed />}{tab === 'profissionais' && <Profissionais />}
+    <div className="g-tabs com-main-tabs" role="tablist" aria-label="Seções da Comunidade">
+      <button role="tab" aria-selected={tab === 'feed'} className={tab === 'feed' ? 'g-on' : ''} onClick={() => changeTab('feed')}>Publicações</button>
+      <button role="tab" aria-selected={tab === 'avisos'} className={tab === 'avisos' ? 'g-on' : ''} onClick={() => changeTab('avisos')}>Avisos</button>
+    </div>
+    {tab === 'feed' && <Feed />}{tab === 'avisos' && <Notices focusedId={sp.get('aviso')} />}{tab === 'profissionais' && <Profissionais />}
   </div>
 }
 export function PostPage() {

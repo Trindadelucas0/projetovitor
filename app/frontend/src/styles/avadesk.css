@@ -15,6 +15,7 @@ body{background:var(--ag-bg)}
 #agtab button.g-on .icn{filter:drop-shadow(0 0 8px #20f51b66)}
 .ag .g-acc,.ag a{color:var(--ag-acc)}
 .ag .g-chipbtn.g-on,.ag .g-chip.g-on{background:var(--ag-acc);color:var(--ag-on);border-color:transparent}
+.ag .avisos-thumb{width:56px;height:40px;object-fit:cover;border-radius:8px;flex:0 0 auto}
 .ag .g-pill.g-ok{background:#20f51b1f;color:var(--ag-acc)}
 
 /* anel de progresso, ações rápidas, cartão "Treino de hoje", miniaturas */

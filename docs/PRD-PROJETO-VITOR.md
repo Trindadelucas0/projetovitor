@@ -1,8 +1,8 @@
 # PRD — Projeto Vitor | aplicativo do personal e dos alunos
 
 **Produto:** Projeto Vitor — aplicativo de treino de um personal trainer e seus alunos
-**Versão do documento:** 1.0 · 21/10/2026
-**Base de referência:** frontend 2.0.2 · API 2.0.1 (arquivos locais; publicação não verificada nesta revisão)
+**Versão do documento:** 1.1 · 22/10/2026
+**Base de referência:** frontend 2.1.0 · API 2.1.0 (arquivos locais; publicação não verificada nesta revisão)
 
 **Natureza deste documento:** especificação do produto desejado, com App Flow e estado de entrega. Requisitos descrevem como o Projeto Vitor deve funcionar; presença de tela, rota ou módulo não significa jornada homologada. O comportamento comprovado no código e as limitações locais ficam na [documentação oficial](../app/DOCUMENTACAO-SISTEMA.md).
 
@@ -360,7 +360,7 @@ Nova área em que o personal solicita, o aluno registra fotos e vídeos guiados 
 
 ### 6.7 Comunidade e #TáPago
 
-- RF-7.1 A área **Comunidade** contém **somente** o feed de publicações, com alternância **Todos** / **Seguindo** e **Nova publicação** quando autorizado. Os filtros "Assunto" e "Minhas publicações" foram retirados.
+- RF-7.1 A área **Comunidade** separa **Publicações** e **Avisos**. Publicações mantém a alternância **Todos** / **Seguindo** e **Nova publicação** quando autorizado; os filtros "Assunto" e "Minhas publicações" permanecem fora da tela.
 - RF-7.2 Comentários encadeados, curtidas em post e comentário, seguir perfis, denúncia de conteúdo e moderação.
 - RF-7.3 No painel: **Publicações e moderação** (publicações e comentários, conteúdo oficial, moderação) e **Campanha #TáPago**.
 - RF-7.4 **#TáPago 2.0**: editor social de card, campanha de 30 dias, recompensa e publicação **opcional e confirmada** do card na Comunidade, vinculada a uma sessão concluída e limitada a **uma por treino**.
@@ -368,6 +368,9 @@ Nova área em que o personal solicita, o aluno registra fotos e vídeos guiados 
 - RN-7.2 O que o personal publica sai com **o nome e a foto do perfil dele**; outro administrador continua institucional.
 - RN-7.3 Engajamento é exclusivamente real — não há número inflado nem conta de vitrine.
 - RN-7.4 Rotas antigas de grupo, desafio e ranking **redirecionam** para a Comunidade; as APIs deixaram de ser registradas.
+- RF-7.5 Em **Avisos**, personal ativo publica card com título, mensagem, link HTTPS e banner enviado ou miniatura automática do YouTube. A publicação notifica imediatamente e aceita um lembrete futuro opcional.
+- RN-7.5 O personal alcança somente alunos com vínculo ativo; o admin alcança alunos ativos do próprio ambiente. Destinatários são resolvidos no servidor, e publicação/lembrete não duplicam a notificação do mesmo aluno.
+- RN-7.6 A imagem sempre aparece no card, com banner padrão quando não houver mídia. O push inclui a imagem, mas a exibição depende do sistema operacional ou navegador; a notificação interna permanece disponível.
 
 ### 6.8 Acompanhamento e atendimento
 
@@ -401,6 +404,7 @@ Dois grupos no menu de `/admin/painel`:
 
 - RF-10.1 **Avisos** (`/avisos`): Não lidas / Todas, marcar todas como lidas. Preferências por tipo em `notification_prefs`; push por VAPID e notificação local no app nativo.
 - RF-10.2 Eventos de cobrança também saem por push e e-mail (`setBillingPush`).
+- RF-10.5 Avisos da Comunidade usam a lista interna e o Web Push existentes; tocar leva ao card em `/comunidade?tab=avisos&aviso=<id>`, e o botão do card abre o destino HTTPS.
 - RF-10.3 Documentos legais versionados (`/legal/termos`, `/privacidade`, `/assinatura`, `/comunidade`, `/profissional`) com aceite registrado e identificação da empresa (`GET /api/legal/company`).
 - RF-10.4 LGPD: pedido de exportação e de exclusão pelo titular (`POST /api/me/export-request`, `/api/me/delete-request`); a administração decide em **Privacidade e pedidos**; exclusão é **anonimização** com confirmação digitada ("EXCLUIR").
 - RN-10.1 Retenção da auditoria configurável (`app_settings.auditoria_retencao_dias`, padrão `AUDIT_RETENTION_DAYS` ou 180), com purga em job.
@@ -665,6 +669,7 @@ A mídia postural **nunca** aparece no Feed, na Comunidade ou em notificações.
 | `startMailer` | contínuo | Drena `email_outbox`; só envia com SMTP configurado | sem SMTP |
 | `forgottenSweep` | 5 min | Sessão esquecida → `aguardando_recuperacao` + lembrete a cada `SESSION_REMINDER_MIN` | `SESSION_SWEEP=off` |
 | `startBillingJob` | tick | Renovação, retentativa, carência, suspensão, reconciliação | `BILLING_TICK=off` |
+| `startNoticeReminderJob` | 1 min | Envia uma vez os lembretes vencidos dos avisos da Comunidade | `NOTICE_REMINDER_SWEEP=off` |
 | `startPosturalRecurrence` | diário | Recorrência mensal idempotente + retenção de mídia | `POSTURAL_RECURRENCE=off` |
 | `startAuditPurge` | diário | Retenção de `request_audit` (padrão 180 dias) | `AUDIT_RETENTION_DAYS` |
 
@@ -732,7 +737,7 @@ A mídia postural **nunca** aparece no Feed, na Comunidade ou em notificações.
 
 ### 10.2 Variáveis relevantes
 
-`ORIGIN`, `CSRF_ALLOWED_ORIGINS`, `HOST`, `PORT`, `DATA_DIR`, `DB_*`, `SESSION_DAYS`, `RATE_LIMIT`, `SESSION_SWEEP`, `SESSION_REMINDER_MIN`, `BILLING_TICK`, `POSTURAL_RECURRENCE`, `AUDIT_RETENTION_DAYS`, `STORAGE_DRIVER` (`local` padrão), `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, VAPID, SMTP e chaves do provedor de pagamento. A lista completa, com os valores de exemplo, fica em `app/api/.env.example` e `app/.env.example`.
+`ORIGIN`, `CSRF_ALLOWED_ORIGINS`, `HOST`, `PORT`, `DATA_DIR`, `DB_*`, `SESSION_DAYS`, `RATE_LIMIT`, `SESSION_SWEEP`, `SESSION_REMINDER_MIN`, `BILLING_TICK`, `NOTICE_REMINDER_SWEEP`, `POSTURAL_RECURRENCE`, `AUDIT_RETENTION_DAYS`, `STORAGE_DRIVER` (`local` padrão), `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, VAPID, SMTP e chaves do provedor de pagamento. A lista completa, com os valores de exemplo, fica em `app/api/.env.example` e `app/.env.example`.
 
 Para o R2: bucket **privado**, sem domínio personalizado e sem URL pública de desenvolvimento.
 

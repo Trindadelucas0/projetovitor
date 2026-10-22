@@ -8,3 +8,30 @@
 .ag .com-c-act .g-link{min-height:32px;display:inline-flex;align-items:center;gap:4px}
 .ag .com-more{margin:4px 0 0 34px;min-height:36px}
 .ag .com-reply-box{margin:8px 0 0 34px}
+
+/* Comunidade · Avisos — card editorial 16:9, formulário mobile-first e foco por notificação. */
+.ag .com-main-tabs{margin:12px 0 16px}
+.ag .com-notices-head{align-items:flex-end;gap:12px;margin-bottom:12px}
+.ag .com-notices-head h2{margin:0}
+.ag .com-notices-head p{margin:4px 0 0}
+.ag .com-notice-list{display:grid;gap:12px}
+.ag .com-notice{padding:0;overflow:hidden;scroll-margin:96px}
+.ag .com-notice-focus{outline:3px solid var(--ag-acc);outline-offset:2px}
+.ag .com-notice-img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--ag-card-2)}
+.ag .com-notice-placeholder{display:grid;place-items:center;color:var(--ag-acc)}
+.ag .com-notice-placeholder .icn{width:48px;height:48px}
+.ag .com-notice-body{padding:16px}
+.ag .com-notice-body h3{margin:0;overflow-wrap:anywhere}
+.ag .com-notice-message{margin:12px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.ag .com-notice-meta{display:flex;flex-wrap:wrap;gap:8px 16px;margin:8px 0;color:var(--ag-dim);font-size:12px}
+.ag .com-notice-meta span{display:inline-flex;align-items:center;gap:5px}
+.ag .com-notice-actions{align-items:center;margin-top:12px}
+.ag .com-notice-actions .g-btn{min-height:44px;text-decoration:none}
+.ag .com-notice-end{min-height:44px;padding:0 8px;color:var(--ag-bad)}
+.ag .com-notice-form{display:grid;gap:12px}
+.ag .com-notice-fieldset{display:grid;gap:8px;margin:0;padding:12px;border:1px solid var(--ag-line);border-radius:12px}
+.ag .com-notice-fieldset legend{padding:0 6px;font-size:13px;font-weight:700}
+.ag .com-notice-fieldset .g-chk,.ag .com-notice-remind{min-height:44px}
+.ag .com-file{width:max-content}
+@media(min-width:720px){.ag .com-notice-list{grid-template-columns:repeat(2,minmax(0,1fr))}.ag .com-notice{align-self:start}}
+@media(max-width:520px){.ag .com-notices-head{align-items:stretch;flex-direction:column}.ag .com-notices-head .g-sp{display:none}.ag .com-notices-head .g-btn{width:100%;justify-content:center}.ag .com-notice-actions{align-items:stretch}.ag .com-notice-actions .g-btn{width:100%;justify-content:center}}

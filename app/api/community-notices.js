@@ -89,12 +89,6 @@ async function sendPushes(userIds, notice, phase, push) {
   }).catch(error => console.error('[community-notice] push', error.message))))
 }
 
-async function dispatchNotice(notice, phase, { query = q, transact = transaction, push } = {}) {
-  const delivered = await transact(() => insertDeliveries(notice, phase, query))
-  await sendPushes(delivered, notice, phase, push)
-  return delivered.length
-}
-
 function parsedNotice(body) {
   const title = txt(body.title, 140), notificationBody = txt(body.notification_body, 240)
   const destinationUrl = normalizeHttpsUrl(body.destination_url)
@@ -133,7 +127,9 @@ export function communityNoticeRoutes({ json, readBody }, deps = {}) {
           or (n.audience_scope='author_students' and exists(select 1 from coach_students cs where cs.tenant_id=$1 and cs.coach_id=n.author_id and cs.student_id=$2 and cs.status='ativo'))
         ))) order by n.published_at desc limit 100`, [user.tenant_id, user.id, admin])
       const reason = await noticePermissionReason(user, query)
-      json(res, 200, { notices: rows.rows, can_publish: !reason, publish_block_reason: reason })
+      const scope = has(user, 'admin') ? 'tenant_students' : 'author_students'
+      const recipientCount = reason ? 0 : (await recipientIds({ tenant_id: user.tenant_id, author_id: user.id, audience_scope: scope }, query)).length
+      json(res, 200, { notices: rows.rows, can_publish: !reason, publish_block_reason: reason, recipient_count_preview: recipientCount })
     },
     'POST /api/community/notices/save': async (req, res) => {
       const user = await (deps.requireAuth || requireAuth)(req, res, json); if (!user) return

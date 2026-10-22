@@ -41,6 +41,7 @@ export async function hasComunidadeGrant(userId, c) {
 const COMMUNITY_PATHS = [
   /^GET \/api\/feed(\/categories)?$/,
   /^GET \/api\/post$/,
+  /^[A-Z]+ \/api\/community\/notices(\/save|\/cancel)?$/,
   /^POST \/api\/posts(\/delete|\/like)?$/,
   /^POST \/api\/comments(\/like|\/delete)?$/,
   /^POST \/api\/(follows|reports|uploads)$/

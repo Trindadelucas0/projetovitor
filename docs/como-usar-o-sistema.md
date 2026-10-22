@@ -26,7 +26,11 @@ O domínio e os três logins foram verificados. O aluno de teste entra com papel
 
 ## Comunidade
 
-Abra **Comunidade** para acompanhar as publicações. Use **Todos** para ver o feed geral ou **Seguindo** para mostrar somente os perfis acompanhados. O filtro por assunto não faz mais parte da tela. Quando a conta estiver autorizada a publicar, o botão **Nova publicação** continua disponível.
+Abra **Comunidade → Publicações** para acompanhar o feed. Use **Todos** para ver o feed geral ou **Seguindo** para mostrar somente os perfis acompanhados. O filtro por assunto não faz mais parte da tela. Quando a conta estiver autorizada a publicar, o botão **Nova publicação** continua disponível.
+
+Em **Comunidade → Avisos**, o aluno encontra lives, vídeos, promoções e comunicados enviados pelo próprio personal. Toque em **Abrir live ou conteúdo** para abrir o link HTTPS. O mesmo aviso aparece no sino; quando o aparelho autorizou notificações push, ele também pode aparecer fora do aplicativo. O banner completo permanece disponível no card mesmo quando o sistema do aparelho não mostra imagens em notificações.
+
+Para publicar, o personal ativo ou administrador abre **Comunidade → Avisos → Novo aviso**, informa título, link e mensagem, escolhe a miniatura automática do YouTube, uma imagem PNG/JPEG/WebP de até 2,5 MB ou o banner padrão e, se necessário, marca **Notificar novamente** com data e hora futuras. **Publicar aviso** envia a primeira notificação imediatamente. O personal alcança somente alunos com vínculo ativo; o administrador alcança todos os alunos ativos do ambiente. Em um aviso ativo, **Editar** altera o card e o lembrete ainda não enviado; **Encerrar aviso** interrompe o lembrete pendente.
 
 ## Personal principal: atender
 
