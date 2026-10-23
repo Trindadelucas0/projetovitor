@@ -116,18 +116,19 @@ function Compose({ cats, post, onClose, onDone }) {
 function NoticeCard({ notice, focused, onEdit, onCancel, preview = false }) {
   const image = notice.image_url || youtubeThumbnail(notice.destination_url)
   const active = notice.status !== 'encerrado'
+  const aoVivo = active && !!notice.live_id && !!notice.reminder_sent_at
   return <article className={'g-card com-notice' + (focused ? ' com-notice-focus' : '')} id={preview ? undefined : `aviso-${notice.id}`} data-testid="notice-card">
     {image ? <img className="com-notice-img" src={image} alt={`Banner do aviso: ${notice.title}`} loading={preview ? undefined : 'lazy'} />
       : <div className="com-notice-img com-notice-placeholder" aria-hidden="true"><Icon name="bell" /></div>}
     <div className="com-notice-body">
-      <div className="g-row" style={{ alignItems: 'flex-start' }}><div style={{ minWidth: 0 }}><h3>{notice.title || 'Título do aviso'}</h3><p className="g-xs g-mut">{notice.author_name || 'Seu perfil'} · {dt(notice.published_at || new Date())}</p></div><span className="g-sp" />{!active && <span className="g-pill g-warn2">Encerrado</span>}</div>
-      <p className="g-sm com-notice-message">{notice.notification_body || 'Mensagem que o aluno receberá na notificação.'}</p>
+      <div className="g-row" style={{ alignItems: 'flex-start' }}><div style={{ minWidth: 0 }}><h3>{notice.title || 'Título do aviso'}</h3><p className="g-xs g-mut">{notice.author_name || 'Seu perfil'} · {dt(notice.published_at || new Date())}</p></div><span className="g-sp" />{aoVivo && <span className="g-pill g-bad2" data-testid="notice-live">Ao vivo agora</span>}{!active && <span className="g-pill g-warn2">Encerrado</span>}</div>
+      <p className="g-sm com-notice-message">{(aoVivo && notice.reminder_body) || notice.notification_body || 'Mensagem que o aluno receberá na notificação.'}</p>
       {notice.can_manage && !preview && <div className="com-notice-meta" aria-label="Resumo do envio">
         <span><Icon name="users" /> {notice.recipient_count} aluno(s) notificado(s)</span>
         {notice.reminder_at && <span><Icon name="bell" /> {notice.reminder_sent_at ? 'Lembrete enviado' : `Lembrete: ${dt(notice.reminder_at)}`}</span>}
       </div>}
       <div className="g-actions com-notice-actions">
-        {active && notice.destination_url && <a className="g-btn g-sm" href={notice.destination_url} target="_blank" rel="noopener noreferrer" data-testid="notice-open"><Icon name="link" /> Abrir live ou conteúdo</a>}
+        {active && notice.destination_url && <a className="g-btn g-sm" href={notice.destination_url} target="_blank" rel="noopener noreferrer" data-testid="notice-open"><Icon name="link" /> {aoVivo ? 'Assistir agora' : 'Abrir live ou conteúdo'}</a>}
         {notice.can_manage && active && !preview && <><button className="g-btn g-ghost g-sm" onClick={() => onEdit(notice)}><Icon name="pencil" /> Editar</button><button className="g-link g-xs com-notice-end" onClick={() => onCancel(notice)}>Encerrar aviso</button></>}
       </div>
     </div>

@@ -151,3 +151,20 @@ test('cancelar ou encerrar a live encerra o card e remove o lembrete pendente', 
   assert.equal(result.notice.reminder_at, null)
   assert.equal(result.delivered.length, 0)
 })
+
+test('lembrete da live avisa que ela começou, no banco e no push', async () => {
+  let due = true
+  const bodies = [], pushes = []
+  const notice = { id: NOTICE, tenant_id: TENANT, author_id: AUTHOR, live_id: LIVE, title: 'Live', notification_body: 'Marcada para 30/10/2026 19:00. Acompanhe o card para acessar.', reminder_body: 'A live começou agora. Toque para assistir.', image_url: null, audience_scope: 'tenant_students' }
+  const query = async (sql, params = []) => {
+    if (sql.includes('pg_try_advisory')) return { rows: [{ locked: true }], rowCount: 1 }
+    if (sql.includes("reminder_at<=now()")) return { rows: due ? [notice] : [], rowCount: due ? 1 : 0 }
+    if (sql.includes('join user_roles r')) return { rows: [{ id: STUDENT }], rowCount: 1 }
+    if (sql.includes('insert into notifications')) { bodies.push(params[2]); return { rows: [{ user_id: STUDENT }], rowCount: 1 } }
+    if (sql.includes('update community_notices set reminder_sent_at')) { due = false; return { rows: [], rowCount: 1 } }
+    throw new Error('Query inesperada: ' + sql)
+  }
+  await processNoticeReminders({ query, transact: work => work(), push: async (_user, payload) => pushes.push(payload) })
+  assert.deepEqual(bodies, [notice.reminder_body])
+  assert.equal(pushes[0].body, notice.reminder_body)
+})

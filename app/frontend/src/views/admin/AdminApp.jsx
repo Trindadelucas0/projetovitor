@@ -331,8 +331,8 @@ export default function AdminApp() {
       {tab === 'cobranca' && <AdmBilling />}
       {tab === 'tapago' && <TapagoAdmin />}
       {/* Operação postural usa /api/pro/*; governança usa /api/adm/*. */}
-      {tab === 'avaliacao' && <FilaAvaliacoes />}
-      {tab === 'avaliacao-adm' && <>{subTabs}{sub==='indicadores'?<IndicadoresAvaliacao/>:<ProtocolEditor/>}</>}
+      {tab === 'avaliacao' && <Wrap><FilaAvaliacoes /></Wrap>}
+      {tab === 'avaliacao-adm' && <>{subTabs}<Wrap>{sub==='indicadores'?<IndicadoresAvaliacao/>:<ProtocolEditor/>}</Wrap></>}
       {tab === 'publicacoes' && <>{subTabs}{sub==='moderacao'?<ExtraSection name="moderacao"/>:sub==='oficial'?<ConteudoOficial DataTable={DataTable} Drawer={Drawer}/>:<Publicacoes DataTable={DataTable} Drawer={Drawer}/>}</>}
       {tab === 'vinculos' && <>{subTabs}{sub==='convites'?<AdminInvites/>:<Wrap><Vinculos/></Wrap>}</>}
       {tab === 'filas' && <Wrap><Filas /></Wrap>}

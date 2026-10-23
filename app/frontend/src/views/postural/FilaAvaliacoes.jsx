@@ -161,9 +161,9 @@ export default function FilaAvaliacoes() {
 
         <div className="g-row ap-filtros">
           <input className="g-in" placeholder="Buscar aluno…" value={termo} onChange={e => setTermo(e.target.value)} data-testid="ap-fila-busca" />
-          <div className="g-opts">
+          <div className="g-row ap-fila-chips">
             {[['abertas', 'Abertas'], ['enviada', 'Aguardando análise'], ['publicada', 'Concluídas'], ['todas', 'Todas']].map(([k, l]) => (
-              <button key={k} type="button" className={filtro === k ? 'g-on' : ''} onClick={() => setFiltro(k)} data-testid={'ap-fila-f-' + k}>{l}</button>
+              <button key={k} type="button" className={'g-chipbtn' + (filtro === k ? ' g-on' : '')} onClick={() => setFiltro(k)} data-testid={'ap-fila-f-' + k}>{l}</button>
             ))}
           </div>
         </div>

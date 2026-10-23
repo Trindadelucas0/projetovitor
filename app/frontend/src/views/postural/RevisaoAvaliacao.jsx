@@ -83,7 +83,7 @@ export default function RevisaoAvaliacao({ id, onClose }) {
     <div className="ap-rev" data-testid="ap-revisao">
       <div className="g-row">
         <div>
-          <span className="g-eyebrow">{a.protocol_name}</span>
+          <span className="ap-vers-label">{a.protocol_name}</span>
           <h2 style={{ margin: '2px 0' }}>{student?.name}</h2>
           <p className="g-mut g-xs">
             {STATUS_PT[a.status]} · enviada em {dt(a.submitted_at)}
@@ -133,7 +133,7 @@ export default function RevisaoAvaliacao({ id, onClose }) {
             <Field label="Qualidade do registro">
               <div className="g-opts">
                 {DECISOES.map(([k, l]) => (
-                  <button key={k} type="button" className={cap.review_status === k ? 'g-on' : ''} onClick={() => decidir(k)}
+                  <button key={k} type="button" className={'g-opt' + (cap.review_status === k ? ' g-on' : '')} onClick={() => decidir(k)}
                     disabled={busy} data-testid={'ap-rev-dec-' + k}>{l}</button>
                 ))}
               </div>

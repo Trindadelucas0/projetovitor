@@ -79,7 +79,7 @@ function EditorEtapa({ step, editable, onSaved, onRemoved }) {
     </Field>
     <Field label="Tipo">
       <div className="g-opts">
-        {['foto', 'video'].map(k => <button key={k} type="button" className={v.capture_kind === k ? 'g-on' : ''} onClick={() => editable && set('capture_kind', k)} disabled={!editable}>{KIND_PT[k]}</button>)}
+        {['foto', 'video'].map(k => <button key={k} type="button" className={'g-opt' + (v.capture_kind === k ? ' g-on' : '')} onClick={() => editable && set('capture_kind', k)} disabled={!editable}>{KIND_PT[k]}</button>)}
       </div>
     </Field>
     {v.capture_kind === 'video' && <Field label="Repetições que o vídeo deve mostrar">
@@ -169,7 +169,7 @@ function Versao({ versionId, onChanged }) {
 
   return <div data-testid="ap-versao">
     <div className="g-row">
-      <span className="g-eyebrow">{v.protocol_name} · versão {v.version}</span>
+      <span className="ap-vers-label">{v.protocol_name} · versão {v.version}</span>
       <span className="g-sp" />
       <span className="g-pill">{v.status}{v.official ? ' · oficial' : ''}</span>
     </div>

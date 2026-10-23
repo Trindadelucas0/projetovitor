@@ -88,10 +88,14 @@ input,select,textarea,.ag input,.ag select,.ag textarea,.ag .g-in{font-size:16px
 :root[data-theme="light"] .adm-btn.ghost{background:var(--ag-card-2);color:var(--ag-txt)}
 /* Perfil Mulher: rosa no tema claro (os hardcodes de #20f51b acima vencem o token) */
 :root[data-theme="light"][data-palette="feminino"] .ag .g-btn{background:linear-gradient(135deg,#ff4fd8,#e13bc4);color:#11140a;box-shadow:0 8px 20px -10px #ff4fd899}
+/* A regra acima tem a mesma especificidade de .g-btn.g-ghost do tema claro e vem depois, entao vencia:
+   sem estas duas linhas TODO botao secundario e de perigo desta paleta era pintado como primario. */
+:root[data-theme="light"][data-palette="feminino"] .ag .g-btn.g-ghost{background:var(--ag-card);color:var(--ag-txt);border:1px solid var(--ag-line);box-shadow:none}
+:root[data-theme="light"][data-palette="feminino"] .ag .g-btn.g-danger{background:transparent;color:var(--ag-bad);border-color:#c0262d55;box-shadow:none}
 :root[data-theme="light"][data-palette="feminino"] .ag .g-chipbtn.g-on,:root[data-theme="light"][data-palette="feminino"] .ag .g-chip.g-on,:root[data-theme="light"][data-palette="feminino"] .g-chipbtn.on{background:#ff4fd8;color:#11140a}
 :root[data-theme="light"][data-palette="feminino"] .adm-side button.on{background:#ff4fd844;color:#7a1458}
 :root[data-theme="light"][data-palette="feminino"] #app .btn.primary,:root[data-theme="light"][data-palette="feminino"] #app .btn-primary{background:linear-gradient(135deg,#ff4fd8,#e13bc4);color:#11140a}
-:root[data-theme="light"][data-palette="feminino"] #app .chip.on,:root[data-theme="light"][data-palette="feminino"] #app .seg .on,:root[data-theme="light"][data-palette="feminino"] .adm-btn,:root[data-theme="light"][data-palette="feminino"] .adm-side button em,
+:root[data-theme="light"][data-palette="feminino"] #app .chip.on,:root[data-theme="light"][data-palette="feminino"] #app .seg .on,:root[data-theme="light"][data-palette="feminino"] .adm-btn:not(.ghost):not(.danger),:root[data-theme="light"][data-palette="feminino"] .adm-side button em,
 :root[data-theme="light"][data-palette="feminino"] .ag .g-badge,:root[data-theme="light"][data-palette="feminino"] .ag .g-cover .g-badge,:root[data-theme="light"][data-palette="feminino"] .ag .g-opt.g-on .g-tick,:root[data-theme="light"][data-palette="feminino"] .ag .g-tabs button.g-on,
 :root[data-theme="light"][data-palette="feminino"] .ag .g-week .g-d.g-done i,:root[data-theme="light"][data-palette="feminino"] [role="tab"].g-on{background:#ff4fd8;color:#11140a}
 :root[data-theme="light"][data-palette="feminino"] #agtab button.g-on,:root[data-theme="light"][data-palette="feminino"] #agtab button.g-go span{color:#7a1458}

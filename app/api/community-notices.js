@@ -63,15 +63,19 @@ async function recipientIds(notice, query = q) {
   [notice.tenant_id, notice.author_id])).rows.map(x => x.id)
 }
 
+/** Texto da notificacao: o lembrete usa o proprio recado quando existe (live que comecou). */
+const phaseBody = (notice, phase) => (phase === 'reminder' && notice.reminder_body) || notice.notification_body
+
 async function insertDeliveries(notice, phase, query = q) {
   const ids = await recipientIds(notice, query), delivered = []
   const key = `community-notice:${notice.id}:${phase}`
   const link = `/comunidade?tab=avisos&aviso=${notice.id}`
+  const body = phaseBody(notice, phase)
   for (const userId of ids) {
     const row = await query(`insert into notifications(user_id,kind,title,body,link,dedupe_key,image_url,community_notice_id)
       values($1,'community.notice',$2,$3,$4,$5,$6,$7)
       on conflict (user_id,dedupe_key) where dedupe_key is not null do nothing returning user_id`,
-    [userId, notice.title, notice.notification_body, link, key, notice.image_url || null, notice.id])
+    [userId, notice.title, body, link, key, notice.image_url || null, notice.id])
     if (row.rowCount) delivered.push(userId)
   }
   return delivered
@@ -82,7 +86,7 @@ async function sendPushes(userIds, notice, phase, push) {
   const link = `/comunidade?tab=avisos&aviso=${notice.id}`
   await Promise.all(userIds.map(userId => push(userId, {
     title: notice.title,
-    body: notice.notification_body,
+    body: phaseBody(notice, phase),
     image: notice.image_url || undefined,
     url: link,
     tag: `community-notice-${notice.id}-${phase}`
@@ -111,17 +115,18 @@ export async function syncLiveNotice(live, { query = q } = {}) {
   const destination = live.youtube_url || null
   const image = youtubeThumbnail(destination)
   const body = `Marcada para ${liveDateTime(live.starts_at)}. Acompanhe o card para acessar.`
+  const reminder = destination ? 'A live começou agora. Toque para assistir.' : 'A live começou agora.'
   if (current) {
     const notice = (await query(`update community_notices set author_id=$3,title=$4,notification_body=$5,destination_url=$6,
-      image_url=$7,image_source=$8,audience_scope='tenant_students',status='ativo',
+      image_url=$7,image_source=$8,audience_scope='tenant_students',status='ativo',reminder_body=$10,
       reminder_at=case when reminder_sent_at is null then $9 else reminder_at end,ended_at=null,updated_at=now()
-      where id=$1 and tenant_id=$2 returning *`, [current.id, live.tenant_id, live.created_by, live.title, body, destination, image, image ? 'youtube' : 'none', live.starts_at])).rows[0]
+      where id=$1 and tenant_id=$2 returning *`, [current.id, live.tenant_id, live.created_by, live.title, body, destination, image, image ? 'youtube' : 'none', live.starts_at, reminder])).rows[0]
     return { notice, delivered: [], created: false }
   }
 
   let notice = (await query(`insert into community_notices(tenant_id,author_id,title,notification_body,destination_url,image_url,image_source,
-    audience_scope,reminder_at,live_id) values($1,$2,$3,$4,$5,$6,$7,'tenant_students',$8,$9) returning *`,
-  [live.tenant_id, live.created_by, live.title, body, destination, image, image ? 'youtube' : 'none', live.starts_at, live.id])).rows[0]
+    audience_scope,reminder_at,live_id,reminder_body) values($1,$2,$3,$4,$5,$6,$7,'tenant_students',$8,$9,$10) returning *`,
+  [live.tenant_id, live.created_by, live.title, body, destination, image, image ? 'youtube' : 'none', live.starts_at, live.id, reminder])).rows[0]
   const delivered = await insertDeliveries(notice, 'initial', query)
   notice = (await query('update community_notices set recipient_count=$2 where id=$1 returning *', [notice.id, delivered.length])).rows[0]
   return { notice, delivered, created: true }

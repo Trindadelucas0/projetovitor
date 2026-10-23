@@ -36,7 +36,11 @@
   border: 1px solid var(--ag-line); border-radius: var(--ag-radius, 20px); overflow: hidden;
   background: var(--ag-card-2);
 }
-.ap-cap-prev img, .ap-cap-prev video { display: block; width: 100%; max-height: 52vh; object-fit: contain; background: #000; }
+/* A foto fica em pe e sobra faixa dos lados: no tema claro um fundo preto fixo vira moldura dura.
+   A faixa usa a propria superficie; o video mantem preto, que e o fundo esperado de um player. */
+.ap-cap-prev img, .ap-cap-prev video { display: block; width: 100%; max-height: 52vh; object-fit: contain; }
+.ap-cap-prev img { background: var(--ag-card-2); }
+.ap-cap-prev video { background: #000; }
 .ap-cap-check { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 .ap-cap-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .ap-cap-actions > * { flex: 1 1 46%; min-width: 150px; }
@@ -87,6 +91,10 @@
 .ap-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin: 12px 0; }
 .ap-filtros { flex-wrap: wrap; gap: 10px; align-items: center; }
 .ap-filtros .g-in { flex: 1 1 200px; }
+/* filtros da fila: chips em linha que quebram no celular, em vez da lista empilhada do g-opts */
+.ap-fila-chips { flex-wrap: wrap; }
+/* nome e versao do protocolo no painel: nao pode usar g-eyebrow, que o admin esconde (avadesk.css) */
+.ap-vers-label { font-size: 12.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ag-acc); }
 .ap-rev { display: grid; gap: 12px; }
 .ap-rev-nav { align-items: center; gap: 10px; flex-wrap: wrap; }
 .ap-rev-media { display: grid; gap: 8px; justify-items: start; }
