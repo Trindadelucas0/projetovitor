@@ -137,10 +137,13 @@ export default function Wizard() {
           </label>
         ))}
       </div>}
-      {(d.version?.general_instructions?.length > 0 || d.version?.clothing_note) && <details className="ap-step-details">
+      {/* A vestimenta fica FORA do bloco recolhido: é ela que decide se as fotos servem para a avaliação.
+          Recolhida, o aluno podia seguir vestido errado e perder as 18 etapas. Só as orientações gerais,
+          que repetem a lista acima em outras palavras, ficam sob demanda. */}
+      {d.version?.clothing_note && <div className="g-note" data-testid="ap-clothing"><strong>Vestimenta</strong><p>{d.version.clothing_note}</p></div>}
+      {d.version?.general_instructions?.length > 0 && <details className="ap-step-details">
         <summary>Ver orientações completas</summary>
-        {d.version?.general_instructions?.length > 0 && <ul className="ap-step-list" data-testid="ap-general">{d.version.general_instructions.map((t, k) => <li key={k}>{t}</li>)}</ul>}
-        {d.version?.clothing_note && <div className="g-note" data-testid="ap-clothing"><strong>Vestimenta</strong><p>{d.version.clothing_note}</p></div>}
+        <ul className="ap-step-list" data-testid="ap-general">{d.version.general_instructions.map((t, k) => <li key={k}>{t}</li>)}</ul>
       </details>}
       <p className="g-mut g-sm">Confira cada imagem antes de usar.</p>
     </>, <Btn onClick={() => vai(1)} disabled={itens.length > 0 && !todos} data-testid="ap-prep-done">

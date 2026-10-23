@@ -230,7 +230,7 @@ body:has(.ag),html:has(.ag){background:var(--ag-bg)!important}
 .ag .g-rank.g-me{background:#20f51b12;border-radius:12px;padding:10px 8px}
 .ag .g-pos{width:34px;font-weight:850;color:var(--ag-acc);text-align:center}
 /* ajustes pós-screenshot: alvos de toque e abas */
-.ag .g-link{min-height:44px;display:inline-flex;align-items:center}
+.ag .g-link{min-height:44px;display:inline-flex;align-items:center;gap:8px}
 .ag .g-tabs button{white-space:nowrap;font-size:13px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center}
 
 .g-grp{margin-top:8px;border-left:4px solid #8b7cf6;background:#16142a;border-radius:6px 12px 12px 6px;padding:8px 10px;font-size:13px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}

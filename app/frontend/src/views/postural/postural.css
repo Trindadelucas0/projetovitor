@@ -17,6 +17,8 @@
 .ap-step-list { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
 .ap-step-list li { line-height: 1.45; }
 .ap-step-media { display: grid; gap: 8px; }
+/* .icn e display:block, entao dentro de um <p> o icone joga o texto para a linha de baixo */
+.ap-step-cam { display: flex; align-items: center; gap: 6px; }
 .ap-step-ref {
   position: relative; padding: 0; border: 1px solid var(--ag-line); border-radius: var(--ag-radius, 20px);
   overflow: hidden; background: var(--ag-card-2); cursor: zoom-in; display: block; width: 100%;
@@ -44,6 +46,9 @@
 .ap-cap-check { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 .ap-cap-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .ap-cap-actions > * { flex: 1 1 46%; min-width: 150px; }
+/* No celular os dois botoes lado a lado nao cabem: "Escolher arquivo" com icone estourava a largura.
+   Abaixo de 420px cada acao ocupa a linha inteira, o que tambem aumenta o alvo de toque. */
+@media (max-width: 420px) { .ap-cap-actions > * { flex-basis: 100%; } }
 .ap-cap-send { display: grid; gap: 6px; }
 .ap-cap label.g-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
 .ap-cap label.g-disabled { opacity: .5; pointer-events: none; }

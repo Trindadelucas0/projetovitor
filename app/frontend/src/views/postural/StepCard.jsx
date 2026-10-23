@@ -77,7 +77,7 @@ export default function StepCard({ assessmentId, step, capture, question, onSave
         </div>}
       </div>}
 
-      {step.camera_position && <p className="g-mut g-xs"><Icon name="info" /> {CAMERA_PT[step.camera_position]}</p>}
+      {step.camera_position && <p className="g-mut g-xs ap-step-cam"><Icon name="info" /> {CAMERA_PT[step.camera_position]}</p>}
       {step.camera_note && <p className="g-mut g-sm">{step.camera_note}</p>}
 
       {Array.isArray(step.instructions) && step.instructions.length > 0 && <>
