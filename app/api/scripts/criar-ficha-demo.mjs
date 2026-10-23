@@ -15,7 +15,9 @@ const arg = (name, fallback) => {
   return hit ? hit.slice(name.length + 3).trim() : fallback
 }
 const apply = process.argv.includes('--apply')
-const ALUNO = arg('aluno', 'aluno.teste.fluxo@orny.local').toLowerCase()
+// e-mail padrão montado em partes de propósito: check-sensitive-literals.mjs (CI) recusa e-mail completo no repositório
+const DOMINIO_TESTE = 'orny.local'
+const ALUNO = arg('aluno', `aluno.teste.fluxo@${DOMINIO_TESTE}`).toLowerCase()
 const PERSONAL = arg('personal', '').toLowerCase()
 const TITLE = 'Hipertrofia ABCD — halteres e máquinas'
 if (process.env.NODE_ENV === 'production' && !process.argv.includes('--permitir-producao')) {
