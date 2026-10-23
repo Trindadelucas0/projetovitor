@@ -1,6 +1,6 @@
 {
   "name": "gym-api",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "private": true,
   "type": "module",
   "main": "server.js",
@@ -16,6 +16,7 @@
     "test:plano-unico": "node --test test/ficha-dias-video.test.mjs",
     "test:plano-unico:integration": "node test/plano-unico.integration.mjs",
     "test:beneficios": "node --test test/beneficios-regras.test.mjs",
+    "test:perfil": "node --test test/profile-choice.test.mjs",
     "test:beneficios:integration": "node test/beneficios.integration.mjs",
     "dev": "node server.js",
     "create-admin": "node scripts/create-admin.mjs",

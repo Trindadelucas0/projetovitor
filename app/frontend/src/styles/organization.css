@@ -6,8 +6,7 @@
 .org-details > summary::after { content: '+'; margin-left: auto; color: var(--ag-mut); }
 .org-details[open] > summary::after { content: '−'; }
 .org-section { margin-top: 24px; }
-.org-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 16px 0; }
-.org-toolbar > * { min-width: 0; }
+
 .org-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
 .org-back { margin-bottom: 16px; }
 .org-pro-nav .org-brand { display: none; }
@@ -23,17 +22,10 @@
   body:has(.org-pro-nav) .ag { max-width: 1000px; }
 }
 @media (max-width: 600px) {
-  .org-toolbar .g-btn { width: 100%; }
   .org-tabs > button { flex: 1 1 auto; }
   .adm-tools { flex-wrap: wrap; }
   .adm-tools input { max-width: 100%; min-width: 0; }
   .org-mobile-sort { display: flex; gap: 8px; align-items: center; margin: 12px 0; }
-  .adm-tbl { min-width: 0; width: 100%; }
-  .adm-tbl thead { display: none; }
-  .adm-tbl tr { display: block; border-bottom: 1px solid var(--ag-line); padding: 12px 0; }
-  .adm-tbl td { display: flex; gap: 12px; justify-content: space-between; border: 0; white-space: normal; overflow-wrap: anywhere; }
-  .adm-tbl td::before { content: attr(data-label); font-weight: 600; flex: 0 0 35%; }
-  .adm-drawer { width: 100%; max-width: 100%; }
 }
 
 @media(min-width:601px){.org-mobile-sort{display:none}}
@@ -57,7 +49,7 @@
   .ag .g-tabs > button { flex-basis:calc(50% - 8px); }
   .com-feed-tools .g-btn { width:100%; }
   .adm-side { right:16px; max-width:360px; }
-  .wb-days .wb-day { flex:1 1 100px; }
+
 }
 
 .org-back{display:block}.ag [data-testid="theme-picker"] .g-chipbtn{padding:0 8px;white-space:nowrap;word-break:normal;font-size:13px;min-width:0}
@@ -70,7 +62,6 @@
 .library-filters select { width:100%; min-width:0; min-height:44px; }
 
 .org-mobile-more{display:none}
-@media(max-width:600px){.adm-tbl tr:not(.org-expanded) td:nth-child(n+4):not(.org-mobile-more){display:none}.adm-tbl td.org-mobile-more{display:flex;justify-content:flex-end}.adm-tbl td.org-mobile-more::before{display:none}.adm-tbl-wrap{min-width:0;overflow-x:hidden}}
 
 /* V4.3 · Treinos (redesenho): hero do treino ativo + seções claras, mobile first */
 .ag.tr-page .tr-hero{margin-top:12px;padding:20px 18px;display:grid;gap:8px}

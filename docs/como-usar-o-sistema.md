@@ -2,6 +2,14 @@
 
 Este guia descreve as ações do aplicativo de um personal e seus alunos. O nome Projeto Vitor identifica o produto nesta documentação; a marca mostrada nas telas ainda é a anterior nesta cópia. Consulte o [PRD e App Flow](PRD-PROJETO-VITOR.md) para a jornada completa e a [documentação oficial](../app/DOCUMENTACAO-SISTEMA.md) para o comportamento confirmado e os limites de validação.
 
+## Perfil e atribuição de personal
+
+1. No cadastro ou no primeiro acesso de uma conta antiga, escolha **Menino**, **Menina** ou **Outro**. Em **Outro**, escolha roxo, azul ou laranja.
+2. Em **Menina**, a preferência **Prefiro ser atendida por uma personal mulher** é opcional. Ela orienta a atribuição e não escolhe uma profissional automaticamente.
+3. Depois do cadastro, o aluno fica **Aguardando personal**.
+4. O administrador abre **Administração → Alunos**, usa o filtro **Aguardando personal**, abre a pessoa, escolhe o profissional em **Treino atual e vínculos** e toca em **Atribuir**.
+5. Para trocar um vínculo existente, o administrador usa **Detalhes avançados → Histórico de treinos e vínculos → Transferir** e informa o motivo. O personal não transfere aluno alterando o perfil.
+
 ## Primeiro uso da base local
 
 A base local começa com **zero alunos** e duas contas separadas. O administrador entra com a conta definida em `ADMIN_EMAIL` e abre somente o painel administrativo. O personal principal entra com a conta definida em `PERSONAL_PRINCIPAL_EMAIL`, troca a senha provisória no primeiro acesso e abre a área profissional em `/pro`. Esses valores ficam somente no `.env`. A publicação na VPS e a contratação do plano exigem validação própria antes de receber alunos reais.

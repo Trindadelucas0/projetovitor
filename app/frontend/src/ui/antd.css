@@ -1,0 +1,220 @@
+/* Ant Design dentro do ORNY. Carregado só com os chunks que usam antd.
+   1) variáveis de cor que não existem no CSS legado (preenchimento, texto sobre o preenchimento, item ativo do menu);
+   2) neutralizadores dos resets globais que vencem o :where() do antd (index.css, guided.css .ag, avadesk.css);
+   3) estilos das pontes (shell do admin, StatusTag, AdmTable no celular). Cores = as de hoje. */
+:root{--orny-fill:#20f51b;--orny-fill-hover:#19cb16;--orny-on:#000;--orny-sel-bg:#20f51b1a;--orny-sel-txt:#20f51b;--orny-side:#0f0f11;--orny-drawer:#111113;--orny-hover:#ffffff08;--orny-mtop:#0b0b0cf0}
+:root[data-palette="feminino"],:root[data-palette="rosa"]{--orny-fill:#ff4fd8;--orny-fill-hover:#e13bc4;--orny-sel-bg:#ff4fd818;--orny-sel-txt:#ff4fd8}
+:root[data-theme="light"]{--orny-on:#11140a;--orny-sel-bg:#20f51b44;--orny-sel-txt:#2f4a00;--orny-side:#fff;--orny-drawer:#fff;--orny-hover:#14160f0a;--orny-mtop:#f4f5f0f0}
+:root[data-theme="light"][data-palette="feminino"],:root[data-theme="light"][data-palette="rosa"]{--orny-sel-bg:#ff4fd844;--orny-sel-txt:#7a1458}
+
+/* ---------- neutralizadores ---------- */
+.orny-antd{font-family:var(--font-body);color:var(--ag-txt)}
+.orny-antd .ant-btn{font-family:var(--font-head);letter-spacing:0}             /* botões em Montserrat, como os de hoje (orny.css) */
+.orny-antd .ant-btn .anticon{font-size:1em}
+.orny-antd a.ant-btn{text-decoration:none}
+.ag .orny-antd a.ant-btn-variant-solid.ant-btn-color-primary,.orny-antd a.ant-btn-variant-solid.ant-btn-color-primary{color:var(--orny-on)}   /* .ag a {color:acc} vencia */
+.ag .orny-antd a.ant-btn-variant-outlined,.ag .orny-antd a.ant-btn-variant-filled{color:var(--ag-txt)}
+.orny-antd .ant-typography{color:inherit}
+.orny-antd h1.ant-typography,.orny-antd h2.ant-typography,.orny-antd h3.ant-typography,.orny-antd h4.ant-typography,.orny-antd h5.ant-typography{font-family:var(--font-head);color:var(--ag-txt)}
+.orny-antd .ant-card-head-title{font-family:var(--font-head)}
+.orny-antd .ant-input,.orny-antd .ant-picker input,.orny-antd .ant-select-selection-search-input,.orny-antd .ant-input-number-input{letter-spacing:normal}
+.ag .orny-antd ul.ant-list-items,.orny-antd ul.ant-list-items{padding:0;margin:0}
+.orny-antd .ant-tag{margin-inline-end:0}
+.orny-antd .ant-empty-description{color:var(--ag-dim)}
+.orny-antd .ant-statistic-content{font-family:var(--font-head);font-weight:800}
+.orny-antd .ant-alert{border-radius:14px}
+.orny-antd :where(.ant-btn,.ant-input,.ant-picker,.ant-select,.ant-segmented-item,.ant-tabs-tab-btn,.ant-menu-item,.ant-switch):focus-visible{outline:2.5px solid var(--ag-acc);outline-offset:2px}
+
+/* ---------- StatusTag (mesmas cores do .adm-pill) ---------- */
+.orny-tag.ant-tag{border:0;border-radius:99px;font-weight:700;font-size:11.5px;line-height:1.6;padding:1px 9px;background:#ffffff10;color:var(--ag-mut);white-space:nowrap}
+:root[data-theme="light"] .orny-tag.ant-tag{background:#14160f10}
+.orny-tag.ant-tag.orny-tag-ok{background:#20f51b1c;color:var(--ag-acc)}
+:root[data-palette="feminino"] .orny-tag.ant-tag.orny-tag-ok,:root[data-palette="rosa"] .orny-tag.ant-tag.orny-tag-ok{background:#ff4fd81c;color:var(--ag-acc)}
+:root[data-theme="light"] .orny-tag.ant-tag.orny-tag-ok{background:#20f51b55;color:#2f4a00}
+:root[data-theme="light"][data-palette="feminino"] .orny-tag.ant-tag.orny-tag-ok,:root[data-theme="light"][data-palette="rosa"] .orny-tag.ant-tag.orny-tag-ok{background:#ff4fd81c;color:var(--ag-acc)}
+.orny-tag.ant-tag.orny-tag-warn{background:#ffb54722;color:var(--ag-warn)}
+.orny-tag.ant-tag.orny-tag-bad{background:#ff6b6b22;color:var(--ag-bad)}
+
+/* ---------- shell do admin (Layout/Sider/Menu) ---------- */
+.adm.adm-shell{display:flex;flex-direction:row;grid-template-columns:none;background:var(--ag-bg)}
+.adm-shell>.ant-layout{background:var(--ag-bg);min-width:0}
+.adm-shell .adm-sider.ant-layout-sider{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--ag-line);background:var(--orny-side)}
+.adm-shell .adm-sider .ant-layout-sider-children{padding:18px 12px 24px;height:auto;min-height:100%}
+.adm-nav .adm-brand{display:flex;align-items:center;gap:8px}
+.adm-nav .ant-menu{background:transparent;border-inline-end:0!important;font-family:var(--font-head)}
+.adm-nav .ant-menu-item-group-title{text-transform:uppercase;letter-spacing:.08em;font-weight:700;padding:14px 12px 6px!important;font-family:var(--font-body)}
+.adm-nav .ant-menu-item{display:flex;align-items:center;height:auto!important;min-height:42px;line-height:1.3!important;padding-block:10px!important;white-space:normal;font-weight:600;width:100%}
+.adm-nav .ant-menu-item .ant-menu-title-content{white-space:normal;overflow:visible;text-overflow:clip;display:flex;align-items:center;gap:8px;min-width:0;flex:1}
+.adm-nav .ant-menu-item .adm-nav-ic{display:inline-flex;width:18px;flex:none;font-size:16px}
+.adm-nav .ant-menu-item .adm-nav-ic svg{width:18px;height:18px}
+.adm-nav .ant-menu-item-selected{font-weight:800}
+.adm-nav .adm-nav-label{flex:1;min-width:0;overflow-wrap:anywhere}
+.adm-nav .ant-badge .ant-badge-count{box-shadow:none;font-size:11px;font-family:var(--font-body);background:var(--orny-fill);color:var(--orny-on)}
+.adm-nav .adm-nav-conta{margin-top:10px}
+.adm-mnav .ant-drawer-body{padding:16px 12px 32px;background:var(--orny-side)}
+.adm-mnav .ant-drawer-content{background:var(--orny-side)}
+.adm-shell .adm-main{flex:1;min-width:0}
+.adm-shell .adm-mtop .ant-btn{min-width:44px;min-height:44px}
+@media (max-width:900px){.adm-shell .adm-mtop{display:flex}}
+
+/* ---------- PageHeader ---------- */
+.adm-ph .ant-breadcrumb{margin-bottom:6px}
+.adm-ph .ant-breadcrumb ol{margin:0;padding:0}
+.adm-ph .ant-breadcrumb-link button{background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer;text-decoration:underline}
+.adm-ph h1.ant-typography{flex:1;margin:0;font-size:24px;line-height:1.2;font-weight:800}
+.adm-ph .adm-ph-desc{margin:6px 0 0}
+
+/* ---------- SubTabs ---------- */
+.adm-subtabs.ant-tabs{display:flex;flex-direction:column;flex-wrap:nowrap;gap:0;margin:0 0 14px;min-width:0}
+.adm-subtabs .ant-tabs-nav{margin-bottom:0;overflow:hidden}
+.adm-subtabs .ant-tabs-tab{font-weight:600;padding:10px 2px}
+.adm-subtabs .ant-tabs-tab-btn{font-family:var(--font-head)}
+
+/* ---------- AdmTable ---------- */
+.adm-table .ant-table{border:1px solid var(--ag-line);border-radius:14px;overflow:hidden}
+.adm-table .ant-table-thead>tr>th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;white-space:nowrap}
+.adm-table .ant-table-tbody>tr:last-child>td{border-bottom:0}
+.adm-table .ant-table-tbody>tr.adm-row-click{cursor:pointer}
+.adm-table .ant-table-tbody>tr>td{vertical-align:top}
+.adm-table .ant-pagination{margin:10px 0 0!important}
+.adm-table-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.adm-table-tools .adm-table-search{flex:1;min-width:200px;max-width:360px}
+.adm-table-count{color:var(--ag-mut);font-size:12.5px}
+.adm-cards{display:grid;gap:8px}
+.adm-cards .adm-card-row{background:var(--ag-card);border:1px solid var(--ag-line);border-radius:14px;padding:12px 14px;text-align:left;width:100%;color:var(--ag-txt);font:inherit;cursor:default}
+.adm-cards .adm-card-row.adm-row-click{cursor:pointer}
+.adm-cards .adm-card-row:focus-visible{outline:2.5px solid var(--ag-acc);outline-offset:2px}
+.adm-cards dl{display:grid;grid-template-columns:minmax(90px,35%) 1fr;gap:6px 10px;margin:0;font-size:13.5px}
+.adm-cards dt{color:var(--ag-dim);font-weight:600}
+.adm-cards dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.adm-cards .adm-card-more{margin-top:8px;display:flex;justify-content:flex-end}
+@media (max-width:600px){.adm-table-tools .adm-table-search{max-width:none;min-width:0;flex-basis:100%}}
+
+/* ---------- AdmDrawer ---------- */
+.orny-antd.ant-drawer .ant-drawer-header{border-bottom:1px solid var(--ag-line)}
+.orny-antd.ant-drawer .ant-drawer-title{font-family:var(--font-head);font-size:18px;font-weight:800}
+.orny-antd.ant-drawer .ant-drawer-content{background:var(--orny-drawer)}
+.orny-antd.ant-drawer .ant-drawer-body{padding:20px}
+.orny-antd.ant-drawer .ant-drawer-body h2{margin:0 0 6px}
+
+/* ---------- telas da Fase 2 ---------- */
+.orny-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr));gap:12px}
+.orny-grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:12px}
+.orny-sec-title.ant-typography{font-size:13px!important;letter-spacing:.06em;text-transform:uppercase;color:var(--ag-dim)!important;margin:20px 0 10px!important;font-family:var(--font-body)!important;font-weight:700!important}
+.orny-task.ant-card{cursor:pointer;height:100%;background:#ffffff05;border-radius:14px;transition:border-color .15s}
+.orny-task.ant-card:hover,.orny-task.ant-card:focus-visible{border-color:var(--ag-acc)}
+.orny-task .ant-card-body{display:flex;flex-direction:column;gap:6px;padding:14px}
+.orny-task .orny-task-n{font-size:26px;font-weight:800;font-family:var(--font-head);color:var(--ag-acc);line-height:1.1}
+.orny-task.orny-zero .orny-task-n{color:var(--ag-dim)}
+.orny-task b{font-size:15px}
+.orny-task small{color:var(--ag-mut)}
+.orny-muted{color:var(--ag-mut)}
+.orny-dim{color:var(--ag-dim)}
+.orny-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.orny-stack{display:grid;gap:12px}
+.orny-mono{font-family:ui-monospace,monospace;font-size:13px;word-break:break-all;user-select:all}
+.orny-list{list-style:none;margin:0;padding:0}
+.orny-list-item{padding:10px 0;border-bottom:1px solid var(--ag-line)}
+.orny-list-item:last-child{border-bottom:0}
+.orny-csv-pre{max-height:140px;overflow:auto;background:var(--ag-card-2);border-radius:10px;padding:8px 10px;font-size:12px;margin:8px 0 0;white-space:pre-wrap}
+
+/* o <App> do antd aplica line-height/font/color próprios no wrapper; as telas antigas dentro dele seguem o tema do app */
+.orny-antd.ant-app{line-height:inherit;font-family:inherit;font-size:inherit;color:inherit}
+/* input interno do antd (dentro de affix-wrapper / select / picker) não herda o visual de .adm-tools input / .adm-in */
+.orny-antd .ant-input-affix-wrapper>input.ant-input,.orny-antd .ant-picker-input>input,.orny-antd .ant-select input{background:transparent;border:0;min-height:0;padding:0;border-radius:0;min-width:0;max-width:none;box-shadow:none}
+.orny-antd .ant-input-number-input{background:transparent;border:0;border-radius:0;box-shadow:none}
+/* SubTabs: as abas quebram linha (como os botões antigos) em vez de rolar escondidas atrás do "…" */
+.adm-subtabs .ant-tabs-nav-wrap{overflow:visible}
+.adm-subtabs .ant-tabs-nav-wrap::before,.adm-subtabs .ant-tabs-nav-wrap::after,.adm-subtabs .ant-tabs-nav-operations,.adm-subtabs .ant-tabs-ink-bar{display:none!important}
+.adm-subtabs .ant-tabs-nav-list{flex-wrap:wrap;transform:none!important;column-gap:24px}
+.adm-subtabs .ant-tabs-nav-list>.ant-tabs-tab+.ant-tabs-tab{margin-inline-start:0}
+.adm-subtabs .ant-tabs-tab.ant-tabs-tab-active{box-shadow:inset 0 -2px 0 var(--ag-acc)}
+/* título do PageHeader não quebra no meio da palavra; ações descem quando não cabem */
+.adm-ph .adm-ph-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+.adm-ph h1.ant-typography{flex:1 1 12ch;overflow-wrap:normal;word-break:normal;min-width:min(100%,12ch)}
+/* cartões / campos das telas da fase 2 */
+.orny-card.ant-card,.orny-antd .orny-card.ant-collapse{background:var(--ag-card);border:1px solid var(--ag-line);border-radius:16px}
+.orny-card.ant-card .ant-card-head{border-bottom:1px solid var(--ag-line);min-height:52px;padding:0 16px}
+.orny-card.ant-card .ant-card-head-title{font-family:var(--font-head);font-weight:800;font-size:16px;white-space:normal}
+.orny-card.ant-card .ant-card-body{padding:16px}
+.orny-field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.orny-field>span:first-child{font-size:12.5px}
+.orny-hint.ant-typography{font-size:12.5px;margin:0 0 10px}
+.orny-slot{padding:4px 0}
+.orny-agenda .ant-list-item{padding:12px 0}
+.orny-antd .ant-collapse>.ant-collapse-item>.ant-collapse-header{font-weight:700}
+.orny-xs{font-size:12px}
+.orny-warn{color:var(--ag-warn)}
+.orny-link{background:none;border:0;padding:0;font:inherit;color:var(--ag-acc);text-decoration:underline;cursor:pointer;min-height:0}
+.orny-antd .ant-form-item-extra{font-size:12px;color:var(--ag-mut)}
+.orny-antd .ant-form-item{margin-bottom:14px}
+/* Alvos de toque: no celular os botões "small" ficam com 40px (mesma altura dos controles). */
+@media (max-width: 640px){
+  .orny-antd .ant-btn.ant-btn-sm{height:40px;padding-inline:12px}
+}
+
+/* Fase 3 · avisos do lib/dialog.js desenhados com Alert (ui/AntDialogHost.jsx); mesma posição do .ag-notes */
+.orny-notes{position:fixed;left:12px;right:12px;bottom:calc(24px + env(safe-area-inset-bottom));z-index:1100;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.orny-notes .orny-note{pointer-events:auto;max-width:520px;width:100%;box-shadow:0 10px 30px -10px #000c}
+
+/* Fase 3 · painel do usuário (UserPanel) na gaveta antd — reaproveita .upn-* do v42.css */
+.upn-drawer .ant-drawer-body{padding:0}
+.upn-drawer .ant-drawer-header{padding:12px 16px}
+.upn-head-antd{display:flex;gap:10px;align-items:flex-start;width:100%}
+.upn-head-antd h2{margin:0;font-size:20px;line-height:1.2;word-break:break-word}
+.upn-head-antd p{margin:2px 0 0;opacity:.75;font-size:13px;font-weight:400;word-break:break-all}
+.upn-head-antd .upn-close{margin-left:auto;flex:none;width:44px;height:44px}
+.upn .ant-btn{min-height:44px}
+.upn-tools{margin-top:6px}
+.upn-adv .ant-collapse-header{min-height:44px;align-items:center!important;padding:10px 16px!important}
+.upn-adv .ant-collapse-content-box{padding:0 16px 14px!important}
+
+/* Fase 3/4 · primitivas de ui/kit.jsx */
+.orny-tools{margin:0 0 12px}
+.orny-card{margin-bottom:12px}
+.orny-warn{margin:8px 0}
+.orny-field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;min-width:0}
+.orny-field-l{font-size:12px;color:var(--ag-mut)}
+.orny-field-h{font-size:12px}
+.orny-field-e{font-size:12px;color:#ff6b6b}
+.orny-warn-text{color:#ffb547}
+:root[data-theme="light"] .orny-warn-text{color:#8a4b00}
+.orny-stable{margin-top:6px}
+.orny-item{display:block;padding:10px 0;border-bottom:1px solid var(--ag-line)}
+.orny-item:last-child{border-bottom:0}
+.orny-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+@media (max-width:600px){.orny-grid{grid-template-columns:minmax(0,1fr)!important}}
+.orny-kpi{cursor:pointer;text-align:left}
+.orny-kpi:focus-visible{outline:2px solid var(--ag-acc);outline-offset:3px}
+.orny-kpi .ant-statistic-title{color:var(--ag-mut);font-size:12.5px;margin-bottom:2px}
+.orny-kpi .ant-statistic-content{font-size:28px;font-weight:800;font-family:Montserrat,Inter,sans-serif}
+.orny-kpi small{display:block;color:var(--ag-dim);font-size:11.5px;margin-top:4px}
+.orny-native-sel{min-height:36px;padding:4px 32px 4px 11px;border-radius:8px;border:1px solid var(--ag-line);background:var(--ag-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;color:var(--ag-txt);font:inherit;font-size:14px;appearance:none;-webkit-appearance:none}
+.orny-native-sel:hover,.orny-native-sel:focus{border-color:var(--ag-acc);outline:none}
+.orny-collapse.ant-collapse{margin-top:16px}
+.mg-chart .ant-collapse-header{min-height:44px;align-items:center!important}
+.ap-solicitar.ant-card{display:block}.ap-solicitar .ant-card-body{display:grid;gap:10px}
+.ap-list .ant-card-body{padding:4px 12px}
+.ap-list .g-li{display:flex;width:100%;align-items:center;gap:12px;padding:12px 0;background:none;border:0;border-bottom:1px solid var(--ag-line);color:inherit;text-align:left;cursor:pointer;font:inherit}
+.ap-list .g-li:last-child{border-bottom:0}
+.ap-kpi .ant-statistic-content{font-size:22px}
+.ap-filtros{margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.ap-filtros .ant-input-affix-wrapper{flex:1 1 220px;max-width:320px}
+@media(max-width:640px){.ap-filtros .ant-input-affix-wrapper{max-width:none}}
+.ap-seg-scroll{max-width:100%;overflow-x:auto;scrollbar-width:none}
+.ap-seg-scroll::-webkit-scrollbar{display:none}
+.ap-editor.ant-card{display:block;margin-top:10px}.ap-editor .ant-card-body{display:grid;gap:10px}
+.ap-proto.ant-card{margin-top:10px}
+.ap-proto-vers{flex-wrap:wrap;gap:6px;margin-top:8px}
+/* Auditoria: filtros em grade (quebra sozinha no celular) */
+.logs-filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0 12px;align-items:end}
+.logs-filters .orny-field{margin-bottom:12px}
+.logs-filters-act{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:12px;min-height:44px}
+/* Agenda do personal: dias da semana e blocos de 15 min (grade do PC 0f68160 em antd) */
+.ag-day{min-width:48px}
+.ag-day-off{opacity:.7}
+.ag-day-has{border-color:var(--ag-acc)!important;box-shadow:0 0 0 1px var(--ag-acc)}
+.ag-blocks{display:grid;gap:10px;margin-bottom:10px}
+.ag-hour{font-size:12px;margin-bottom:4px}
+.ag-block{min-width:96px}
+.ag-copy.ant-btn{white-space:normal;height:auto;min-height:24px;padding-block:4px;max-width:100%;text-align:left}

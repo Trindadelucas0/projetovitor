@@ -19,7 +19,9 @@ import { useUnsavedGuard, ask, notify, notifyError } from '../../lib/dialog.js'
 import { problemsOf, weekdayClash, anchorServerProblems } from '../../lib/workout-validate.js'
 import WizardShell from '../../components/WizardShell.jsx'
 import Icon from '../../components/Icon.jsx'
-import { Btn } from '../app/kit.jsx'
+import { Steps } from 'antd'
+import { Btn } from '../../ui/gkit.jsx'
+import AntProvider from '../../ui/AntProvider.jsx'   // Fase 5: Steps, abas de dia editáveis e gaveta da biblioteca em antd
 import { useBuilderState, workoutFromSaved, MAX_DAYS } from './useBuilderState.js'
 import { cleanDays } from './shape.js'
 import StepIdentity from './StepIdentity.jsx'
@@ -270,15 +272,18 @@ export default function WorkoutBuilder() {
   ].join(' · ')
 
   return (
-    <WizardShell eyebrow={eyebrow} title={TITULOS[step]} step={step} total={3}
-      onBack={voltar} onJump={pular} labels={ETAPAS} footer={rodape()} testid="builder" className="wb">
+    <AntProvider className="gk-app"><WizardShell eyebrow={eyebrow} title={TITULOS[step]} step={step} total={3}
+      onBack={voltar} onJump={pular} labels={null} footer={rodape()} testid="builder" className="wb">
+
+      <Steps className="wb-steps" size="small" current={step} onChange={pular} responsive={false} aria-label="Etapas"
+        items={ETAPAS.map((title, i) => ({ title, 'aria-label': `${i + 1}. ${title}`, status: i < step ? 'finish' : i === step ? 'process' : 'wait' }))} />
 
       {rascunho && (
         <div className="wb-rascunho" role="status">
           <Icon name="history" />
           <span className="g-sp">Há um rascunho deste treino salvo neste aparelho ({quando(rascunho.at)}).</span>
-          <button type="button" className="g-link" onClick={() => { dx({ type: 'applyDraft', w: rascunho.w, day: rascunho.day }); setRascunho(null) }}>Retomar</button>
-          <button type="button" className="g-link" onClick={limpaRascunho}>Descartar</button>
+          <Btn variant="tertiary" onClick={() => { dx({ type: 'applyDraft', w: rascunho.w, day: rascunho.day }); setRascunho(null) }}>Retomar</Btn>
+          <Btn variant="tertiary" onClick={limpaRascunho}>Descartar</Btn>
         </div>
       )}
 
@@ -301,7 +306,7 @@ export default function WorkoutBuilder() {
         <StepReview st={st} students={students} problemas={mostrados}
           onIr={irProblema} onEditarDia={i => { vaPara(1); dx({ type: 'pickDay', day: i }) }} />
       )}
-    </WizardShell>
+    </WizardShell></AntProvider>
   )
 }
 

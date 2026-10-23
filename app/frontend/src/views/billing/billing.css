@@ -82,3 +82,4 @@
 .bl-feats{align-content:start}
 @media (max-width:359px){.bl-grid{grid-template-columns:1fr}.bl-full{grid-column:auto}.bl-coupon{display:grid;grid-template-columns:1fr}.bl-coupon input{min-width:0}}
 @media (min-width:900px){.bl-cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.bl-sub:empty{display:none}

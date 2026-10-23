@@ -14,6 +14,7 @@ import { groupPt, plural } from './HomeWidgets.jsx'
 import { useNavigationAccess } from '../../components/NavigationAccess.jsx'
 import './guided.css'
 import './lote7.css'
+import { Btn, Note, Chips } from '../../ui/gkit.jsx'
 
 export const PERIODOS = [[7, '7 dias'], [30, '30 dias'], [90, '3 meses'], [180, '6 meses'], [365, '1 ano'], [0, 'Tudo']]
 const DOW = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
@@ -46,10 +47,10 @@ export default function Estatisticas() {
   const [retry, setRetry] = useState(0)
   const [d, setD] = useState(null), [ex, setEx] = useState(null), [metric, setMetric] = useState('e1rm'), [gm, setGm] = useState('sets'), [trend, setTrend] = useState('n')
   useEffect(() => { let live = true; setD(null); sessionStorage.setItem('avagym_st_dias', dias); G.stats(dias).then(r => { if (!live) return; setD(r); setEx(x => r.exercises.some(e => e.exercise_id === x) ? x : r.exercises[0]?.exercise_id || null) }).catch(() => { if (live) setD(false) }); return () => { live = false } }, [dias, retry])
-  const chips = <div className="g-scrollx st-chips" role="tablist" aria-label="Período">{PERIODOS.map(([v, l]) => <button key={v} role="tab" aria-selected={dias === v} className={'g-chipbtn' + (dias === v ? ' g-on' : '')} onClick={() => setDias(v)} data-testid={'st-per-' + v}>{l}</button>)}</div>
-  const top = <><button className="g-link st-back" onClick={() => nav("/progresso")} aria-label="Voltar ao Progresso"><Icon name="chevronLeft" /> Progresso</button>
+  const chips = <div className="st-chips"><Chips items={PERIODOS} value={dias} onChange={setDias} testid={v => 'st-per-' + v} ariaLabel="Período" /></div>
+  const top = <><Btn variant="tertiary" className="st-back" onClick={() => nav("/progresso")} aria-label="Voltar ao Progresso"><Icon name="chevronLeft" /> Progresso</Btn>
     <span className="g-eyebrow">Progresso</span><h1>Estatísticas detalhadas</h1>{chips}</>
-  if (d === false) return <div className="ag" data-testid="estatisticas">{top}<p className="g-mut" style={{ marginTop: 12 }}>Não foi possível carregar as estatísticas.</p><button className="g-btn" onClick={() => setRetry(v => v + 1)}>Tentar novamente</button></div>
+  if (d === false) return <div className="ag" data-testid="estatisticas">{top}<p className="g-mut" style={{ marginTop: 12 }}>Não foi possível carregar as estatísticas.</p><Btn onClick={() => setRetry(v => v + 1)}>Tentar novamente</Btn></div>
   if (!d) return <div className="ag" data-testid="estatisticas">{top}<Spin /></div>
   const k = d.kpis, e = d.exercises.find(x => x.exercise_id === ex)
   const wk = d.weeks.map(w => ({ ...w, label: dm(w.wk) }))
@@ -70,7 +71,7 @@ export default function Estatisticas() {
       <Kpi v={ton(k.vol)} l="Volume" s={cmp?.vol == null ? `média ${ton(k.avg_volume)} por treino` : `${cmp.vol >= 0 ? '+' : ''}${cmp.vol}% vs. período anterior`} testid="kpi-vol" />
       <Kpi v={k.records_count ?? d.records.filter(r => r.new).length} l="Recordes no período" s={d.records[0] ? `maior 1RM: ${d.records[0].e1rm} kg` : 'sem cargas registradas'} testid="kpi-rec" />
     </div>
-    {empty && <p className="g-note" style={{ marginTop: 12 }}>Nenhum treino concluído neste período. Escolha um período maior ou treine para ver os gráficos.</p>}
+    {empty && <Note type="info">Nenhum treino concluído neste período. Escolha um período maior ou treine para ver os gráficos.</Note>}
 
     <h2>Evolução</h2>
     <div className="g-card" data-testid="st-trends"><div className="st-seg" role="tablist" aria-label="Indicador do gráfico">{Object.entries(trendOptions).map(([value, option]) => <button key={value} role="tab" aria-selected={trend === value} className={trend === value ? 'g-on' : ''} onClick={() => setTrend(value)}>{option.label}</button>)}</div>

@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon.jsx'
 import { useStore } from '../../store/useStore.js'
 import { G, loadSession, flushQueue, pendingCount, rejectedCount, mediaOf } from '../../lib/guided.js'
-import { Spin } from './Programs.jsx'
 import { useNavigationAccess } from '../../components/NavigationAccess.jsx'
 import { PendingCard, isPending } from '../app/Locked.jsx'
 import Bell from '../../components/Bell.jsx'
@@ -15,7 +14,7 @@ import { Li } from '../app/Treinos.jsx'
 import { ResumeBar } from '../v3/StartHub.jsx'
 import { usePremium, PremiumLock } from '../billing/Premium.jsx'
 import { HomeWidgets, useHome, plural } from './HomeWidgets.jsx'
-import { AvaliacaoHomeCard } from '../postural/Avaliacoes.jsx'   // V5-AP
+import { AvaliacaoHomeCard } from '../postural/AvaliacaoHomeCard.jsx'   // V5-AP
 import './guided.css'
 
 const DN = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']
@@ -80,7 +79,9 @@ export default function Today() {
   if (isPending(user)) return <div className="ag" data-testid="today"><span className="g-eyebrow">Início</span><h1>Olá{user.name ? ', ' + user.name.split(' ')[0] : ''}!</h1><div style={{ marginTop: 14 }}><PendingCard /></div></div>
   if (err) return <div className="ag">{head}<p className="g-mut">{err}</p><button className="g-btn g-ghost" onClick={() => setRetry(v => v + 1)}>Tentar novamente</button>
     {local && <button className="g-btn g-xl" style={{ marginTop: 20 }} onClick={() => nav('/treinar')}>CONTINUAR TREINO</button>}</div>
-  if (!st) return <Spin />
+  if (!st) return <div className="ag" aria-busy="true"><span className="sr-only" role="status">Carregando…</span>
+    <span className="g-skel g-skel-line" /><span className="g-skel g-skel-h1" /><span className="g-skel g-skel-card" />
+    <span className="g-skel g-skel-btn" /><span className="g-skel g-skel-card sm" /></div>
   const first = (user?.name || '').split(' ')[0]
   const w = today?.workout
   const cover = w && mediaOf(w.exercises.find(e => e.media)?.media)

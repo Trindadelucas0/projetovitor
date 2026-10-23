@@ -2,7 +2,7 @@
 // foco volta ao elemento de origem, altura limitada à viewport, sem depender só de cor.
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useDialog } from '../lib/dialog.js'
+import { useDialog, activeHost } from '../lib/dialog.js'
 import '../views/guided/guided.css'
 
 function Dialog({ d }) {
@@ -51,7 +51,8 @@ function Dialog({ d }) {
 }
 
 export default function DialogHost() {
-  const dlg = useDialog(s => s.dlg), notes = useDialog(s => s.notes)
+  const dlg = useDialog(s => s.dlg), notes = useDialog(s => s.notes), host = useDialog(activeHost)
+  if (host !== 'legacy') return null   // uma área antd está aberta: ui/AntDialogHost.jsx desenha
   return createPortal(<>
     {dlg && <Dialog key={dlg.id} d={dlg} />}
     <div className="ag-notes" aria-live="polite">{notes.map(n => <div key={n.id} className={'ag-note ag-note-' + n.tone} role={n.tone === 'error' ? 'alert' : 'status'} data-testid="notice">

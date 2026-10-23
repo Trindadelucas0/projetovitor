@@ -10,6 +10,7 @@ import { allowPasswordEmail, queuePasswordLink, tokenHash, invalidatePasswordLin
 import { currentTerms, acceptTerms, termsStatus } from './lgpd.js'
 import { parseContact, saveContact, contactOf, contactComplete } from './contact.js'
 import { acceptAtSignup } from './legal.js'   // aceite no cadastro (mesma transacao)
+import { normalizeProfileChoice, legacyPerfil } from './profile-choice.js'
 
 const SECRET = process.env.JWT_SECRET
 if (!SECRET || SECRET.length < 32) console.warn('[auth] JWT_SECRET ausente ou curto — defina em app/api/.env')
@@ -57,6 +58,9 @@ async function loadUser(id) {
       (select pp.verification_status from professional_profiles pp where pp.user_id=u.id) verification,
       coalesce((select pp.internal_managed from professional_profiles pp where pp.user_id=u.id), false) internal_personal,
       (select up.sex from user_profiles up where up.user_id=u.id) sex,
+      (select up.profile_kind from user_profiles up where up.user_id=u.id) profile_kind,
+      (select up.accent_palette from user_profiles up where up.user_id=u.id) accent_palette,
+      coalesce((select up.prefers_female_coach from user_profiles up where up.user_id=u.id),false) prefers_female_coach,
       (select s.value #>> '{}' from app_settings s where s.tenant_id=u.tenant_id and s.key='personal_user_id') personal_masculino_id,
       (select s.value #>> '{}' from app_settings s where s.tenant_id=u.tenant_id and s.key='personal_feminino_user_id') personal_feminino_id,
       t.slug tenant_slug,t.name tenant_name,
@@ -97,8 +101,10 @@ export const tenantScope = (alias, idx) => `(${alias}.tenant_id is null or ${ali
 export const contextOf = u => (u.active_context && u.roles.includes(u.active_context)) ? u.active_context
   : u.roles.includes('admin') ? 'admin' : u.roles.includes('aluno') ? 'aluno' : u.roles.includes('profissional') ? 'profissional' : 'aluno'
 const sign = u => jwt.sign({ sub: u.id, tid: u.tenant_id, roles: u.roles, tv: u.token_version || 0, jti: crypto.randomUUID() }, SECRET, { expiresIn: TTL_H + 'h' })
-// sex gravado (admin ou cadastro) manda na cor. Sem sex, a personal feminina do tenant fica rosa.
+// Perfil visual e atendimento são decisões separadas. Campos antigos seguem como fallback durante a migração.
 const perfilOf = u => {
+  if (u.profile_kind === 'menina') return 'feminino'
+  if (u.profile_kind === 'menino') return 'masculino'
   if (u.sex === 'feminino' || u.sex === 'masculino') return u.sex
   if (u.personal_feminino_id && String(u.id) === String(u.personal_feminino_id)) return 'feminino'
   return 'masculino'
@@ -118,8 +124,10 @@ export const pub = u => {
   access_suspension_reason: u.access_suspension_reason || null,
   coach_pending: u.account_type === 'personal_client' && !u.own_student_access && !u.coach_has_access,
   managed_by: u.managed_by || null,
-  perfil, palette: perfil === 'feminino' ? 'feminino' : 'masculino',
-  needs_perfil: isAlunoOnly && !u.sex }
+  perfil, profile_kind: u.profile_kind || (perfil === 'feminino' ? 'menina' : u.sex === 'masculino' ? 'menino' : null),
+  palette: u.accent_palette || (perfil === 'feminino' ? 'rosa' : 'verde'),
+  prefers_female_coach: !!u.prefers_female_coach,
+  needs_perfil: isAlunoOnly && !u.profile_kind }
 }
 
 export function authRoutes({ json, readBody, bridge, clearCookies }) {
@@ -138,9 +146,10 @@ export function authRoutes({ json, readBody, bridge, clearCookies }) {
       // administrador do ambiente (o personal), criado por dentro. Um 'intent' antigo
       // vindo de app em cache é ignorado de propósito: não cria papel de profissional.
       const intent = 'aluno'
-      const perfil = b.perfil === 'feminino' ? 'feminino' : b.perfil === 'masculino' ? 'masculino' : null
+      let profile
+      try { profile = normalizeProfileChoice(b) } catch (e) { return json(res, 400, { error: e.message, code: e.code, errors: { perfil: e.message } }) }
+      const perfil = legacyPerfil(profile)
       const errors = {}
-      if (!perfil) errors.perfil = 'Escolha Homem ou Mulher'
       if (name.length < 2) errors.name = 'Informe seu nome'
       if (!EMAIL_RE.test(email)) errors.email = 'E-mail inválido'
       if (password.length < 8) errors.password = 'A senha deve ter pelo menos 8 caracteres'
@@ -166,17 +175,6 @@ export function authRoutes({ json, readBody, bridge, clearCookies }) {
       if (!signupPlan) return json(res, 400, { error: 'Escolha um plano disponível para continuar o cadastro.', code: 'PLAN_REQUIRED', errors: { plan_id: 'Escolha um plano disponível' } })
       const t = await q('select id from tenants where slug=$1 and active', [String(b.tenant || process.env.DEFAULT_TENANT || 'avadesk')])
       if (!t.rowCount) return json(res, 400, { error: 'Academia não encontrada' })
-      // Mulher: a personal feminina precisa existir antes de criar a conta.
-      if (perfil === 'feminino') {
-        const { tenantPersonalId } = await import('./pro.js')
-        const fem = await tenantPersonalId(t.rows[0].id, 'feminino')
-        if (!fem) return json(res, 503, { error: 'O cadastro de mulher está indisponível agora. A personal feminina ainda não foi configurada.', code: 'PERSONAL_FEMININO_UNAVAILABLE' })
-        const ok = (await q(`select 1 from users u
-          join user_roles r on r.user_id=u.id and r.tenant_id=u.tenant_id and r.role_id in ('admin','profissional')
-          join professional_profiles p on p.user_id=u.id and p.tenant_id=u.tenant_id and p.state='ativo'
-          where u.id=$1 and u.tenant_id=$2 and u.status='ativo' and u.disabled_at is null`, [fem, t.rows[0].id])).rowCount
-        if (!ok) return json(res, 503, { error: 'O cadastro de mulher está indisponível agora. A personal feminina ainda não foi configurada.', code: 'PERSONAL_FEMININO_UNAVAILABLE' })
-      }
       if ((await q('select 1 from users where lower(email)=$1', [email])).rowCount) return json(res, 409, { error: 'Este e-mail já tem conta. Quer entrar ou recuperar a senha?', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } })
       const hash = await bcrypt.hash(password, 12)
       let u
@@ -185,17 +183,17 @@ export function authRoutes({ json, readBody, bridge, clearCookies }) {
         try { u = await q('insert into users(tenant_id,name,email,password_hash,birth_date) values($1,$2,$3,$4,$5) returning id', [t.rows[0].id, name.slice(0, 80), email, hash, b.birth_date]) }
         catch (e) { if (e.code === '23505') return null; throw e }   // corrida: o índice único decide
         await q(`insert into user_roles values($1,$2,'aluno')`, [u.rows[0].id, t.rows[0].id])
-        await q(`insert into user_profiles(user_id, tenant_id, sex) values($1,$2,$3)
-          on conflict (user_id) do update set sex=excluded.sex`, [u.rows[0].id, t.rows[0].id, perfil])
+        await q(`insert into user_profiles(user_id, tenant_id, sex, profile_kind, accent_palette, prefers_female_coach) values($1,$2,$3,$4,$5,$6)
+          on conflict (user_id) do update set sex=excluded.sex, profile_kind=excluded.profile_kind, accent_palette=excluded.accent_palette,
+            prefers_female_coach=excluded.prefers_female_coach`, [u.rows[0].id, t.rows[0].id, profile.sex, profile.profile_kind, profile.accent_palette, profile.prefers_female_coach])
         if (ct) await saveContact(u.rows[0].id, t.rows[0].id, ct.data, u.rows[0].id, 'cadastro.contato')
-        // Plano de acesso do aluno: pré-condição do vínculo com o personal (linkFailures).
+        // Plano de acesso é pré-condição para o Admin atribuir um personal depois do cadastro.
         await q(`insert into user_access_plans(user_id,plan_id) values($1,'personal_unico') on conflict (user_id) do nothing`, [u.rows[0].id])
         // V3 (decisão Lucas 15/10): SaaS aberto — conta nasce ativa, sem aprovação do admin (admin ainda pode bloquear)
         await acceptAtSignup(u.rows[0].id, { professional: false, health: typeof b.health_consent === 'boolean' ? b.health_consent : null }, req)
         if (terms) await acceptTerms(u.rows[0].id, terms.version, req)
-        await (await import('./pro.js')).linkNewStudentToPrincipal(t.rows[0].id, u.rows[0].id, u.rows[0].id, null, perfil)
         await autoUnlockForTests(u.rows[0].id, email)   // só em teste local (E2E_AUTO_UNLOCK_DOMAIN)
-        await audit(t.rows[0].id, u.rows[0].id, 'conta.cadastro', 'user', u.rows[0].id, { intent, perfil, termos: terms && terms.version })
+        await audit(t.rows[0].id, u.rows[0].id, 'conta.cadastro', 'user', u.rows[0].id, { intent, profile_kind: profile.profile_kind, accent_palette: profile.accent_palette, prefers_female_coach: profile.prefers_female_coach, termos: terms && terms.version })
         return u
       }) } catch (e) {
         if (e.code === 'PRINCIPAL_UNAVAILABLE' || e.code === 'PERSONAL_FEMININO_UNAVAILABLE') return json(res, 503, { error: e.message, code: e.code })
@@ -254,36 +252,30 @@ export function authRoutes({ json, readBody, bridge, clearCookies }) {
       const u = await requireAuth(req, res, json, { allowPending: true }); if (!u) return
       json(res, 200, { user: { ...pub(u), ...(await termsStatus(u.id)), profile_incomplete: !u.roles?.includes('admin') && !contactComplete(await contactOf(u.id)) } })
     },
-    // Aluno antigo sem sex: escolhe Homem/Mulher uma vez. Depois fica travado.
+    // Aluno antigo sem perfil escolhe identidade visual e preferência uma vez. A escolha não cria nem transfere vínculo.
     'POST /api/me/perfil': async (req, res) => {
       const u = await requireAuth(req, res, json); if (!u) return
       const roles = u.roles || []
       if (!roles.includes('aluno') || roles.includes('admin') || roles.includes('profissional')) {
         return json(res, 403, { error: 'Só o aluno escolhe o perfil nesta tela.', code: 'PERMISSION_DENIED' })
       }
-      if (u.sex) return json(res, 409, { error: 'O perfil já foi definido e não pode ser alterado aqui.', code: 'PERFIL_TRAVADO' })
+      if (u.profile_kind) return json(res, 409, { error: 'O perfil já foi definido e não pode ser alterado aqui.', code: 'PERFIL_TRAVADO' })
       const b = await readBody(req)
-      const perfil = b.perfil === 'feminino' ? 'feminino' : b.perfil === 'masculino' ? 'masculino' : null
-      if (!perfil) return json(res, 400, { error: 'Escolha Homem ou Mulher', errors: { perfil: 'Escolha Homem ou Mulher' } })
+      let profile
+      try { profile = normalizeProfileChoice(b) } catch (e) { return json(res, 400, { error: e.message, code: e.code, errors: { perfil: e.message } }) }
       try {
         await transaction(async () => {
-          const locked = (await q('select sex from user_profiles where user_id=$1 for update', [u.id])).rows[0]
-          if (locked?.sex) throw Object.assign(new Error('O perfil já foi definido e não pode ser alterado aqui.'), { code: 'PERFIL_TRAVADO', status: 409 })
-          if (perfil === 'masculino') {
-            await q(`insert into user_profiles(user_id, tenant_id, sex) values($1,$2,'masculino')
-              on conflict (user_id) do update set sex='masculino'`, [u.id, u.tenant_id])
-            return
-          }
-          const { transferStudentBetweenPersonals } = await import('./pro.js')
-          await transferStudentBetweenPersonals(u.tenant_id, u.id, u.id, 'feminino', 'perfil', null)
+          const locked = (await q('select profile_kind from user_profiles where user_id=$1 for update', [u.id])).rows[0]
+          if (locked?.profile_kind) throw Object.assign(new Error('O perfil já foi definido e não pode ser alterado aqui.'), { code: 'PERFIL_TRAVADO', status: 409 })
+          await q(`insert into user_profiles(user_id, tenant_id, sex, profile_kind, accent_palette, prefers_female_coach) values($1,$2,$3,$4,$5,$6)
+            on conflict (user_id) do update set sex=excluded.sex, profile_kind=excluded.profile_kind, accent_palette=excluded.accent_palette,
+              prefers_female_coach=excluded.prefers_female_coach`, [u.id, u.tenant_id, profile.sex, profile.profile_kind, profile.accent_palette, profile.prefers_female_coach])
         })
       } catch (e) {
         if (e.code === 'PERFIL_TRAVADO' || e.status === 409) return json(res, e.status || 409, { error: e.message, code: e.code || 'PERFIL_TRAVADO' })
-        if (e.code === 'PERSONAL_FEMININO_UNAVAILABLE' || e.code === 'PRINCIPAL_UNAVAILABLE') return json(res, 503, { error: e.message, code: e.code })
-        if (e.code === 'MULTIPLE_LINKS') return json(res, 409, { error: e.message, code: e.code })
         throw e
       }
-      await audit(u.tenant_id, u.id, 'perfil.escolhido', 'user', u.id, { perfil })
+      await audit(u.tenant_id, u.id, 'perfil.escolhido', 'user', u.id, profile)
       const next = await loadUser(u.id)
       json(res, 200, { user: { ...pub(next), ...(await termsStatus(next.id)) } })
     },

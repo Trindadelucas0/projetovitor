@@ -26,15 +26,6 @@
    flex-wrap é requisito de teste: e2e/navigation-layout.spec.js mede .wb-days em 320 px
    com 7 dias e exige que nada role na horizontal. */
 .wb-days { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.wb-day {
-  min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--ag-line);
-  background: var(--ag-card); color: var(--ag-txt); font-weight: 600; font-size: 14px;
-  white-space: normal; overflow-wrap: anywhere; cursor: pointer;
-}
-.wb-day small { margin-left: 6px; color: var(--ag-mut); font-weight: 700; }
-.wb-day.on { background: var(--ag-acc); color: var(--ag-on); border-color: transparent; }
-.wb-day.on small { color: var(--ag-on); }
-.wb-day.add { border-style: dashed; color: var(--ag-mut); }
 
 .wb-dia { display: grid; gap: 12px; }
 .org-details.wb-detalhe { margin: 0; padding: 0; border-bottom: 0; }
@@ -102,8 +93,6 @@
 .wb-erro { color: var(--ag-bad); font-size: 13px; margin: 0; overflow-wrap: anywhere; }
 .wb-in-erro, input.wb-in-erro, .wb-in-erro.num { border-color: var(--ag-bad) !important; }
 .wb-alerta { border: 1px solid var(--ag-bad); border-radius: 14px; padding: 10px 12px; }
-.wb-li-ruim b { color: var(--ag-bad); }
-.wb-li-ruim .g-ico { color: var(--ag-bad); }
 
 /* ---------------- rascunho ---------------- */
 
@@ -131,7 +120,6 @@
 .wb-lib-filtros { display: grid; gap: 8px; }
 .wb-lib-conta { margin: 0; }
 .wb-lib-lista { display: grid; gap: 6px; overflow: auto; flex: 1; min-height: 0; align-content: start; }
-.wb-lib-foot { padding-top: 6px; border-top: 1px solid var(--ag-line); }
 
 /* Uma linha por exercício, com um toque para adicionar — a versão anterior pedia marcar
    a caixinha e descer até "Adicionar selecionados". */
@@ -179,17 +167,11 @@
 
 /* No celular a biblioteca é uma tela cheia; no desktop, uma coluna ao lado da ficha. */
 @media (max-width: 899px) {
-  .wb-lib.open {
-    position: fixed; inset: 0; z-index: 30; border-radius: 0; border: 0;
-    padding: calc(12px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));
-    max-height: none;
-  }
   .wb-campos { grid-template-columns: 1fr; }
   .wb-acoes-dia .g-btn { min-width: 0; flex: 1 1 100%; }
 }
 
 @media (min-width: 900px) {
-  .wb-only-mob { display: none !important; }
   .wb-step2 { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; column-gap: 24px; }
   .wb-step2-main { display: grid; gap: 14px; min-width: 0; }
   /* A biblioteca fica sempre visível no desktop: é o painel de trabalho da etapa. */
@@ -201,3 +183,27 @@
 @media (prefers-reduced-motion: reduce) {
   .wb-exrow, .wb-card { transition: none !important; }
 }
+
+/* Fase 5 · antd no construtor: Steps, abas de dia editáveis e gaveta da biblioteca (celular) */
+.orny-antd .wb-steps.ant-steps{margin:4px 0 14px}
+.orny-antd .wb-steps .ant-steps-item-container,.orny-antd .wb-steps .ant-steps-item{min-height:40px}
+.orny-antd .wb-steps .ant-steps-item-title{font-size:13.5px;white-space:nowrap}
+@media (max-width:480px){.orny-antd .wb-steps .ant-steps-item:not(.ant-steps-item-active) .ant-steps-item-title{display:none}}
+.orny-antd .wb-days .ant-tabs-nav{margin:0;flex-wrap:wrap;gap:8px}
+.orny-antd .wb-days .ant-tabs-nav-wrap{flex:0 1 auto}
+.orny-antd .wb-days .ant-tabs-extra-content{flex:none}
+.orny-antd .wb-days .ant-tabs-nav::before{display:none}
+.orny-antd .wb-days .ant-tabs-nav-wrap{overflow:visible}
+.orny-antd .wb-days .ant-tabs-nav-wrap::before,.orny-antd .wb-days .ant-tabs-nav-wrap::after,.orny-antd .wb-days .ant-tabs-nav-operations{display:none!important}
+.orny-antd .wb-days .ant-tabs-nav-list{flex-wrap:wrap;gap:8px;transform:none!important}
+.orny-antd .wb-days .ant-tabs-content-holder{display:none}
+.orny-antd .wb-days .ant-tabs-tab{min-height:44px;margin:0!important;border-radius:999px!important;border:1px solid var(--ag-line)!important;background:var(--ag-card)!important;padding:0 8px 0 14px!important;font-weight:650}
+.orny-antd .wb-days .ant-tabs-tab-active{background:var(--ag-acc)!important;border-color:transparent!important}
+.orny-antd .wb-days .ant-tabs-tab-active .ant-tabs-tab-btn,.orny-antd .wb-days .ant-tabs-tab-active .ant-tabs-tab-remove{color:var(--ag-on)!important}
+.orny-antd .wb-days .ant-tabs-tab-remove{min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center;margin:0;color:var(--ag-mut)}
+.wb-day-addb{font:inherit;cursor:pointer;min-height:44px;border-radius:999px!important;border:1px dashed var(--ag-line)!important;background:transparent!important;padding:0 16px!important;font-weight:700;color:var(--ag-acc)!important}
+.wb-day-l{display:inline-flex;align-items:center;gap:6px}
+.wb-day-l small{font-size:11px;font-weight:700;opacity:.75;background:color-mix(in srgb,currentColor 14%,transparent);border-radius:999px;padding:1px 7px}
+.wb-lib-drawer .ant-drawer-body{padding:12px 14px!important;display:flex;flex-direction:column}
+.wb-lib.wb-lib-in{position:static!important;border:0;padding:0;background:transparent;flex:1;min-height:0}
+.wb-lib-drawer .ant-drawer-footer{padding:10px 14px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--ag-line)}

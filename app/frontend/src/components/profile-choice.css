@@ -1,0 +1,17 @@
+.profile-choice-provider{background:transparent;color:inherit}.profile-choice{display:grid;gap:14px;text-align:left;
+  /* cores originais (a escolha fica sempre sobre a foto escura, no cadastro e no gate) */
+  --pc-card:#101010d9;--pc-card-on:#202020f2;--pc-line:#ffffff2e;--pc-txt:#fff;--pc-mut:#c2c2c2}
+.profile-choice .ant-radio-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.profile-choice .ant-radio-wrapper{margin:0;padding:14px 12px;min-height:82px;border:1px solid var(--pc-line);border-radius:16px;background:var(--pc-card);align-items:flex-start;color:var(--pc-txt);transition:border-color .15s,background .15s,transform .15s}
+.profile-choice .ant-radio-wrapper:hover,.profile-choice .ant-radio-wrapper-checked{border-color:var(--ag-acc);background:var(--pc-card-on);transform:translateY(-1px)}
+.profile-choice-title{display:block;font-weight:800;font-family:var(--font-head);margin-bottom:4px}.profile-choice small{display:block;color:var(--pc-mut)}
+.profile-palettes{border:0;padding:0;margin:0;display:flex;gap:8px;flex-wrap:wrap}.profile-palettes legend{width:100%;font-size:13px;font-weight:600;color:var(--pc-mut);margin-bottom:7px}
+.profile-palettes button{min-height:42px;padding:8px 12px;border:1px solid var(--pc-line);border-radius:12px;background:var(--pc-card);color:var(--pc-txt);font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer}
+.profile-palettes button.on{border-color:var(--ag-acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--ag-acc) 30%,transparent)}
+.profile-palettes i{width:16px;height:16px;border-radius:50%;background:var(--swatch)}
+.profile-palettes [data-color="roxo"]{--swatch:#a855f7}.profile-palettes [data-color="azul"]{--swatch:#38bdf8}.profile-palettes [data-color="laranja"]{--swatch:#fb923c}
+.profile-choice .ant-checkbox-wrapper{color:var(--pc-txt);min-height:40px;align-items:center;line-height:1.45}.profile-choice-note{font-size:12px;line-height:1.45;color:var(--pc-mut);margin:0}.profile-choice-error{margin:0;color:#ff8585;font-size:13px}
+@media(max-width:560px){.profile-choice .ant-radio-group{grid-template-columns:1fr}.profile-choice .ant-radio-wrapper{min-height:64px}}
+.profile-choice .ant-radio-wrapper:has(:focus-visible),.profile-palettes button:focus-visible{outline:2.5px solid var(--ag-acc);outline-offset:2px}
+.profile-choice .ant-radio-wrapper{box-shadow:var(--pz-shadow,none)}.profile-choice .ant-radio-wrapper .ant-radio{margin-top:2px}
+.profile-choice-error{padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--ag-bad) 12%,transparent);border:1px solid color-mix(in srgb,var(--ag-bad) 35%,transparent)}

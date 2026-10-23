@@ -61,7 +61,7 @@ export default function Treinos() {
     <span className="g-eyebrow">Treinos</span><h1 style={{ marginTop: 2 }}>Seus treinos</h1>
     <ResumeBar />
     {ready && (st === false || care === false) && <Err msg="Não foi possível carregar tudo. Verifique a conexão." retry={reload} />}
-    {!ready ? <p className="g-mut g-sm" role="status">Carregando…</p> : <>
+    {!ready ? <div aria-busy="true"><span className="sr-only" role="status">Carregando…</span><span className="g-skel g-skel-card" /><span className="g-skel g-skel-line" /><span className="g-skel g-skel-card sm" /></div> : <>
       {/* 1 · TREINO ATIVO (um só) — card de destaque com o botão grande */}
       <section className="g-hero tr-hero" data-testid="active-training" aria-label="Treino ativo">
         {activePlan && <span className="g-activebadge"><Icon name="check" /> Treino ativo</span>}

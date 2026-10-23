@@ -7,7 +7,7 @@
 import { useMemo, useState } from 'react'
 import Icon from '../../components/Icon.jsx'
 import { SearchField } from '../../components/ui.jsx'
-import { Sheet, Tabs, Empty } from '../app/kit.jsx'
+import { Sheet, Tabs, Empty } from '../../ui/gkit.jsx'
 
 const semAcento = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
@@ -29,18 +29,18 @@ export default function PickerSheet({
           placeholder={placeholder} aria-label={placeholder} data-testid={testid ? testid + '-q' : undefined} />
       )}
       {tabs && tabs.length > 1 && <Tabs tabs={tabs} cur={tab} set={onTab} />}
-      <div className="g-card g-list wb-picker" data-testid={testid}>
+      <div className="gk-rows wb-picker" data-testid={testid}>
         {filtrados.length
           ? filtrados.map(x => (
-            <button key={x.value} type="button" className="g-li" onClick={() => { onPick(x.value); onClose() }}
+            <button key={x.value} type="button" className="gk-row gk-row-click" onClick={() => { onPick(x.value); onClose() }}
               data-value={x.value} data-testid={testid ? testid + '-item' : undefined}>
-              {x.icon && <span className="g-ico"><Icon name={x.icon} /></span>}
+              {x.icon && <span className="gk-row-ic"><Icon name={x.icon} /></span>}
               {x.avatar}
-              <span className="wb-picker-txt">
+              <span className="gk-row-t">
                 <b>{x.label}</b>
-                {x.hint && <span className="g-mut g-xs">{x.hint}</span>}
+                {x.hint && <span className="gk-row-s">{x.hint}</span>}
               </span>
-              {x.selected ? <Icon name="check" className="g-chev" /> : <Icon name="chevronRight" className="g-chev" />}
+              {x.selected ? <span className="gk-row-chev"><Icon name="check" /></span> : <span className="gk-row-chev" aria-hidden="true"><Icon name="chevronRight" /></span>}
             </button>
           ))
           : <Empty icon="magnifier">{q ? 'Nada com esse nome.' : empty}</Empty>}

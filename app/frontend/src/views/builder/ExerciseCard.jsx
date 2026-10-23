@@ -14,7 +14,7 @@ import { fieldId } from '../../lib/workout-validate.js'
 import Icon from '../../components/Icon.jsx'
 import GSelect from '../../components/GSelect.jsx'
 import { NumberField, Stepper, Segmented } from '../../components/ui.jsx'
-import { Btn } from '../app/kit.jsx'
+import { Btn } from '../../ui/gkit.jsx'
 import { exSummary } from './shape.js'
 
 // Vídeo do personal no exercício. Dois caminhos: colar o link (YouTube é o que toca

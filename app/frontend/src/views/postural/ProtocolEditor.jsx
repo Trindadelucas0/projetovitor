@@ -8,7 +8,15 @@
 import { useState } from 'react'
 import Icon from '../../components/Icon.jsx'
 import MediaLightbox from '../../components/MediaLightbox.jsx'
-import { Btn, Empty, Err, Load, Field, useLoad } from '../app/kit.jsx'
+import { Empty, Err, Load, useLoad } from '../app/kit.jsx'
+import { Button, Checkbox, Collapse, Segmented, Upload } from 'antd'
+import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons'
+import StatusTag from '../../ui/StatusTag.jsx'
+import { Btn as KBtn, TextIn, NumIn, Area, Sel, Card, Field, Warn } from '../../ui/kit.jsx'
+// Btn legado (variant primary/secondary/tertiary, size sm) mapeado para o Button antd
+const Btn = ({ variant, size, ...p }) => <KBtn v={variant === 'secondary' || variant === 'tertiary' ? 'ghost' : 'primary'} small={size === 'sm'} {...p} />
+const pick = (accept, onFile, testid, label) => <Upload accept={accept} showUploadList={false} beforeUpload={file => { onFile({ target: { files: [file], value: '' } }); return false }}>
+  <KBtn v="ghost" small data-testid={testid}>{label}</KBtn></Upload>
 import { ask, askText, notify, notifyError } from '../../lib/dialog.js'
 import { APA, KIND_PT, uploadStepMedia } from '../../lib/postural.js'
 import ExampleEditor from './ExampleEditor.jsx'
@@ -65,7 +73,7 @@ function EditorEtapa({ step, editable, onSaved, onRemoved }) {
     step.has_demo && { kind: 'video', url: APA.stepMediaUrl(step.id, 'demo'), label: 'Vídeo demonstrativo' }
   ].filter(Boolean)
 
-  return <div className="ap-editor" data-testid={'ap-ed-' + step.code}>
+  return <Card className="ap-editor" data-testid={'ap-ed-' + step.code}>
     {step.needs_review && <div className="g-note g-sm" data-testid={'ap-ed-review-' + step.code}>
       <strong><Icon name="flag" /> Aguardando validação do profissional</strong>
       <p>{step.review_note}</p>
@@ -75,54 +83,52 @@ function EditorEtapa({ step, editable, onSaved, onRemoved }) {
     </div>}
 
     <Field label="Nome da etapa">
-      <input className="g-in" value={v.title} onChange={e => set('title', e.target.value)} disabled={!editable} maxLength={160} data-testid={'ap-ed-title-' + step.code} />
+      <TextIn value={v.title} onChange={e => set('title', e.target.value)} disabled={!editable} maxLength={160} data-testid={'ap-ed-title-' + step.code} />
     </Field>
     <Field label="Tipo">
-      <div className="g-opts">
-        {['foto', 'video'].map(k => <button key={k} type="button" className={'g-opt' + (v.capture_kind === k ? ' g-on' : '')} onClick={() => editable && set('capture_kind', k)} disabled={!editable}>{KIND_PT[k]}</button>)}
-      </div>
+      <Segmented value={v.capture_kind} disabled={!editable} onChange={k => editable && set('capture_kind', k)} options={['foto', 'video'].map(k => ({ value: k, label: KIND_PT[k] }))} />
     </Field>
     {v.capture_kind === 'video' && <Field label="Repetições que o vídeo deve mostrar">
-      <input className="g-in" type="number" min={1} max={50} value={v.repetitions} onChange={e => set('repetitions', e.target.value)} disabled={!editable} />
+      <NumIn min={1} max={50} value={v.repetitions} onChange={e => set('repetitions', e.target.value)} disabled={!editable} />
     </Field>}
     <Field label="Descrição (opcional)">
-      <textarea className="g-in" rows={2} value={v.description} onChange={e => set('description', e.target.value)} disabled={!editable} maxLength={2000} />
+      <Area rows={2} value={v.description} onChange={e => set('description', e.target.value)} disabled={!editable} maxLength={2000} />
     </Field>
     <Field label="Instruções numeradas (uma por linha)">
-      <textarea className="g-in" rows={5} value={v.instructions} onChange={e => set('instructions', e.target.value)} disabled={!editable} data-testid={'ap-ed-instr-' + step.code} />
+      <Area rows={5} value={v.instructions} onChange={e => set('instructions', e.target.value)} disabled={!editable} data-testid={'ap-ed-instr-' + step.code} />
     </Field>
     <Field label="Cuidados importantes (uma por linha)">
-      <textarea className="g-in" rows={3} value={v.cautions} onChange={e => set('cautions', e.target.value)} disabled={!editable} />
+      <Area rows={3} value={v.cautions} onChange={e => set('cautions', e.target.value)} disabled={!editable} />
     </Field>
     <Field label="Posição da câmera">
-      <select className="g-in" value={v.camera_position} onChange={e => set('camera_position', e.target.value)} disabled={!editable}>
+      <Sel style={{ width: '100%' }} value={v.camera_position} onChange={e => set('camera_position', e.target.value)} disabled={!editable}>
         {CAMERAS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-      </select>
+      </Sel>
     </Field>
     <Field label="Observação de câmera (opcional)">
-      <input className="g-in" value={v.camera_note} onChange={e => set('camera_note', e.target.value)} disabled={!editable} maxLength={600} />
+      <TextIn value={v.camera_note} onChange={e => set('camera_note', e.target.value)} disabled={!editable} maxLength={600} />
     </Field>
 
     <div className="ap-ed-flags">
       {[['required', 'Exigir registro'], ['allow_skip', 'Permitir dispensa justificada'], ['allow_question', 'Permitir dúvidas']].map(([k, l]) => (
-        <label key={k} className="g-chk"><input type="checkbox" checked={!!v[k]} onChange={e => set(k, e.target.checked)} disabled={!editable} /><span>{l}</span></label>
+        <Checkbox key={k} checked={!!v[k]} onChange={e => set(k, e.target.checked)} disabled={!editable}>{l}</Checkbox>
       ))}
     </div>
 
     <h4 className="ap-h2">Demonstrações para novas avaliações</h4>
     <ExampleEditor stepId={step.id} scope="protocol" />
-    <details className="ap-step-details"><summary>Mídia antiga da versão</summary>
+    <Collapse ghost size="small" className="ap-step-details" items={[{ key: 'm', label: 'Mídia antiga da versão', children: <>
     {midias.length > 0 && <div className="g-row">
       {midias.map((m, k) => <Btn key={m.kind} variant="secondary" size="sm" onClick={() => setLb(k)}>Ver {m.label.toLowerCase()}</Btn>)}
     </div>}
     {editable && <div className="g-row ap-cap-actions">
-      <label className="g-btn g-ghost g-sm">Foto de referência<input type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={e => enviarMidia(e, 'referencia')} data-testid={'ap-ed-ref-' + step.code} /></label>
-      <label className="g-btn g-ghost g-sm">Vídeo demonstrativo<input type="file" accept="video/mp4,video/webm" hidden onChange={e => enviarMidia(e, 'demo')} /></label>
+      {pick('image/jpeg,image/png,image/webp', e => enviarMidia(e, 'referencia'), 'ap-ed-ref-' + step.code, 'Foto de referência')}
+      {pick('video/mp4,video/webm', e => enviarMidia(e, 'demo'), undefined, 'Vídeo demonstrativo')}
       {step.has_reference && <Btn variant="tertiary" onClick={() => tirarMidia('referencia')}>Remover foto</Btn>}
       {step.has_demo && <Btn variant="tertiary" onClick={() => tirarMidia('demo')}>Remover vídeo</Btn>}
     </div>}
     <p className="g-mut g-sm">Compatibilidade com avaliações anteriores. Para novos exemplos, use a seção acima.</p>
-    </details>
+    </> }]} />
 
     {editable && <div className="g-row ap-cap-actions">
       <Btn onClick={salvar} loading={busy} disabled={!f} data-testid={'ap-ed-save-' + step.code}>Salvar etapa</Btn>
@@ -130,7 +136,7 @@ function EditorEtapa({ step, editable, onSaved, onRemoved }) {
     </div>}
 
     {lb !== null && <MediaLightbox items={midias} index={lb} onIndex={setLb} onClose={() => setLb(null)} title={step.title} />}
-  </div>
+  </Card>
 }
 
 function Versao({ versionId, onChanged }) {
@@ -171,16 +177,12 @@ function Versao({ versionId, onChanged }) {
     <div className="g-row">
       <span className="ap-vers-label">{v.protocol_name} · versão {v.version}</span>
       <span className="g-sp" />
-      <span className="g-pill">{v.status}{v.official ? ' · oficial' : ''}</span>
+      <StatusTag v={v.status} label={v.status + (v.official ? ' · oficial' : '')} />
     </div>
-    {v.official && <p className="g-note g-sm">
-      Protocolo oficial do sistema: somente leitura. Duplique para a sua organização para poder editar.
-    </p>}
-    {!v.editable && !v.official && <p className="g-note g-sm">
-      Versão publicada: para alterar as etapas, crie uma versão nova no catálogo. As avaliações em andamento não mudam.
-    </p>}
+    {v.official && <Warn type="info">Protocolo oficial do sistema: somente leitura. Duplique para a sua organização para poder editar.</Warn>}
+    {!v.editable && !v.official && <Warn type="info">Versão publicada: para alterar as etapas, crie uma versão nova no catálogo. As avaliações em andamento não mudam.</Warn>}
 
-    <div className="g-card g-list">
+    <Card className="ap-list">
       {steps.map((s, idx) => (
         <div key={s.id} className="g-li ap-ed-row" data-testid={'ap-step-row-' + s.code}>
           <span className="g-ico">{s.position}</span>
@@ -190,13 +192,13 @@ function Versao({ versionId, onChanged }) {
           </button>
           <span className="g-sp" />
           {v.editable && <>
-            <button className="g-icbtn" onClick={() => mover(idx, -1)} disabled={busy || idx === 0} aria-label={'Mover ' + s.title + ' para cima'}><Icon name="arrowUp" /></button>
-            <button className="g-icbtn" onClick={() => mover(idx, 1)} disabled={busy || idx === steps.length - 1} aria-label={'Mover ' + s.title + ' para baixo'}><Icon name="arrowDown" /></button>
+            <Button type="text" icon={<ArrowUpOutlined />} onClick={() => mover(idx, -1)} disabled={busy || idx === 0} aria-label={'Mover ' + s.title + ' para cima'} />
+            <Button type="text" icon={<ArrowDownOutlined />} onClick={() => mover(idx, 1)} disabled={busy || idx === steps.length - 1} aria-label={'Mover ' + s.title + ' para baixo'} />
           </>}
         </div>
       ))}
       {steps.length === 0 && <p className="g-mut g-sm" style={{ padding: 12 }}>Nenhuma etapa nesta versão.</p>}
-    </div>
+    </Card>
 
     {aberta && <EditorEtapa step={steps.find(s => s.id === aberta)} editable={v.editable}
       onSaved={() => reload()} onRemoved={() => { setAberta(null); reload() }} />}
@@ -241,7 +243,7 @@ export default function ProtocolEditor() {
   }
 
   return <div data-testid="ap-protocolos">
-    <p className="adm-sub">
+    <p className="orny-muted">
       Os protocolos oficiais vêm com o sistema e são somente leitura. Duplique para a sua organização e
       edite a cópia: versão publicada nunca muda, e avaliação em andamento continua na versão em que começou.
     </p>
@@ -250,7 +252,7 @@ export default function ProtocolEditor() {
     {d.protocols.length === 0 && <Empty icon="clipboard">Nenhum protocolo cadastrado.</Empty>}
 
     {d.protocols.map(p => (
-      <div key={p.id} className="g-card ap-proto" data-testid={'ap-proto-' + p.slug}>
+      <Card key={p.id} className="ap-proto" data-testid={'ap-proto-' + p.slug}>
         <div className="g-row">
           <div>
             <b>{p.name}</b>
@@ -263,12 +265,12 @@ export default function ProtocolEditor() {
         </div>
         <div className="g-row ap-proto-vers">
           {(p.versions || []).map(v => (
-            <button key={v.id} className={'g-chipbtn' + (v.status === 'publicada' ? ' g-on' : '')} onClick={() => setSel(v.id)} data-testid={'ap-ver-' + v.id}>
+            <KBtn key={v.id} v={v.status === 'publicada' ? 'primary' : 'ghost'} small onClick={() => setSel(v.id)} data-testid={'ap-ver-' + v.id}>
               v{v.version} · {v.status} · {v.steps} etapas{v.a_validar ? ` · ${v.a_validar} a validar` : ''}
-            </button>
+            </KBtn>
           ))}
         </div>
-      </div>
+      </Card>
     ))}
   </div>
 }

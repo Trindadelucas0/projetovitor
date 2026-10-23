@@ -12,8 +12,8 @@ import { useState } from 'react'
 import { ask, askText } from '../../lib/dialog.js'
 import Icon from '../../components/Icon.jsx'
 import GSelect from '../../components/GSelect.jsx'
-import { Sheet } from '../app/kit.jsx'
-import { Btn } from '../app/kit.jsx'
+import { Tabs } from 'antd'
+import { Sheet, Btn, Row, Rows } from '../../ui/gkit.jsx'
 import { WEEKDAYS, WD_SHORT } from './shape.js'
 import { MAX_DAYS, MAX_EX_PER_DAY } from './useBuilderState.js'
 import ExerciseLibrary from './ExerciseLibrary.jsx'
@@ -63,18 +63,23 @@ export default function StepDays({ st, dx, day, groups, clash, errosPorEx, onAvi
   return (
     <section className="wb-etapa wb-step2" aria-label="Dias e exercícios">
       <div className="wb-step2-main">
-        <nav className="wb-days" role="tablist" aria-label="Dias do treino">
-          {w.days.map((d, i) => (
-            <button key={i} role="tab" aria-selected={i === st.day} className={'wb-day' + (i === st.day ? ' on' : '')}
-              onClick={() => dx({ type: 'pickDay', day: i })} data-testid={'wb-day-' + i}>
-              {d.name}{d.weekday != null && d.weekday !== '' ? ' · ' + WD_SHORT[+d.weekday] : ''}
-              <small>{d.exercises.length}</small>
-            </button>
-          ))}
-          {w.days.length < MAX_DAYS && (
-            <button className="wb-day add" onClick={() => dx({ type: 'addDay' })} data-testid="wb-day-add">+ Dia</button>
-          )}
-        </nav>
+        {/* abas editáveis (antd): toque abre o dia, "+ Dia" cria, o × remove (com confirmação) */}
+        <div className="wb-days">
+          <Tabs type="editable-card" size="small" activeKey={String(st.day)} aria-label="Dias do treino"
+            onChange={k => dx({ type: 'pickDay', day: +k })}
+            hideAdd
+            tabBarExtraContent={w.days.length < MAX_DAYS ? { right: <button type="button" className="wb-day-addb" onClick={() => dx({ type: 'addDay' })} data-testid="wb-day-add">+ Dia</button> } : null}
+            onEdit={async (k, action) => {
+              if (w.days.length === 1) return onAviso('O treino precisa de pelo menos um dia.')
+              const i = +k, d = w.days[i]
+              if (await ask(`Remover ${d.name}?`, { text: `${d.exercises.length} exercício(s) serão perdidos.`, ok: 'Remover dia', danger: true })) { dx({ type: 'pickDay', day: i }); dx({ type: 'removeDay' }) }
+            }}
+            items={w.days.map((d, i) => ({
+              key: String(i), closable: w.days.length > 1,
+              closeIcon: <span aria-label={'Remover ' + d.name}><Icon name="xmark" /></span>,
+              label: <span className="wb-day-l" data-testid={'wb-day-' + i}>{d.name}{d.weekday != null && d.weekday !== '' ? ' · ' + WD_SHORT[+d.weekday] : ''}<small>{d.exercises.length}</small></span>,
+            }))} />
+        </div>
 
         <div className="g-card wb-dia">
           <div className="g-row">
@@ -155,42 +160,33 @@ export default function StepDays({ st, dx, day, groups, clash, errosPorEx, onAvi
 
       {menu === 'dia' && (
         <Sheet title={day.name} onClose={() => setMenu(null)}>
-          <div className="g-card g-list">
-            <button className="g-li" onClick={() => { setMenu(null); renomear() }}><span className="g-ico"><Icon name="pencil" /></span><span className="wb-picker-txt"><b>Renomear dia</b></span></button>
-            <button className="g-li" onClick={() => { setMenu(null); duplicar() }}><span className="g-ico"><Icon name="clipboard" /></span><span className="wb-picker-txt"><b>Duplicar dia</b><span className="g-mut g-xs">Copia os exercícios para um dia novo</span></span></button>
+          <Rows>
+            <Row icon="pencil" title="Renomear dia" chevron={false} onClick={() => { setMenu(null); renomear() }} />
+            <Row icon="clipboard" title="Duplicar dia" sub="Copia os exercícios para um dia novo" chevron={false} onClick={() => { setMenu(null); duplicar() }} />
             {outrosDias.map(({ d, i }) => (
-              <button key={i} className="g-li" onClick={() => { setMenu(null); dx({ type: 'copyFrom', from: i }) }}>
-                <span className="g-ico"><Icon name="shuffle" /></span>
-                <span className="wb-picker-txt"><b>Copiar exercícios de {d.name}</b><span className="g-mut g-xs">{d.exercises.length} exercício(s) entram no fim de {day.name}</span></span>
-              </button>
+              <Row key={i} icon="shuffle" title={'Copiar exercícios de ' + d.name} chevron={false}
+                sub={`${d.exercises.length} exercício(s) entram no fim de ${day.name}`}
+                onClick={() => { setMenu(null); dx({ type: 'copyFrom', from: i }) }} />
             ))}
-            <button className="g-li" onClick={() => { setMenu(null); limpar() }} disabled={!day.exercises.length}><span className="g-ico"><Icon name="reset" /></span><span className="wb-picker-txt"><b>Limpar exercícios</b></span></button>
-            <button className="g-li wb-li-ruim" onClick={() => { setMenu(null); remover() }}><span className="g-ico"><Icon name="trash" /></span><span className="wb-picker-txt"><b>Remover dia</b></span></button>
-          </div>
+            <Row icon="reset" title="Limpar exercícios" chevron={false} disabled={!day.exercises.length} onClick={() => { setMenu(null); limpar() }} />
+            <Row icon="trash" title="Remover dia" chevron={false} danger onClick={() => { setMenu(null); remover() }} />
+          </Rows>
         </Sheet>
       )}
 
       {menu && menu.ex != null && day.exercises[menu.ex] && (
         <Sheet title={day.exercises[menu.ex].name} onClose={() => setMenu(null)}>
-          <div className="g-card g-list">
-            <button className="g-li" onClick={() => { const i = menu.ex; setMenu(null); dx({ type: 'dupExercise', i }) }}>
-              <span className="g-ico"><Icon name="clipboard" /></span><span className="wb-picker-txt"><b>Duplicar exercício</b></span>
-            </button>
+          <Rows>
+            <Row icon="clipboard" title="Duplicar exercício" chevron={false} onClick={() => { const i = menu.ex; setMenu(null); dx({ type: 'dupExercise', i }) }} />
             {outrosDias.map(({ d, i }) => (
-              <button key={i} className="g-li" onClick={() => { const k = menu.ex; setMenu(null); dx({ type: 'moveToDay', i: k, to: i }) }}>
-                <span className="g-ico"><Icon name="chevronRight" /></span>
-                <span className="wb-picker-txt"><b>Mover para {d.name}</b></span>
-              </button>
+              <Row key={i} icon="chevronRight" title={'Mover para ' + d.name} chevron={false}
+                onClick={() => { const k = menu.ex; setMenu(null); dx({ type: 'moveToDay', i: k, to: i }) }} />
             ))}
             {day.exercises[menu.ex].group != null && (
-              <button className="g-li" onClick={() => { const i = menu.ex; setMenu(null); dx({ type: 'ungroup', i }) }}>
-                <span className="g-ico"><Icon name="link" /></span><span className="wb-picker-txt"><b>Desagrupar</b></span>
-              </button>
+              <Row icon="link" title="Desagrupar" chevron={false} onClick={() => { const i = menu.ex; setMenu(null); dx({ type: 'ungroup', i }) }} />
             )}
-            <button className="g-li wb-li-ruim" onClick={() => { const i = menu.ex; setMenu(null); removerEx(i) }}>
-              <span className="g-ico"><Icon name="trash" /></span><span className="wb-picker-txt"><b>Remover do {day.name}</b></span>
-            </button>
-          </div>
+            <Row icon="trash" title={'Remover do ' + day.name} chevron={false} danger onClick={() => { const i = menu.ex; setMenu(null); removerEx(i) }} />
+          </Rows>
         </Sheet>
       )}
     </section>

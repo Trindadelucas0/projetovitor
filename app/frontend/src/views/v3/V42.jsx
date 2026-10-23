@@ -6,7 +6,6 @@ import Icon from '../../components/Icon.jsx'
 import { api } from '../../lib/api.js'
 import { useStore } from '../../store/useStore.js'
 import { Sheet, useLoad } from '../app/kit.jsx'
-import { askText } from '../../lib/dialog.js'
 
 const post = (p, b) => api(p, { method: 'POST', body: JSON.stringify(b || {}) })
 const dt = s => s ? new Date(s).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—'
@@ -79,43 +78,7 @@ export function ScopeGate({ title, children }) {
   </div>
 }
 
-// ---------- personal: cadastrar aluno ----------
-export function ProClients({ mode = 'all' }) {
-  const [d, err, reload] = useLoad(() => api('/api/pro/clients'))
-  const [name, setName] = useState(''), [email, setEmail] = useState(''), [msg, setMsg] = useState(''), [busy, setBusy] = useState(false), [cred, setCred] = useState(null)
-  const create = async e => {
-    e.preventDefault(); setBusy(true); setMsg('')
-    try { const r = await post('/api/pro/clients', { name, email }); setCred({ email: r.email, pw: r.temp_password, queued: r.email_queued }); setName(''); setEmail(''); reload() }
-    catch (e) { setMsg(e.message) } finally { setBusy(false) }
-  }
-  const reset = async c => { try { const r = await post('/api/pro/clients/reset-password', { id: c.id }); setCred({ email: c.email, pw: r.temp_password, queued: r.email_queued }) } catch (e) { setMsg(e.message) } }
-  return <section className="g-card" data-testid="pro-clients">
-    {mode !== 'list' && <><h3 className="g-h3">Cadastrar aluno</h3>
-    <p className="g-xs g-mut">A conta entra no seu plano. O aluno recebe por e-mail um link para definir a própria senha.</p>
-    <form onSubmit={create} className="g-col" style={{ gap: 8, marginTop: 8 }}>
-      <label className="g-field"><span className="g-mut g-xs">Nome</span><input value={name} onChange={e => setName(e.target.value)} required minLength={2} data-testid="pc-name" /></label>
-      <label className="g-field"><span className="g-mut g-xs">E-mail</span><input type="email" value={email} onChange={e => setEmail(e.target.value)} required data-testid="pc-email" /></label>
-      {msg && <p className="g-bad2 g-sm" role="alert">{msg}</p>}
-      <button className="g-btn" disabled={busy} data-testid="pc-create">{busy ? 'Criando…' : 'Criar conta do aluno'}</button>
-    </form>
-    {cred && <div className="g-card v42-cred" data-testid="pc-cred" style={{ marginTop: 10 }}>
-      <b>Senha provisória (aparece só agora)</b>
-      <p className="g-sm">{cred.email}</p>
-      <code data-testid="pc-temp" style={{ fontSize: 18 }}>{cred.pw}</code>
-      {cred.queued && <p className="g-xs g-mut">O aluno também recebe um link por e-mail para definir a senha.</p>}
-      <div className="g-actions" style={{ marginTop: 8 }}>
-        <button className="g-btn" onClick={() => navigator.clipboard?.writeText(`E-mail: ${cred.email}\nSenha provisória: ${cred.pw}`)}>Copiar acesso</button>
-        <button className="g-btn g-ghost" onClick={() => setCred(null)}>Já enviei</button></div></div>}
-    </>}
-    {mode !== 'create' && <><h4 className="g-h3" style={{ marginTop: 14 }}>Alunos criados por você</h4>
-    {err && <p className="g-warn g-sm">{err}</p>}
-    {d && !d.clients.length && <p className="g-xs g-mut">Nenhum ainda.</p>}
-    {d?.clients.map(c => <div key={c.id} className="g-row" style={{ justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid var(--ag-line,#ffffff14)' }}>
-      <div><b className="g-sm">{c.name}</b><p className="g-xs g-mut" style={{ margin: 0 }}>{c.email} · {c.pending_first_login ? 'aguardando 1º acesso' : 'ativo'}</p></div>
-      <button className="g-btn g-ghost" onClick={() => reset(c)} data-testid="pc-reset">Reenviar link</button></div>)}
-    </>}
-  </section>
-}
+// (cadastro de aluno pelo personal: movido para views/pro/ProClients.jsx — Fase 5, Ant Design no chunk do portal)
 
 // ---------- histórico de fichas (somente leitura) ----------
 export function PlanHistory({ plans }) {
@@ -133,36 +96,7 @@ export function PlanHistory({ plans }) {
 }
 
 // ---------- admin: suspensões excepcionais de acesso ----------
-const TYPE_PT = x => x.account_type === 'personal_client' ? 'Aluno de ' + (x.coach_name || 'personal') : 'Usuário normal'
-export function AdmLiberacoes() {
-  const [d, err, reload] = useLoad(() => api('/api/adm/access'))
-  const [tab, setTab] = useState('suspensas'), [msg, setMsg] = useState(''), [busy, setBusy] = useState(false)
-  if (err) return <p className="g-warn">{err}</p>
-  if (!d) return <p className="adm-sub">Carregando…</p>
-  const rows = tab === 'suspensas' ? d.locked_users : d.unlocked_users
-  const suspend = async x => {
-    const note = await askText('Suspender esta conta?', { text: 'Informe o motivo. Ele será mostrado para a pessoa.', ok: 'Suspender', danger: true })
-    if (note == null) return
-    setBusy(true); setMsg('')
-    try { await post('/api/adm/access/set', { user_id: x.id, unlocked: false, note }); setMsg('Conta suspensa com registro do motivo.'); reload() } catch (e) { setMsg(e.message) } finally { setBusy(false) }
-  }
-  const reactivate = async x => {
-    setBusy(true); setMsg('')
-    try { await post('/api/adm/access/set', { user_id: x.id, unlocked: true, note: 'suspensão removida' }); setMsg('Suspensão removida. O acesso voltou a seguir o plano vigente.'); reload() } catch (e) { setMsg(e.message) } finally { setBusy(false) }
-  }
-  return <div data-testid="adm-suspensoes">
-    <p className="adm-sub">Pagamento, teste ou cobertura pelo personal liberam o uso automaticamente. Use esta área somente para suspensões excepcionais, sempre com motivo.</p>
-    <div className="adm-tools" role="tablist">
-      <button role="tab" aria-selected={tab === 'suspensas'} className={'adm-btn ' + (tab === 'suspensas' ? '' : 'ghost')} onClick={() => setTab('suspensas')}>Suspensas ({d.locked_users.length})</button>
-      <button role="tab" aria-selected={tab === 'ativas'} className={'adm-btn ' + (tab === 'ativas' ? '' : 'ghost')} onClick={() => setTab('ativas')}>Ativas ({d.unlocked_users.length})</button>
-    </div>
-    {msg && <p className="g-note" role="status">{msg}</p>}
-    <table className="adm-table"><thead><tr><th>Conta</th><th>Tipo</th><th>{tab === 'suspensas' ? 'Suspensa em' : 'Criada em'}</th>{tab === 'suspensas' && <th>Motivo</th>}<th></th></tr></thead><tbody>
-      {rows.map(x => <tr key={x.id}><td>{x.name}<br /><small>{x.email}</small></td><td>{TYPE_PT(x)}</td><td>{dt(tab === 'suspensas' ? x.access_suspended_at : x.created_at)}</td>{tab === 'suspensas' && <td>{x.access_suspension_reason || '—'}</td>}<td>{tab === 'suspensas' ? <button className="adm-btn" disabled={busy} onClick={() => reactivate(x)}>Reativar</button> : <button className="adm-btn danger" disabled={busy} onClick={() => suspend(x)}>Suspender</button>}</td></tr>)}
-      {!rows.length && <tr><td colSpan={tab === 'suspensas' ? 5 : 4}>Nenhuma conta nesta situação.</td></tr>}
-    </tbody></table>
-  </div>
-}
+// AdmLiberacoes (suspensões de acesso no admin) mudou para views/admin/AdmLiberacoes.jsx (antd, chunk do admin).
 
 // ---------- LGPD: exportação por e-mail ----------
 export function ExportRequest() {

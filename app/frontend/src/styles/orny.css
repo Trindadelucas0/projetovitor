@@ -16,17 +16,21 @@
  --acc:#176d14;--acc-2:#20f51b;--on-acc:#fff;--navy:#171717;
 }
 /* Perfil Mulher: rosa neon no app logado e no preview do cadastro */
-:root[data-palette="feminino"],:root[data-palette="feminino"][data-accent="avagym"]{
+:root[data-palette="feminino"],:root[data-palette="feminino"][data-accent="avagym"],:root[data-palette="rosa"],:root[data-palette="rosa"][data-accent="avagym"]{
  --orny-green:#ff4fd8;--ag-acc:#ff4fd8;--ag-acc-2:#e13bc4;--ag-focus:#ff4fd8;
  --acc:#ff4fd8;--acc-2:#e13bc4;--brand-orange:#ff4fd8;
 }
-:root[data-palette="feminino"] .adm-btn:not(.ghost):not(.danger){background:var(--ag-acc);color:#000}
-:root[data-palette="feminino"] .adm-pill.ok{background:#ff4fd81c;color:var(--ag-acc)}
-:root[data-palette="feminino"] .adm-brand b{color:var(--ag-acc)}
-:root[data-theme="light"][data-palette="feminino"],:root[data-theme="light"][data-palette="feminino"][data-accent="avagym"]{
+:root[data-palette="feminino"] .adm-btn:not(.ghost):not(.danger),:root[data-palette="rosa"] .adm-btn:not(.ghost):not(.danger){background:var(--ag-acc);color:#000}
+:root[data-palette="feminino"] .adm-pill.ok,:root[data-palette="rosa"] .adm-pill.ok{background:#ff4fd81c;color:var(--ag-acc)}
+:root[data-palette="feminino"] .adm-brand b,:root[data-palette="rosa"] .adm-brand b{color:var(--ag-acc)}
+:root[data-theme="light"][data-palette="feminino"],:root[data-theme="light"][data-palette="feminino"][data-accent="avagym"],:root[data-theme="light"][data-palette="rosa"],:root[data-theme="light"][data-palette="rosa"][data-accent="avagym"]{
  --orny-green:#ff4fd8;--ag-acc:#c2186a;--ag-acc-2:#ff4fd8;--ag-focus:#c2186a;
  --acc:#c2186a;--acc-2:#ff4fd8;--brand-orange:#ff4fd8;
 }
+:root[data-palette="rosa"],:root[data-palette="rosa"][data-accent="avagym"]{--orny-green:#ff4fd8;--ag-acc:#ff4fd8;--ag-acc-2:#e13bc4;--ag-focus:#ff4fd8;--acc:#ff4fd8;--acc-2:#e13bc4;--brand-orange:#ff4fd8}
+:root[data-palette="roxo"],:root[data-palette="roxo"][data-accent="avagym"]{--orny-green:#a855f7;--ag-acc:#a855f7;--ag-acc-2:#9333ea;--ag-focus:#a855f7;--acc:#a855f7;--acc-2:#9333ea;--brand-orange:#a855f7}
+:root[data-palette="azul"],:root[data-palette="azul"][data-accent="avagym"]{--orny-green:#38bdf8;--ag-acc:#38bdf8;--ag-acc-2:#0ea5e9;--ag-focus:#38bdf8;--acc:#38bdf8;--acc-2:#0ea5e9;--brand-orange:#38bdf8}
+:root[data-palette="laranja"],:root[data-palette="laranja"][data-accent="avagym"]{--orny-green:#fb923c;--ag-acc:#fb923c;--ag-acc-2:#f97316;--ag-focus:#fb923c;--acc:#fb923c;--acc-2:#f97316;--brand-orange:#fb923c}
 h1,h2,h3,h4,.sec,button,.g-btn{font-family:var(--font-head)}
 .orny-brand{display:inline-flex;align-items:center;justify-content:center;background:#000;border-radius:10px;padding:8px 12px;max-width:100%;box-sizing:border-box;vertical-align:middle}
 .orny-brand img{display:block;width:160px;max-width:100%;height:auto;object-fit:contain}
@@ -66,6 +70,9 @@ h1,h2,h3,h4,.sec,button,.g-btn{font-family:var(--font-head)}
 @media(min-width:900px){.lg-card,.lg-hero~.lg-card{background:var(--ag-card);border-color:var(--ag-line)}.lg-shade{background:linear-gradient(90deg,#0006,#000a 45%,#000 90%)}}
 @media(min-width:900px){:root[data-theme="light"] .lg-shade{background:linear-gradient(90deg,rgba(11,18,32,.25) 0%,rgba(11,18,32,.56) 45%,rgba(11,18,32,.92) 90%),linear-gradient(180deg,rgba(11,18,32,.18) 0%,transparent 40%,rgba(11,18,32,.65) 100%)}:root[data-theme="light"] .lg-card,:root[data-theme="light"] .lg-hero~.lg-card{background:rgba(11,18,32,.86);border-color:#ffffff2b}}
 @media(max-width:360px){.lg-card{padding-left:16px;padding-right:16px}.lg-brand .orny-brand img{width:200px}}
+.profile-gate{position:relative;isolation:isolate;min-height:100dvh;overflow:auto;padding:24px}.profile-gate-bg,.profile-gate-shade{position:fixed;inset:0;z-index:-2}.profile-gate-bg img{width:100%;height:100%;object-fit:cover}.profile-gate-shade{z-index:-1;background:linear-gradient(180deg,#0009,#000 85%)}
+.profile-gate-card{width:min(100%,560px);margin:auto;background:#090909e8!important;border:1px solid #ffffff24!important;box-shadow:0 30px 90px #000b;backdrop-filter:blur(14px)}.profile-gate-card h1{font-size:clamp(26px,5vw,38px);margin:4px 0 8px}.profile-kicker{margin:12px 0 0;color:var(--ag-acc);font-weight:800;text-transform:uppercase;letter-spacing:.12em;font-size:11px}
+@media(min-width:900px){.profile-gate{justify-content:flex-end;padding:48px 7vw}.profile-gate-shade{background:linear-gradient(90deg,#0002 0%,#0006 45%,#000 100%)}.profile-gate-card{margin:auto 0}}
 
 .orny-app-brand{display:flex;justify-content:center;padding:12px 16px 0}.orny-app-brand img{width:120px}
 

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { B } from '../../lib/care.js'
-import { useLoad, Load, Err } from '../app/kit.jsx'
+import { useLoad, Load, Err, Btn, In, TextArea, Note } from '../../ui/gkit.jsx'
 import { ask, notify, notifyError } from '../../lib/dialog.js'
 import { quotaText, spDateTime, spDate } from '../../lib/plans.js'
 
@@ -40,7 +40,7 @@ function Plano({ d }) {
   const nav = useNavigate()
   if (!d.plan) return <div className="g-card" data-testid="ben-sem-plano"><h3 style={{ marginTop: 0 }}>Você ainda não tem um plano ativo</h3>
     <p className="g-sm">Calls com o personal, grupos do WhatsApp, Close Friends e perguntas na live fazem parte dos planos Básico e Completo.</p>
-    <button className="g-btn" onClick={() => nav('/planos')}>Ver planos</button></div>
+    <Btn onClick={() => nav('/planos')}>Ver planos</Btn></div>
   const r = d.plan.rules
   return <div className="g-card" data-testid="ben-plano"><span className="g-eyebrow">Seu plano</span><h3 style={{ margin: '4px 0' }}>{d.plan.label}</h3>
     <p className="g-mut g-sm">Válido até {spDate(d.plan.period_end)}.</p>
@@ -119,16 +119,16 @@ function Calls() {
     {q.plan && <p className="g-sm">{q.label}: {q.limit} call {q.unit} de {q.minutes} min. {q.window_end && <>Esta janela vai até {spDate(q.window_end)}.</>} Call não usada não acumula.</p>}
     {upcoming.map(b => <div key={b.id} className="g-li" style={{ display: 'block' }} data-testid="ben-call-marcada">
       <b>{spDateTime(b.starts_at)}</b> com {b.personal_name}<div className="g-mut g-xs">O link do Zoom chega pelo WhatsApp.</div>
-      <button className="g-btn g-ghost g-sm" onClick={() => cancelar(b)} style={{ marginTop: 6 }}>Cancelar</button></div>)}
-    {!q.can_book && q.reason && <p className="g-note g-sm" role="status" data-testid="ben-calls-bloqueio">{q.reason}</p>}
-    {q.can_book && !d.personal && <p className="g-warn g-sm">Você ainda não tem personal vinculado.</p>}
+      <Btn variant="secondary" size="sm" onClick={() => cancelar(b)} style={{ marginTop: 6 }}>Cancelar</Btn></div>)}
+    {!q.can_book && q.reason && <Note type="info" role="status" data-testid="ben-calls-bloqueio">{q.reason}</Note>}
+    {q.can_book && !d.personal && <Note>Você ainda não tem personal vinculado.</Note>}
     {q.can_book && d.personal && <>
       <p className="g-mut g-xs">Escolha um dia com abertura e um horário (Brasília). Reserve com pelo menos {d.settings.antecedencia}h de antecedência.</p>
       {!windowDates.length ? <p className="g-mut g-sm">Seu personal ainda não abriu horários. Tente mais tarde.</p> : <>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }} data-testid="ben-mini-cal">
-          <button type="button" className="g-btn g-ghost g-sm" disabled={!canPrev} onClick={() => goMonth(-1)} aria-label="Mês anterior">‹</button>
+          <Btn type="button" variant="secondary" size="sm" disabled={!canPrev} onClick={() => goMonth(-1)} aria-label="Mês anterior">‹</Btn>
           <span className="g-sm" style={{ flex: 1, textAlign: 'center', textTransform: 'capitalize' }}>{monthTitle}</span>
-          <button type="button" className="g-btn g-ghost g-sm" disabled={!canNext} onClick={() => goMonth(1)} aria-label="Próximo mês">›</button>
+          <Btn type="button" variant="secondary" size="sm" disabled={!canNext} onClick={() => goMonth(1)} aria-label="Próximo mês">›</Btn>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 10 }} role="grid" aria-label="Calendário de horários livres">
           {DOW_MON.map(l => <div key={l} className="g-mut g-xs" style={{ textAlign: 'center' }}>{l}</div>)}
@@ -137,8 +137,8 @@ function Calls() {
             const has = byDay.has(date)
             const selected = day === date
             const muted = !has
-            return <button key={date} type="button" data-testid="ben-dia" disabled={muted}
-              className={'g-btn g-sm ' + (selected ? '' : 'g-ghost')}
+            return <Btn key={date} type="button" data-testid="ben-dia" disabled={muted}
+              variant={(selected) ? 'primary' : 'secondary'} size="sm"
               onClick={() => setDay(date)}
               aria-pressed={selected}
               style={{
@@ -146,12 +146,12 @@ function Calls() {
                 opacity: muted ? 0.35 : 1, fontWeight: has ? 700 : 400,
               }}>
               {Number(date.slice(8, 10))}
-            </button>
+            </Btn>
           })}
         </div>
         {day && (daySlots.length
           ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {daySlots.map(s => <button key={s.starts_at} style={CHIP} className="g-btn g-ghost g-sm" disabled={busy} onClick={() => reservar(s)} data-testid="ben-slot">{slotRangeLabel(s)}</button>)}
+            {daySlots.map(s => <Btn key={s.starts_at} style={CHIP} variant="secondary" size="sm" disabled={busy} onClick={() => reservar(s)} data-testid="ben-slot">{slotRangeLabel(s)}</Btn>)}
           </div>
           : <p className="g-mut g-sm">Nenhum horário livre neste dia.</p>)}
       </>}
@@ -169,14 +169,14 @@ function Comunidade() {
   const save = async () => { try { const r = await B.saveInstagram(handle); setH(r.instagram_handle); notify('@ salvo. O admin usa ele para te colocar no Close Friends.') } catch (e) { notifyError(e) } }
   return <div className="g-card" data-testid="ben-comunidade"><h3 style={{ marginTop: 0 }}>Grupos e Close Friends</h3>
     {d.groups.length ? <div style={{ display: 'grid', gap: 6 }}>{d.groups.map(g => g.url
-      ? <a key={g.kind} className="g-btn g-ghost" href={g.url} target="_blank" rel="noopener noreferrer" data-testid={'ben-grupo-' + g.kind}>Entrar: {g.label}</a>
+      ? <Btn key={g.kind} variant="secondary" href={g.url} target="_blank" rel="noopener noreferrer" data-testid={'ben-grupo-' + g.kind}>Entrar: {g.label}</Btn>
       : <span key={g.kind} className="g-mut g-sm">{g.label}: link em breve</span>)}</div>
       : <p className="g-mut g-sm">Os grupos do WhatsApp fazem parte dos planos.</p>}
     {d.former && <p className="g-mut g-xs">Seu plano terminou: você continua nos grupos abertos. Renove para voltar ao grupo exclusivo e ao Close Friends.</p>}
     {d.plan && <>
       <p className="g-sm" style={{ marginTop: 12 }}>{cf ? <>Close Friends até <b>{spDate(cf.expires_at)}</b>{cf.added_at ? ' — você já está na lista.' : ' — o admin vai te adicionar.'}</> : 'Close Friends: o admin adiciona no início de cada ciclo.'}</p>
       <label className="g-field"><span className="g-mut g-xs">Seu @ do Instagram (para entrar no Close Friends)</span>
-        <div className="g-row" style={{ gap: 8 }}><input className="g-in" value={handle} onChange={e => setH(e.target.value)} placeholder="@seuperfil" data-testid="ben-instagram" /><button className="g-btn g-sm" onClick={save}>Salvar</button></div></label>
+        <div className="g-row" style={{ gap: 8 }}><In value={handle} onChange={e => setH(e.target.value)} placeholder="@seuperfil" data-testid="ben-instagram" /><Btn size="sm" onClick={save}>Salvar</Btn></div></label>
     </>}
   </div>
 }
@@ -191,11 +191,11 @@ function Live() {
   return <div className="g-card" data-testid="ben-live"><h3 style={{ marginTop: 0 }}>Live semanal</h3>
     {!live ? <p className="g-mut g-sm">Nenhuma live marcada por enquanto.</p> : <>
       <p className="g-sm"><b>{live.title}</b> — {spDateTime(live.starts_at)}</p>
-      {live.youtube_url && <a className="g-btn g-ghost g-sm" href={live.youtube_url} target="_blank" rel="noopener noreferrer">Abrir no YouTube</a>}
+      {live.youtube_url && <Btn variant="secondary" size="sm" href={live.youtube_url} target="_blank" rel="noopener noreferrer">Abrir no YouTube</Btn>}
       {live.my_questions.map(qq => <p key={qq.id} className="g-mut g-xs">Sua pergunta: “{qq.body}” · {qq.status === 'respondida' ? 'respondida' : 'na fila'}</p>)}
       {live.status === 'agendada' && (d.can_ask ? <label className="g-field" style={{ marginTop: 8 }}><span className="g-mut g-xs">Mande sua pergunta{d.priority ? ' (alunos Completo aparecem primeiro)' : ''}</span>
-        <textarea className="g-in" rows={2} maxLength={500} value={txt} onChange={e => setTxt(e.target.value)} data-testid="ben-pergunta" />
-        <button className="g-btn g-sm" style={{ marginTop: 6 }} disabled={txt.trim().length < 5} onClick={send}>Enviar pergunta</button></label>
+        <TextArea rows={2} maxLength={500} value={txt} onChange={e => setTxt(e.target.value)} data-testid="ben-pergunta" />
+        <Btn size="sm" style={{ marginTop: 6 }} disabled={txt.trim().length < 5} onClick={send}>Enviar pergunta</Btn></label>
         : <p className="g-mut g-xs">Perguntas na live são para alunos dos planos.</p>)}
     </>}
   </div>

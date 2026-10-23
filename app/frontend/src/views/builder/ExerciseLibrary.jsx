@@ -14,13 +14,16 @@ import { mediaOf } from '../../lib/guided.js'
 import Icon from '../../components/Icon.jsx'
 import GSelect from '../../components/GSelect.jsx'
 import { SearchField } from '../../components/ui.jsx'
-import { Btn, Empty } from '../app/kit.jsx'
+import { Drawer } from 'antd'
+import { Btn, Empty } from '../../ui/gkit.jsx'
+import { useMedia } from '../../ui/useMedia.js'
 import { LEVEL_PT } from './shape.js'
 
 const PAGINA = 30
 const vazio = { q: '', group: '', equipment: '', level: '' }
 
 export default function ExerciseLibrary({ open, onClose, onAdd, dayName, inDay, room }) {
+  const mob = useMedia('(max-width: 899px)')
   const [f, setF] = useState(vazio)
   const [d, setD] = useState(null)
   const [erro, setErro] = useState('')
@@ -44,13 +47,11 @@ export default function ExerciseLibrary({ open, onClose, onAdd, dayName, inDay, 
 
   const opt = (itens, rotulo) => [{ value: '', label: rotulo }, ...itens.map(x => ({ value: x.id, label: x.name_pt }))]
 
-  return (
-    <aside className={'wb-lib' + (open ? ' open' : '')} aria-label="Biblioteca de exercícios" data-testid="wb-lib">
-      <div className="wb-lib-top">
+  const corpo = <>
+      {!mob && <div className="wb-lib-top">
         <b>Biblioteca</b>
         <span className="g-sp" />
-        <button className="g-icbtn wb-only-mob" onClick={onClose} aria-label="Fechar biblioteca"><Icon name="xmark" /></button>
-      </div>
+      </div>}
 
       <div className="wb-lib-filtros">
         <SearchField value={f.q} onChange={e => setF({ ...f, q: e.target.value })} onClear={() => setF({ ...f, q: '' })}
@@ -109,11 +110,14 @@ export default function ExerciseLibrary({ open, onClose, onAdd, dayName, inDay, 
         )}
       </div>
 
-      <div className="wb-lib-foot wb-only-mob">
-        <Btn onClick={onClose} data-testid="wb-add-sel">
-          {inDay.size ? `Concluir · ${inDay.size} em ${dayName}` : 'Fechar a biblioteca'}
-        </Btn>
-      </div>
-    </aside>
+    </>
+  // celular: gaveta antd (de baixo, 92% da altura, fecha no × / Esc / fundo); desktop: coluna fixa ao lado da ficha
+  if (mob) return (
+    <Drawer open={open} onClose={onClose} placement="bottom" size="auto" styles={{ wrapper: { height: '92dvh' } }} title="Biblioteca" destroyOnHidden={false}
+      rootClassName="orny-antd gk-sheet wb-lib-drawer" closable={{ 'aria-label': 'Fechar biblioteca' }} aria-label="Biblioteca de exercícios"
+      footer={<Btn onClick={onClose} data-testid="wb-add-sel">{inDay.size ? `Concluir · ${inDay.size} em ${dayName}` : 'Fechar a biblioteca'}</Btn>}>
+      <div className="wb-lib open wb-lib-in" data-testid="wb-lib">{corpo}</div>
+    </Drawer>
   )
+  return <aside className={'wb-lib' + (open ? ' open' : '')} aria-label="Biblioteca de exercícios" data-testid="wb-lib">{corpo}</aside>
 }

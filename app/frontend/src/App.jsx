@@ -1,6 +1,5 @@
 import Brand, { BrandLoading } from './components/Brand.jsx'
 import { applyTheme, applyPalette, loadTheme } from './lib/theme.js'
-import PerfilGate from './components/PerfilGate.jsx'
 import { useEffect, lazy, Suspense } from 'react'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from './store/useStore.js'
@@ -25,10 +24,7 @@ import Workout from './views/Workout.jsx'
 import Stats from './views/Stats.jsx'
 import History from './views/History.jsx'
 import Library from './views/Library.jsx'
-import SocialProfile from './views/guided/SocialProfile.jsx'
-import SocialPublic from './views/guided/SocialPublic.jsx'
 import ShareCard from './views/guided/ShareCard.jsx'
-import Settings from './views/Settings.jsx'
 const MuscleMap = lazy(() => import('./views/MuscleMap.jsx'))
 // treino guiado (AVAGYM)
 import GuidedTabBar, { ProfessionalTabBar, isAdminAccount, isProAccount } from './views/guided/TabBar.jsx'
@@ -38,41 +34,64 @@ import { Recommendations, Library as ProgramLibrary, ProgramDetail } from './vie
 import MyProgram from './views/guided/MyProgram.jsx'
 import Train from './views/guided/Train.jsx'
 import Done from './views/guided/Done.jsx'
-import Progress from './views/guided/Progress.jsx'
-import Profile from './views/guided/Profile.jsx'
 import AdminPrograms from './views/guided/AdminPrograms.jsx'
 // AVAGYM
 import Treinos from './views/app/Treinos.jsx'
-import Comunidade, { PostPage, ProfessionalPage } from './views/app/Comunidade.jsx'
-import './views/app/AdminCommunity.jsx'
+// moderação da comunidade (EXTRA.moderacao) agora é importada só pelo AdminApp (chunk lazy)
 import Gate from './views/app/Locked.jsx'
-import Acompanhamento, { Conversa } from './views/app/Acompanhamento.jsx'
-import Avisos from './views/app/Avisos.jsx'
-import AdminApp from './views/admin/AdminApp.jsx'
-import ProPortal from './views/pro/Portal.jsx'
-import Beneficios from './views/beneficios/Beneficios.jsx'   // calls, grupos, Close Friends e live do plano
-import { LegalGate, LegalPage } from './views/app/Legal.jsx'
+// Ant Design: painel admin, portal do personal e construtor carregam sob demanda (o antd não entra no bundle do aluno)
+const AdminApp = lazy(() => import('./views/admin/AdminApp.jsx'))
+const ProPortal = lazy(() => import('./views/pro/Portal.jsx'))
+import { LegalGate } from './views/app/Legal.jsx'
 /* Plano unico: o portal do profissional (views/pro/Portal.jsx, views/pro/MyPrograms.jsx)
    e a assinatura PRO (views/billing/ProSubscription.jsx) saem das rotas. Os arquivos
    continuam no projeto para quando o app abrir para varios personais. */
-import Builder from './views/builder/WorkoutBuilder.jsx'
+const Builder = lazy(() => import('./views/builder/WorkoutBuilder.jsx'))
+const PerfilGate = lazy(() => import('./components/PerfilGate.jsx'))   // usa antd: fora do bundle inicial
+const Lz = ({ children }) => <Suspense fallback={<BrandLoading />}>{children}</Suspense>
+// Fases 5–6: telas do aluno em Ant Design carregam sob demanda, já dentro do AntProvider (tema exato do app).
+// Ficam fora (sem antd, no bundle inicial): login, Início, Treinos, treino/conclusão, gates e barras de abas.
+const ANT = () => import('./ui/AntProvider.jsx')
+const lazyAnt = (imp, name = 'default') => lazy(() => Promise.all([imp(), ANT()]).then(([m, p]) => {
+  const View = m[name], Provider = p.default
+  return { default: props => <Provider className="gk-app"><View {...props} /></Provider> }
+}))
+const I = {
+  social: () => import('./views/guided/SocialProfile.jsx'), socialPub: () => import('./views/guided/SocialPublic.jsx'),
+  settings: () => import('./views/Settings.jsx'), progress: () => import('./views/guided/Progress.jsx'), profile: () => import('./views/guided/Profile.jsx'),
+  comunidade: () => import('./views/app/Comunidade.jsx'), care: () => import('./views/app/Acompanhamento.jsx'), avisos: () => import('./views/app/Avisos.jsx'),
+  beneficios: () => import('./views/beneficios/Beneficios.jsx'), estat: () => import('./views/guided/Estatisticas.jsx'),
+  aval: () => import('./views/postural/Avaliacoes.jsx'), devol: () => import('./views/postural/Devolutiva.jsx'),
+  plans: () => import('./views/v3/Plans.jsx'), billing: () => import('./views/billing/Billing.jsx'), invite: () => import('./views/v3/AcceptInvite.jsx'),
+  legal: () => import('./views/app/LegalPage.jsx'),
+}
+const SocialProfile = lazyAnt(I.social), SocialPublic = lazyAnt(I.socialPub), Settings = lazyAnt(I.settings)
+const Progress = lazyAnt(I.progress), Profile = lazyAnt(I.profile)
+const Comunidade = lazyAnt(I.comunidade), PostPage = lazyAnt(I.comunidade, 'PostPage'), ProfessionalPage = lazyAnt(I.comunidade, 'ProfessionalPage')
+const Acompanhamento = lazyAnt(I.care), Conversa = lazyAnt(I.care, 'Conversa'), Avisos = lazyAnt(I.avisos), Beneficios = lazyAnt(I.beneficios)
+const Estatisticas = lazyAnt(I.estat), Avaliacoes = lazyAnt(I.aval), Devolutiva = lazyAnt(I.devol)
+const Plans = lazyAnt(I.plans), PublicPlans = lazyAnt(I.billing, 'PublicPlans'), Subscription = lazyAnt(I.billing, 'Subscription'), AcceptInvite = lazyAnt(I.invite)
+const LegalPage = lazyAnt(I.legal)
+// depois do login, baixa os chunks no tempo ocioso: trocar de aba não espera a rede
+function usePrefetch(on) {
+  useEffect(() => {
+    if (!on) return
+    const run = () => { ANT(); I.progress(); I.profile(); I.comunidade(); I.care(); I.avisos() }
+    const id = 'requestIdleCallback' in window ? window.requestIdleCallback(run, { timeout: 4000 }) : setTimeout(run, 2500)
+    return () => ('cancelIdleCallback' in window ? window.cancelIdleCallback(id) : clearTimeout(id))
+  }, [on])
+}
 import PlanErrorHost from './views/v3/PlanErrorHost.jsx'
 import { AccessHost } from './views/billing/Access.jsx'   // Monetizacao F8
 import WelcomeHost from './views/billing/Welcome.jsx'   // lote 7: boas-vindas pos-assinatura
-import Estatisticas from './views/guided/Estatisticas.jsx'   // lote 7: progresso e estatisticas
-import Avaliacoes from './views/postural/Avaliacoes.jsx'   // V5-AP: avaliação postural do aluno
 import PosturalWizard from './views/postural/Wizard.jsx'
-import Devolutiva from './views/postural/Devolutiva.jsx'
 import PendingAssessmentNotice from './views/postural/PendingAssessmentNotice.jsx'
 import { MustChangePassword, AccessLockHost, LockBanner, ScopeGate } from './views/v3/V42.jsx'
 import './styles/v42.css'
 import './styles/tours.css'
 import { TourHost } from './components/Tour.jsx'
 import ThemeToggle from './components/ThemeToggle.jsx'
-import Plans from './views/v3/Plans.jsx'
-import { PublicPlans, Subscription } from './views/billing/Billing.jsx'   // V5 cobranca
 import { NavigationAccess } from './components/NavigationAccess.jsx'
-import AcceptInvite from './views/v3/AcceptInvite.jsx'
 import ProfileNotice from './components/ProfileNotice.jsx'
 import DeviceSetupFlow from './components/DeviceSetupFlow.jsx'
 
@@ -93,7 +112,7 @@ function Shell() {
   useEffect(() => {
     // Só reaplica a cor da sessão logada (admin pode pré-visualizar outra cor no painel).
     if (!user) return
-    applyPalette(user.palette === 'feminino' ? 'feminino' : 'masculino')
+    applyPalette(user.palette)   // rosa/roxo/azul/laranja (PC 16:36); applyPalette trata aliases e valor desconhecido = verde
   }, [user?.id, user?.palette])
   useEffect(() => { setLang(S.lang || 'pt') }, [S.lang])
   useEffect(() => { document.documentElement.lang = (S.lang || 'pt') === 'pt' ? 'pt-BR' : S.lang }, [langV, S.lang])
@@ -103,6 +122,7 @@ function Shell() {
   useWakeLock(!!S.active && S.keepAwake !== false)
 
   const authed = user || isGuest
+  usePrefetch(!!user && ready)
   if (!ready && !authed) return (
     <div id="app">
       <BrandLoading />
@@ -111,8 +131,8 @@ function Shell() {
 
   // documentos legais: páginas públicas (com ou sem login), fora dos gates
   // V5 cobranca: pagina publica de planos (com ou sem login)
-  if (loc.pathname === '/precos') return <div id="app" className="vfade"><ErrorBoundary><PublicPlans /></ErrorBoundary></div>
-  if (loc.pathname.startsWith('/legal')) return <div id="app" className="vfade"><ErrorBoundary><Routes><Route path="/legal" element={<LegalPage authed={authed} />} /><Route path="/legal/:doc" element={<LegalPage authed={authed} />} /></Routes></ErrorBoundary></div>
+  if (loc.pathname === '/precos') return <div id="app" className="vfade"><ErrorBoundary><Lz><PublicPlans /></Lz></ErrorBoundary></div>
+  if (loc.pathname.startsWith('/legal')) return <div id="app" className="vfade"><ErrorBoundary><Lz><Routes><Route path="/legal" element={<LegalPage authed={authed} />} /><Route path="/legal/:doc" element={<LegalPage authed={authed} />} /></Routes></Lz></ErrorBoundary></div>
   const legacySignup = loc.pathname === '/' && new URLSearchParams(loc.search).get('cadastro') === '1'
   // A landing e a pagina de marketing: nao faz sentido no app nativo (Capacitor), que abre
   // direto no treino, nem para quem ja esta logado em "/".
@@ -128,10 +148,10 @@ function Shell() {
         {authed && !user?.must_change_password && <LockBanner />}
         {authed && user?.profile_incomplete && !user?.must_change_password && !user?.needs_terms && <ProfileNotice />}
         <ErrorBoundary>
-          {!authed ? <Login /> : user?.must_change_password ? <MustChangePassword /> : user?.needs_terms ? <LegalGate onAccepted={() => useStore.getState().setUser({ ...user, needs_terms: false })} /> : user?.needs_perfil ? <PerfilGate /> : isAdminAccount(user) ? (
-            <Routes>
-              <Route path="/admin/painel" element={<AdminApp />} />
-              <Route path="/pro/treino" element={<Builder />} />
+          {!authed ? <Login /> : user?.must_change_password ? <MustChangePassword /> : user?.needs_terms ? <LegalGate onAccepted={() => useStore.getState().setUser({ ...user, needs_terms: false })} /> : user?.needs_perfil ? <Lz><PerfilGate /></Lz> : isAdminAccount(user) ? (
+            <Lz><Routes>
+              <Route path="/admin/painel" element={<Lz><AdminApp /></Lz>} />
+              <Route path="/pro/treino" element={<Lz><Builder /></Lz>} />
               <Route path="/library" element={<Library />} />
               <Route path="/admin/programas" element={<Navigate to="/admin/painel?tab=exercicios" replace />} />
               <Route path="/comunidade" element={<Gate title="Comunidade" allow="comunidade"><Comunidade /></Gate>} />
@@ -148,13 +168,13 @@ function Shell() {
               <Route path="/convite/:code" element={<AcceptInvite />} />
               <Route path="/settings" element={<Settings />} />{/* admin: Configuracoes (antes caia no "*" e ia para o painel) */}
 <Route path="*" element={<Navigate to="/admin/painel" replace />} />
-            </Routes>
+            </Routes></Lz>
           ) : (
             /* Plano unico (20/10/2026): o app e do aluno e o painel do personal e o admin.
                Nao existe mais shell de profissional; conta legada com esse papel entra como
                aluno e as rotas /pro* levam ao treino. */
-            <Routes>
-              <Route path="/pro/treino" element={(user?.admin || isProAccount(user)) ? <Builder /> : <Navigate to="/hoje" replace />} />
+            <Lz><Routes>
+              <Route path="/pro/treino" element={(user?.admin || isProAccount(user)) ? <Lz><Builder /></Lz> : <Navigate to="/hoje" replace />} />
               <Route path="/hoje" element={isProAccount(user) ? <Navigate to="/pro" replace /> : <Gate title="Início"><Today /></Gate>} />
               <Route path="/treinos" element={<Gate title="Treinos"><Treinos /></Gate>} />
               <Route path="/comunidade" element={<Gate title="Comunidade" allow="comunidade"><Comunidade /></Gate>} />
@@ -168,10 +188,10 @@ function Shell() {
               <Route path="/post/:id" element={<Gate title="Comunidade" allow="comunidade"><PostPage /></Gate>} />
               <Route path="/profissional/:id" element={<Gate title="Comunidade" allow="comunidade"><ProfessionalPage /></Gate>} />
               <Route path="/ranking" element={<Navigate to="/comunidade" replace />} />
-              <Route path="/pro" element={isProAccount(user) ? <ProPortal /> : <Navigate to="/hoje" replace />} />
+              <Route path="/pro" element={isProAccount(user) ? <Lz><ProPortal /></Lz> : <Navigate to="/hoje" replace />} />
               <Route path="/pro/programas" element={<Navigate to={user?.admin ? '/admin/painel?tab=usuarios' : '/hoje'} replace />} />
               <Route path="/pro/assinatura" element={<Navigate to="/assinatura" replace />} />
-              <Route path="/admin/painel" element={user?.admin ? <AdminApp /> : <Navigate to="/hoje" replace state={{ noOnboarding: true }} />} />{/* QA AD-40/43: sem permissao -> Inicio, sem cair no questionario */}
+              <Route path="/admin/painel" element={user?.admin ? <Lz><AdminApp /></Lz> : <Navigate to="/hoje" replace state={{ noOnboarding: true }} />} />{/* QA AD-40/43: sem permissao -> Inicio, sem cair no questionario */}
               <Route path="/onboarding" element={<Navigate to="/treinos" replace />} />
               <Route path="/recomendados" element={<Navigate to="/treinos" replace />} />
               <Route path="/programas" element={<Navigate to="/treinos" replace />} />
@@ -203,13 +223,13 @@ function Shell() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={<Navigate to={user?.admin ? '/admin/painel' : '/hoje'} replace />} />
               <Route path="*" element={<Navigate to={isProAccount(user) ? '/pro' : '/hoje'} replace />} />
-            </Routes>
+            </Routes></Lz>
           )}
         </ErrorBoundary>
       </div>
       {/* barra principal = treino guiado; a antiga só aparece no treino manual em execução */}
-      {authed && !user?.needs_terms && !user?.must_change_password && !isAdminAccount(user) && !isProAccount(user) && !loc.pathname.startsWith('/admin/painel') && !loc.pathname.startsWith('/pro/treino') && !(loc.pathname.startsWith('/avaliacao/') && !loc.pathname.endsWith('/devolutiva')) && <GuidedTabBar />}
-      {authed && !user?.needs_terms && !user?.must_change_password && isProAccount(user) && !loc.pathname.startsWith('/pro/treino') && <ProfessionalTabBar />}
+      {authed && !user?.needs_terms && !user?.needs_perfil && !user?.must_change_password && !isAdminAccount(user) && !isProAccount(user) && !loc.pathname.startsWith('/admin/painel') && !loc.pathname.startsWith('/pro/treino') && !(loc.pathname.startsWith('/avaliacao/') && !loc.pathname.endsWith('/devolutiva')) && <GuidedTabBar />}
+      {authed && !user?.needs_terms && !user?.needs_perfil && !user?.must_change_password && isProAccount(user) && !loc.pathname.startsWith('/pro/treino') && <ProfessionalTabBar />}
       {authed && isAdminAccount(user) && !user?.needs_terms && !loc.pathname.startsWith('/admin/painel') && !loc.pathname.startsWith('/pro/treino') && <button className="adm-btn" style={{ position: 'fixed', left: 12, bottom: 12, minHeight: 44, zIndex: 50 }} onClick={() => navigate('/admin/painel')} data-testid="back-admin">← Painel admin</button>}
       <RestTimer />
       <Modals />

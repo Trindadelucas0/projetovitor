@@ -16,10 +16,12 @@ export function applyTheme(p = pref) {
   try { localStorage.setItem(CACHE, p) } catch { /* */ }
   subs.forEach(f => f(pref))
 }
-// Paleta Homem (verde) / Mulher (rosa). Só no app logado e no preview do cadastro; não grava no localStorage.
+// Paleta visual do perfil. Só no app logado e no preview do cadastro; não grava no localStorage.
 export function applyPalette(palette) {
   const de = document.documentElement
-  if (palette === 'feminino') de.dataset.palette = 'feminino'
+  const aliases = { masculino: 'verde', feminino: 'rosa' }
+  const next = aliases[palette] || palette
+  if (['rosa', 'roxo', 'azul', 'laranja'].includes(next)) de.dataset.palette = next
   else delete de.dataset.palette
 }
 mq?.addEventListener?.('change', () => { if (pref === 'system') applyTheme('system') })

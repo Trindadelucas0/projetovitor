@@ -28,5 +28,5 @@ export async function authLogin(email, password) {
 // Plano único: o cadastro público cria somente aluno. O servidor ignora qualquer outro
 // perfil; o parâmetro saiu da assinatura para não sugerir que existe escolha.
 export async function authRegister(name, email, password, terms_version, extra = {}) {
-  return api('/api/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password, accept_terms: extra.accept ?? !!terms_version, birth_date: extra.birth_date || undefined, ...(typeof extra.health === 'boolean' ? { health_consent: extra.health } : {}), terms_version, plan_id: extra.plan_id || undefined, ...(extra.contact ? { contact: extra.contact } : {}), ...(extra.coupon ? { coupon: extra.coupon } : {}), ...(extra.perfil ? { perfil: extra.perfil } : {}) }) })
+  return api('/api/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password, accept_terms: extra.accept ?? !!terms_version, birth_date: extra.birth_date || undefined, ...(typeof extra.health === 'boolean' ? { health_consent: extra.health } : {}), terms_version, plan_id: extra.plan_id || undefined, ...(extra.contact ? { contact: extra.contact } : {}), ...(extra.coupon ? { coupon: extra.coupon } : {}), profile_kind: extra.profile_kind, accent_palette: extra.accent_palette, prefers_female_coach: extra.prefers_female_coach === true }) })
 }

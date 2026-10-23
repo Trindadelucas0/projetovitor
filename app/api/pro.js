@@ -13,6 +13,7 @@ import { applyWeekdaySchedule } from './workout-schema.js'
 import { fichaQuotaWarning } from './plan-rules.js'
 import { isInternalPersonal } from './internal-personal.js'
 import { queuePasswordLink } from './password-email.js'
+import { normalizeProfileChoice } from './profile-choice.js'
 const genPassword = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; let p; do { p = Array.from({ length: 14 }, () => A[crypto.randomInt(A.length)]).join('') } while (!/\d/.test(p) || !/[a-z]/.test(p) || !/[A-Z]/.test(p)); return p }
 
 const qs = req => new URL(req.url, 'http://x').searchParams
@@ -589,15 +590,20 @@ export function proRoutes({ json, readBody }) {
     },
     'GET /api/adm/users': async (req, res) => {
       const u = await guard('admin')(req, res, json); if (!u) return
-      const st = qs(req).get('status'), s = likeTerm(qs(req).get('q'), 100)
+      const st = qs(req).get('status'), s = likeTerm(qs(req).get('q'), 100), assignment = qs(req).get('assignment')
       const r = await q(`select u.id,u.name,u.email,u.status,u.created_at,u.share_code,u.account_type,u.access_unlocked_at,u.access_suspended_at,u.access_suspension_reason,u.last_seen_at,(select m.name from users m where m.id=u.managed_by) managed_by_name,(select pp.verification_status from professional_profiles pp where pp.user_id=u.id) verification,
           coalesce((select pp.internal_managed from professional_profiles pp where pp.user_id=u.id),false) internal_managed,
           (select up.sex from user_profiles up where up.user_id=u.id) sex,
+          (select up.profile_kind from user_profiles up where up.user_id=u.id) profile_kind,
+          (select up.accent_palette from user_profiles up where up.user_id=u.id) accent_palette,
+          coalesce((select up.prefers_female_coach from user_profiles up where up.user_id=u.id),false) prefers_female_coach,
           coalesce((select json_agg(json_build_object('audience',s.audience,'plan',p.name,'status',s.status,'over_limit',s.over_limit) order by s.audience) from subscriptions s join plans p on p.id=s.plan_id where s.user_id=u.id and s.status<>'cancelada'),'[]') subs, coalesce(array_agg(distinct ur.role_id) filter (where ur.role_id is not null),'{}') roles,
           u.access_unlocked_at, u.account_type, uap.plan_id, ap.max_professionals, (select count(*) from coach_students cs where cs.student_id=u.id and cs.status='ativo')::int links
         from users u left join user_roles ur on ur.user_id=u.id left join user_access_plans uap on uap.user_id=u.id left join access_plans ap on ap.id=uap.plan_id
-        where u.tenant_id=$1 and ($2::text is null or u.status=$2) and (u.name ilike $3 or u.email ilike $3 or u.share_code ilike $3) group by u.id,uap.plan_id,ap.max_professionals order by u.created_at desc limit 200`, [u.tenant_id, st || null, s])
-      json(res, 200, { users: r.rows.map(x => ({ ...x, over_limit: x.plan_id ? x.links > x.max_professionals : false, perfil: x.sex || null })) })
+        where u.tenant_id=$1 and ($2::text is null or u.status=$2) and (u.name ilike $3 or u.email ilike $3 or u.share_code ilike $3)
+          and ($4::text is null or ($4='unassigned' and exists(select 1 from user_roles ar where ar.user_id=u.id and ar.tenant_id=u.tenant_id and ar.role_id='aluno') and not exists(select 1 from coach_students acs where acs.student_id=u.id and acs.status='ativo')))
+        group by u.id,uap.plan_id,ap.max_professionals order by u.created_at desc limit 200`, [u.tenant_id, st || null, s, assignment === 'unassigned' ? assignment : null])
+      json(res, 200, { users: r.rows.map(x => ({ ...x, over_limit: x.plan_id ? x.links > x.max_professionals : false, perfil: x.sex || null, assignment_status: x.links > 0 ? 'atribuido' : (x.roles || []).includes('aluno') ? 'aguardando_personal' : null })) })
     },
     'POST /api/adm/users/status': async (req, res) => {
       const u = await guard('admin')(req, res, json); if (!u) return
@@ -634,15 +640,14 @@ export function proRoutes({ json, readBody }) {
       const b = await readBody(req), errors = {}
       const name = txt(b.name, 120), email = String(b.email || '').trim().toLowerCase()
       const type = b.type === 'profissional' ? 'profissional' : 'aluno'
-      // Homem/Mulher: o aluno vai para o personal principal desse público e o sexo fica gravado.
-      // Sem perfil (chamada antiga), mantém o comportamento anterior e o PerfilGate pergunta no 1º acesso.
-      const perfil = ['masculino', 'feminino'].includes(b.perfil) ? b.perfil : null
+      let profile = null
+      try { profile = normalizeProfileChoice(b, { optional: true }) } catch (e) { return json(res, 400, { error: e.message, code: e.code, errors: { perfil: e.message } }) }
       const audience = ['masculino', 'feminino'].includes(b.audience_sex) ? b.audience_sex : null
       let password = String(b.password || ''), generated = false
       if (name.length < 2) errors.name = 'Informe o nome'
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 200) errors.email = 'E-mail inválido'
       if (!password) { password = genPassword(); generated = true } else if (password.length < 8) errors.password = 'A senha deve ter pelo menos 8 caracteres'
-      // Somente o aluno nasce com plano de acesso e vínculo automático ao personal principal.
+      // Somente o aluno nasce com plano de acesso. O vínculo é atribuído depois pelo Admin.
       const plan = (await q(`select * from access_plans where id='personal_unico' and active`)).rows[0]
         || (await q(`select * from access_plans where active order by max_professionals, id limit 1`)).rows[0]
       if (Object.keys(errors).length) return json(res, 400, { error: Object.values(errors)[0], errors })
@@ -656,23 +661,20 @@ export function proRoutes({ json, readBody }) {
           await c.query('insert into user_access_plans(user_id,plan_id,assigned_by) values($1,$2,$3)', [id, plan.id, u.id])
           await c.query('insert into access_plan_history(plan_id,user_id,action,actor_id) values($1,$2,$3,$4)', [plan.id, id, 'atribuido', u.id])
         }
-        if (type === 'aluno') {
-          await linkNewStudentToPrincipal(u.tenant_id, id, u.id, c, perfil || 'masculino')
-          if (perfil) await c.query(`insert into user_profiles(user_id,tenant_id,sex) values($1,$2,$3) on conflict (user_id) do update set sex=excluded.sex`, [id, u.tenant_id, perfil])
-        }
+        if (type === 'aluno' && profile) await c.query(`insert into user_profiles(user_id,tenant_id,sex,profile_kind,accent_palette,prefers_female_coach) values($1,$2,$3,$4,$5,$6)
+          on conflict (user_id) do update set sex=excluded.sex,profile_kind=excluded.profile_kind,accent_palette=excluded.accent_palette,prefers_female_coach=excluded.prefers_female_coach`, [id, u.tenant_id, profile.sex, profile.profile_kind, profile.accent_palette, profile.prefers_female_coach])
         if (type === 'profissional') await c.query(`insert into professional_profiles(user_id,tenant_id,display_name,state,can_publish,internal_managed,audience_sex) values($1,$2,$3,'ativo',true,true,$4)`, [id, u.tenant_id, name, audience])
         await c.query('commit')
-      } catch (e) { await c.query('rollback'); c.release(); if (e.code === '23505') return json(res, 409, { error: 'Este e-mail já tem conta. Peça para a pessoa entrar e informar o código dela.', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } }); if (e.code === 'PRINCIPAL_UNAVAILABLE' || e.code === 'PERSONAL_FEMININO_UNAVAILABLE') return json(res, 503, { error: e.message, code: e.code }); throw e }
+      } catch (e) { await c.query('rollback'); c.release(); if (e.code === '23505') return json(res, 409, { error: 'Este e-mail já tem conta. Peça para a pessoa entrar e informar o código dela.', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } }); throw e }
       c.release()
-      await audit(u.tenant_id, u.id, 'usuario.criado_admin', 'user', id, { type, plan: plan?.id || null, perfil, audience_sex: audience })
+      await audit(u.tenant_id, u.id, 'usuario.criado_admin', 'user', id, { type, plan: plan?.id || null, profile, audience_sex: audience })
       let link = null, password_link = null
-      if (type === 'aluno') link = { ok: true }
       // aluno e personal recebem o link de 24 h para definir a senha (o personal criado pelo painel também)
       password_link = await queuePasswordLink(id, u.id, true)
       // Aluno: o personal copia o link de 24 h; a senha aleatória existe só no hash.
       // Personal interno (POST direto): ainda pode devolver senha provisória.
       json(res, 201, {
-        id, email, type, link,
+        id, email, type, link, assignment_status: type === 'aluno' ? 'aguardando_personal' : null,
         ...(type === 'aluno'
           ? { password_link, email_queued: !!password_link?.email_queued }
           : { password_link, email_queued: !!password_link?.email_queued, audience_sex: audience, temp_password: generated ? password : undefined })
@@ -788,6 +790,10 @@ export function proRoutes({ json, readBody }) {
       const u = await guard('admin')(req, res, json); if (!u) return
       const b = await readBody(req)
       if (!isUuid(b.student_id) || !isUuid(b.coach_id)) return json(res, 400, { error: 'Selecione aluno e profissional', code: 'INVALID_INPUT' })
+      const preference = (await q(`select up.prefers_female_coach, pp.audience_sex from users s
+        left join user_profiles up on up.user_id=s.id left join professional_profiles pp on pp.user_id=$2 and pp.tenant_id=s.tenant_id
+        where s.id=$1 and s.tenant_id=$3`, [b.student_id, b.coach_id, u.tenant_id])).rows[0]
+      if (preference?.prefers_female_coach && preference.audience_sex !== 'feminino') return json(res, 409, { error: 'Esta aluna pediu atendimento por uma personal mulher. Escolha uma personal feminina.', code: 'FEMALE_COACH_PREFERENCE' })
       const fail = await linkFailures(u.tenant_id, b.student_id, b.coach_id, b.area)
       if (b.confirm !== true) fail.push('Confirme a atribuição')
       if (fail.length) return json(res, 409, { error: fail[0], reasons: fail, code: planCode(fail) })
@@ -922,9 +928,11 @@ export function proRoutes({ json, readBody }) {
         personal_feminino_candidates: candidates
       } })
     },
-    // Personal (ou admin) corrige Homem/Mulher e envia o aluno para a outra personal.
+    // Endpoint legado desativado: perfil visual não pode transferir aluno.
     'POST /api/pro/students/corrigir-perfil': async (req, res) => {
       const u = await requireAuth(req, res, json); if (!u) return
+      return json(res, 410, { error: 'O perfil visual não transfere alunos. Use a atribuição ou transferência no painel administrativo.', code: 'USE_ADMIN_ASSIGNMENT' })
+      /* compatibilidade: implementação antiga mantida abaixo temporariamente, sem execução */
       const b = await readBody(req)
       if (b.confirm !== true) return json(res, 400, { error: 'Confirme a transferência' })
       if (!isUuid(b.student_id)) return json(res, 400, { error: 'Aluno inválido', code: 'INVALID_INPUT' })

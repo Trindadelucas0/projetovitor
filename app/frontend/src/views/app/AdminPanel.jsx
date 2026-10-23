@@ -5,6 +5,10 @@ import { useSearchParams } from 'react-router-dom'
 import { C, CAT_PT, dt } from '../../lib/care.js'
 import { ask as askConfirm, askText, showValue, notify, notifyError } from '../../lib/dialog.js'
 import { Empty, Load, Err, useLoad, Field, Tabs, Sheet } from './kit.jsx'
+// Vínculos, Filas e Config (usados só pelo admin) usam os componentes antd do kit; o restante segue legado.
+import * as K from '../../ui/kit.jsx'
+import StatusTag from '../../ui/StatusTag.jsx'
+import { Checkbox } from 'antd'
 
 const askIt = (m, d = '') => askText(m, { def: d == null ? '' : String(d) })
 const run = (fn, reload) => async (...a) => { try { const r = await fn(...a); reload && reload(); return r } catch (e) { notifyError(e) } }
@@ -107,19 +111,18 @@ export function Vinculos() {
   const [f, setF] = useState({ student_id: '', coach_id: '', area: '' })
   if (err) return <Err msg={err} retry={reload} />
   return <div>
-    <div className="adm-card">
-      <b>Novo vínculo</b>
+    <K.Card title="Novo vínculo">
       <p className="g-xs g-mut">Verifica: aluno ativo, profissional ativo e habilitado, vaga do profissional, limite do plano do aluno, vínculo duplicado e sua confirmação.</p>
-      <select className="adm-in" style={{ marginTop: 8, width: '100%' }} value={f.student_id} onChange={e => setF({ ...f, student_id: e.target.value })} aria-label="Aluno"><option value="">Aluno…</option>{(us?.users || []).filter(u => u.roles.includes('aluno')).map(u => <option key={u.id} value={u.id}>{u.name} ({u.links}/{u.max_professionals ?? '—'})</option>)}</select>
-      <select className="adm-in" style={{ marginTop: 8, width: '100%' }} value={f.coach_id} onChange={e => setF({ ...f, coach_id: e.target.value })} aria-label="Profissional"><option value="">Profissional…</option>{(ps?.professionals || []).map(p => <option key={p.user_id} value={p.user_id}>{p.display_name || p.name} · {p.state} · {p.available} vaga(s)</option>)}</select>
-      <input className="adm-in" style={{ marginTop: 8, width: '100%' }} placeholder="Área de atuação (opcional, ex.: Fisioterapia)" value={f.area} onChange={e => setF({ ...f, area: e.target.value })} />
-      <button className="adm-btn" style={{ marginTop: 10 }} onClick={run(async () => { if (!await askConfirm('Confirmar a atribuição?')) return; await C.link({ ...f, confirm: true }); setF({ student_id: '', coach_id: '', area: '' }) }, reload)} data-testid="create-link">Criar vínculo</button>
-    </div>
-    {!d ? <Load /> : <div className="adm-card" style={{ marginTop: 10 }}>{d.links.map(l => <div key={l.id} style={{ display: 'block', padding: '10px 0', borderBottom: '1px solid var(--ag-line)' }}>
-      <div className="g-row"><b>{l.student} → {l.coach}</b><span className="g-sp" /><span className={'adm-pill ' + (l.status === 'ativo' ? 'ok' : '')}>{l.status}</span></div>
+      <K.Sel style={{ marginTop: 8, width: '100%' }} value={f.student_id} onChange={e => setF({ ...f, student_id: e.target.value })} aria-label="Aluno" showSearch optionFilterProp="label"><option value="">Aluno…</option>{(us?.users || []).filter(u => u.roles.includes('aluno')).map(u => <option key={u.id} value={u.id}>{u.name} ({u.links}/{u.max_professionals ?? '—'})</option>)}</K.Sel>
+      <K.Sel style={{ marginTop: 8, width: '100%' }} value={f.coach_id} onChange={e => setF({ ...f, coach_id: e.target.value })} aria-label="Profissional" showSearch optionFilterProp="label"><option value="">Profissional…</option>{(ps?.professionals || []).map(p => <option key={p.user_id} value={p.user_id}>{p.display_name || p.name} · {p.state} · {p.available} vaga(s)</option>)}</K.Sel>
+      <K.TextIn style={{ marginTop: 8, width: '100%' }} placeholder="Área de atuação (opcional, ex.: Fisioterapia)" value={f.area} onChange={e => setF({ ...f, area: e.target.value })} />
+      <K.Btn style={{ marginTop: 10 }} disabled={!f.student_id || !f.coach_id} onClick={run(async () => { if (!await askConfirm('Confirmar a atribuição?')) return; await C.link({ ...f, confirm: true }); setF({ student_id: '', coach_id: '', area: '' }) }, reload)} data-testid="create-link">Criar vínculo</K.Btn>
+    </K.Card>
+    {!d ? <Load /> : <K.Card style={{ marginTop: 10 }} title={`Vínculos (${d.links.length})`}>{d.links.length ? d.links.map(l => <div key={l.id} className="orny-item">
+      <div className="g-row"><b>{l.student} → {l.coach}</b><span className="g-sp" /><StatusTag v={l.status} /></div>
       <p className="g-mut g-xs">{l.area || ''} desde {dt(l.since)}{l.ended_at ? ' · encerrado ' + dt(l.ended_at) + ': ' + l.end_reason : ''}</p>
-      {l.status === 'ativo' && <button className="adm-btn ghost" style={{ color: 'var(--ag-bad)' }} onClick={run(async () => { const r = await askIt('Motivo do encerramento (o plano deste profissional será arquivado; o histórico é preservado)'); return r && C.endLink(l.id, r) }, reload)}>Encerrar vínculo</button>}
-    </div>)}</div>}
+      {l.status === 'ativo' && <K.Btn v="ghost" danger small onClick={run(async () => { const r = await askIt('Motivo do encerramento (o plano deste profissional será arquivado; o histórico é preservado)'); return r && C.endLink(l.id, r) }, reload)}>Encerrar vínculo</K.Btn>}
+    </div>) : <Empty>Nenhum vínculo.</Empty>}</K.Card>}
   </div>
 }
 export function Filas() {
@@ -135,20 +138,17 @@ export function Filas() {
     await C.assign({ type, id: item.id, professional_id: p.user_id, review_reason })
   }, reload)
   return <div>
-    <h3>Ocorrências</h3>
-    <div className="adm-card">{d.occurrences.length ? d.occurrences.map(o => <div key={o.id} style={{ display: 'block', padding: '10px 0', borderBottom: '1px solid var(--ag-line)' }}>
-      <div className="g-row"><b>{CAT_PT[o.category]} · {o.student_name}</b><span className="g-sp" />{o.admin_review_required ? <span className="adm-pill bad">revisão obrigatória</span> : o.overdue_flagged_at ? <span className="adm-pill bad">prazo vencido</span> : <span className="adm-pill warn">{o.status}</span>}</div>
+    <K.Card title={`Ocorrências (${d.occurrences.length})`}>{d.occurrences.length ? d.occurrences.map(o => <div key={o.id} className="orny-item">
+      <div className="g-row"><b>{CAT_PT[o.category]} · {o.student_name}</b><span className="g-sp" />{o.admin_review_required ? <StatusTag tone="bad" label="revisão obrigatória" /> : o.overdue_flagged_at ? <StatusTag tone="bad" label="prazo vencido" /> : <StatusTag tone="warn" label={o.status} />}</div>
       <p className="g-mut g-xs">Responsável: {o.responsible_name || '—'} · designado: {o.assigned_name || '—'} · prazo {dt(o.due_at) || '—'}</p>
-      <div className="adm-tools"><button className="adm-btn" onClick={assign('occurrence', o)}>Designar</button>
-        <button className="adm-btn ghost" onClick={run(async () => { const r = await askIt('Motivo operacional do encerramento'); return r && C.admClose(o.id, r) }, reload)}>Encerrar (administrativo)</button></div></div>)
-      : <Empty icon="check">Fila vazia.</Empty>}</div>
-    <h3 style={{ marginTop: 14 }}>Mensagens aguardando</h3>
-    <div className="adm-card">{d.threads.length ? d.threads.map(t => <div key={t.id} style={{ display: 'block', padding: '10px 0', borderBottom: '1px solid var(--ag-line)' }}>
-      <div className="g-row"><b>{t.student_name}{t.exercise_name ? ' · ' + t.exercise_name : ''}</b><span className="g-sp" />{t.overdue_flagged_at && <span className="adm-pill bad">prazo vencido</span>}</div>
+      <K.Tools><K.Btn small onClick={assign('occurrence', o)}>Designar</K.Btn>
+        <K.Btn v="ghost" small onClick={run(async () => { const r = await askIt('Motivo operacional do encerramento'); return r && C.admClose(o.id, r) }, reload)}>Encerrar (administrativo)</K.Btn></K.Tools></div>)
+      : <Empty icon="check">Fila vazia.</Empty>}</K.Card>
+    <K.Card style={{ marginTop: 10 }} title={`Mensagens aguardando (${d.threads.length})`}>{d.threads.length ? d.threads.map(t => <div key={t.id} className="orny-item">
+      <div className="g-row"><b>{t.student_name}{t.exercise_name ? ' · ' + t.exercise_name : ''}</b><span className="g-sp" />{t.overdue_flagged_at && <StatusTag tone="bad" label="prazo vencido" />}</div>
       <p className="g-mut g-xs">Responsável: {t.responsible_name || '—'} · designado: {t.assigned_name || '—'}</p>
-      <button className="adm-btn" style={{ marginTop: 6 }} onClick={assign('thread', t)}>Designar para esta mensagem</button></div>) : <Empty icon="check">Nenhuma mensagem pendente.</Empty>}</div>
-    <h3 style={{ marginTop: 14 }}>Propostas aguardando decisão</h3>
-    <div className="adm-card">{d.proposals.length ? d.proposals.map(p => <div key={p.id} className="g-sm" style={{ padding: '8px 0', borderBottom: '1px solid var(--ag-line)' }}>{p.author_name} → decide: {p.decider_name} · {p.description.slice(0, 80)}</div>) : <Empty>Nenhuma.</Empty>}</div>
+      <K.Btn small style={{ marginTop: 6 }} onClick={assign('thread', t)}>Designar para esta mensagem</K.Btn></div>) : <Empty icon="check">Nenhuma mensagem pendente.</Empty>}</K.Card>
+    <K.Card style={{ marginTop: 10 }} title={`Propostas aguardando decisão (${d.proposals.length})`}>{d.proposals.length ? d.proposals.map(p => <div key={p.id} className="g-sm orny-item">{p.author_name} → decide: {p.decider_name} · {p.description.slice(0, 80)}</div>) : <Empty>Nenhuma.</Empty>}</K.Card>
     <p className="g-xs g-mut" style={{ marginTop: 8 }}>Prazos vencidos voltam para esta fila. O sistema não responde nem altera treinos automaticamente.</p>
   </div>
 }
@@ -165,23 +165,22 @@ export function Config() {
   if (err) return <Err msg={err} retry={reload} />
   if (!d) return <Load />
   const v = f || d.settings, set = k => e => setF({ ...v, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value })
-  return <div className="adm-card">
-    <Field label="Prazo de resposta para ocorrências (horas)"><input className="adm-in" type="number" min="1" value={v.prazo_ocorrencia_horas} onChange={set('prazo_ocorrencia_horas')} data-testid="cfg-occ" /></Field>
-    <Field label="Prazo de resposta para mensagens (horas)"><input className="adm-in" type="number" min="1" value={v.prazo_mensagem_horas} onChange={set('prazo_mensagem_horas')} /></Field>
-    <label className="g-row" style={{ marginTop: 12, minHeight: 44 }}><input type="checkbox" checked={!!v.comentarios_alunos} onChange={set('comentarios_alunos')} /> Alunos podem comentar nas publicações</label>
-    <Field label="Limite de publicações por profissional a cada 24 h"><input className="adm-in" type="number" min="1" max="50" value={v.limite_publicacoes_dia ?? 5} onChange={set('limite_publicacoes_dia')} data-testid="cfg-postlimit" /></Field>
-    <Field label="Previsão de análise das liberações (exibida ao usuário; deixe vazio se não houver prazo)"><input className="adm-in" maxLength={160} value={v.liberacao_prazo_texto ?? ''} onChange={set('liberacao_prazo_texto')} placeholder="Ex.: até 2 dias úteis" data-testid="cfg-sla" /></Field>
-    <Field label="Nome da comunidade (tenant)"><input className="adm-in" value={v.tenant_name || ''} onChange={set('tenant_name')} data-testid="cfg-tenant" /></Field>
-    <Field label="Personal que recebe alunas (Mulher)">
-      <select className="adm-in" value={v.personal_feminino_user_id || ''} onChange={set('personal_feminino_user_id')} data-testid="cfg-personal-feminino" aria-label="Personal feminina">
+  return <K.Card>
+    <K.Field label="Prazo de resposta para ocorrências (horas)"><K.NumIn min="1" value={v.prazo_ocorrencia_horas} onChange={set('prazo_ocorrencia_horas')} data-testid="cfg-occ" /></K.Field>
+    <K.Field label="Prazo de resposta para mensagens (horas)"><K.NumIn min="1" value={v.prazo_mensagem_horas} onChange={set('prazo_mensagem_horas')} /></K.Field>
+    <Checkbox style={{ margin: '6px 0 12px', minHeight: 32 }} checked={!!v.comentarios_alunos} onChange={e => setF({ ...v, comentarios_alunos: e.target.checked })}>Alunos podem comentar nas publicações</Checkbox>
+    <K.Field label="Limite de publicações por profissional a cada 24 h"><K.NumIn min="1" max="50" value={v.limite_publicacoes_dia ?? 5} onChange={set('limite_publicacoes_dia')} data-testid="cfg-postlimit" /></K.Field>
+    <K.Field label="Previsão de análise das liberações (exibida ao usuário; deixe vazio se não houver prazo)"><K.TextIn maxLength={160} value={v.liberacao_prazo_texto ?? ''} onChange={set('liberacao_prazo_texto')} placeholder="Ex.: até 2 dias úteis" data-testid="cfg-sla" /></K.Field>
+    <K.Field label="Nome da comunidade (tenant)"><K.TextIn value={v.tenant_name || ''} onChange={set('tenant_name')} data-testid="cfg-tenant" /></K.Field>
+    <K.Field label="Personal que recebe alunas (Mulher)" hint="Homem continua na personal já definida. Trocar esta conta não move alunas já vinculadas.">
+      <K.Sel style={{ width: '100%' }} value={v.personal_feminino_user_id || ''} onChange={set('personal_feminino_user_id')} data-testid="cfg-personal-feminino" aria-label="Personal feminina">
         <option value="">Não configurada</option>
         {(v.personal_feminino_candidates || []).map(c => <option key={c.id} value={c.id}>{c.name} ({c.email})</option>)}
-      </select>
-    </Field>
-    <p className="g-mut g-xs">Homem continua na personal já definida. Trocar esta conta não move alunas já vinculadas.</p>
-    <button className="adm-btn" style={{ marginTop: 12 }} onClick={run(async () => { await C.saveSettings(v); setOk('Configurações salvas') }, reload)} data-testid="cfg-save">Salvar</button>
-    {ok && <p className="g-acc g-sm" style={{ marginTop: 8 }}>{ok}</p>}
-  </div>
+      </K.Sel>
+    </K.Field>
+    <K.Btn style={{ marginTop: 12 }} onClick={run(async () => { await C.saveSettings(v); setOk('Configurações salvas') }, reload)} data-testid="cfg-save">Salvar</K.Btn>
+    {ok && <K.Msg m={{ ok: true, t: ok }} />}
+  </K.Card>
 }
 export const ADMIN_TABS = [['visao', 'Visão'], ['alunos', 'Alunos'], ['profissionais', 'Profissionais'], ['planos', 'Planos'], ['vinculos', 'Vínculos'], ['filas', 'Filas'], ['moderacao', 'Moderação'], ['auditoria', 'Auditoria'], ['config', 'Config.']]
 export const EXTRA = {}   // abas preenchidas por outros módulos

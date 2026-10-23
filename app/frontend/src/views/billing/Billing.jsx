@@ -11,6 +11,7 @@ import ReferralPanel from './Referral.jsx'   // Monetizacao F5
 import { TrialCard, accessChanged } from './Access.jsx'   // Monetizacao F8
 import { PlanGrid, TrialSeal, Faq } from './PlansShowcase.jsx'   // redesenho dos planos
 import { cardPayload, checkoutError, checkoutMask, validateCheckoutCard } from './checkout.js'
+import { Btn, In } from '../../ui/gkit.jsx'
 
 export const FEAT = {
   receber_ficha_profissional: 'Treinos do seu personal',
@@ -57,7 +58,7 @@ export function PublicPlans() {
       <h1>Treine com método.<br /><em>Evolua de verdade.</em></h1>
       <p>Um plano para quem treina, outro para quem prescreve. Cupons podem oferecer desconto na contratação; o acesso começa após a confirmação do pagamento.</p>
       <TrialSeal /></header>
-    {err ? <div className="bl-err" role="alert" data-testid="public-plans-error"><p>{err}</p><button type="button" className="bl-btn" onClick={load}>Tentar novamente</button></div> : !d || busy ? <p className="bl-load">Carregando planos…</p> : <>
+    {err ? <div className="bl-err" role="alert" data-testid="public-plans-error"><p>{err}</p><button type="button" className="bl-btn" onClick={load}>Tentar novamente</button></div> : !d || busy ? <p className="bl-load g-skel" role="status">Carregando planos…</p> : <>
       <PlansCompare plans={d.plans} testMode={d.test_mode} hostedCheckout={d.hosted_checkout} cta={cta} />
       <div className="pl-trust"><span><Icon name="shield" /> Pagamento seguro</span><span><Icon name="xmark" /> Cancele quando quiser</span><span><Icon name="lock" /> Seus dados ficam salvos</span></div>
       <p className="pl-note"><a href={authed ? '#/assinatura' : '#/?cadastro=1'} data-testid="have-coupon">Tenho um cupom ou código de indicação</a></p>
@@ -69,7 +70,7 @@ export function PublicPlans() {
 // ===== checkout =====
 function CheckoutField({ id, label, value, onChange, error, className = '', ...input }) {
   return <label className={'bl-f ' + className} htmlFor={id}>{label}
-    <input id={id} className="g-in" value={value} onChange={onChange} aria-invalid={!!error} aria-describedby={error ? id + '-error' : undefined} {...input} />
+    <In id={id}  value={value} onChange={onChange} aria-invalid={!!error} aria-describedby={error ? id + '-error' : undefined} {...input} />
     {error && <span className="bl-field-error" id={id + '-error'}>{error}</span>}
   </label>
 }
@@ -179,7 +180,7 @@ export function Checkout({ plan, cfg, cards, onClose, onDone }) {
         <CheckoutField id="checkout-address_number" label="Número do endereço" autoComplete="address-line2" required value={f.address_number} onChange={set('address_number')} error={fieldErrors.address_number} />
         </div></fieldset></>}
     </>}
-    {!pendingChargeId && <fieldset className="bl-fieldset bl-coupon-field"><legend>Cupom opcional</legend><div className="bl-row bl-coupon"><label className="sr-only" htmlFor="checkout-coupon">Cupom de desconto</label><input id="checkout-coupon" className="g-in" placeholder="Código do cupom" value={coupon} onChange={e => { setCoupon(e.target.value); setCv(null) }} data-testid="coupon" /><button type="button" className="g-btn" onClick={checkCoupon} disabled={!coupon.trim()}>Aplicar</button></div></fieldset>}
+    {!pendingChargeId && <fieldset className="bl-fieldset bl-coupon-field"><legend>Cupom opcional</legend><div className="bl-row bl-coupon"><label className="sr-only" htmlFor="checkout-coupon">Cupom de desconto</label><In id="checkout-coupon"  placeholder="Código do cupom" value={coupon} onChange={e => { setCoupon(e.target.value); setCv(null) }} data-testid="coupon" /><Btn type="button"  onClick={checkCoupon} disabled={!coupon.trim()}>Aplicar</Btn></div></fieldset>}
     {cv && <p className={cv.valid && cv.benefit === 'desconto' ? 'bl-ok' : cv.unavailable ? 'bl-info' : 'bl-err'} data-testid="coupon-msg">{cv.valid ? cv.benefit === 'desconto' ? `Cupom aplicado: ${cv.discount_pct}% off.` : 'Este cupom é de período experimental; ative-o na tela inicial.' : cv.unavailable ? 'Não foi possível aplicar o cupom. Você pode continuar pelo valor integral.' : cv.error}</p>}
     {msg && <p className="bl-err bl-checkout-error" role="alert" data-stage={errorStage || undefined} data-testid="checkout-error">{msg}</p>}
     <p className="bl-fine">Pagamento seguro processado por {cfg.label}. O AVAGYM não recebe nem guarda os dados do cartão. Ao assinar você aceita os <a href="#/legal/assinatura" target="_blank" rel="noopener">Termos de assinatura</a>.</p>
@@ -206,7 +207,7 @@ function NewCard({ cfg, onSaved, onCancel }) {
     {cfg.requires_holder_info && <><CheckoutField id="new-card-cpf" label="CPF" inputMode="numeric" required value={f.cpf} onChange={set('cpf', 'cpf')} error={fieldErrors.cpf} /><CheckoutField id="new-card-phone" label="Telefone" inputMode="tel" autoComplete="tel" required value={f.phone} onChange={set('phone', 'phone')} error={fieldErrors.phone} />
       <CheckoutField id="new-card-postal_code" label="CEP" inputMode="numeric" autoComplete="postal-code" required value={f.postal_code} onChange={set('postal_code', 'postal_code')} error={fieldErrors.postal_code} /><CheckoutField id="new-card-address_number" label="Número" autoComplete="address-line2" required value={f.address_number} onChange={set('address_number')} error={fieldErrors.address_number} /></>}
     {err && <p className="bl-err bl-full" role="alert">{err}</p>}
-    <div className="bl-row bl-full"><button className="g-btn" disabled={busy} data-testid="nc-save">Salvar cartão</button><button type="button" className="g-btn" onClick={onCancel}>Cancelar</button></div>
+    <div className="bl-row bl-full"><Btn type="submit" disabled={busy} data-testid="nc-save">Salvar cartão</Btn><Btn type="button"  onClick={onCancel}>Cancelar</Btn></div>
   </form>
 }
 
@@ -259,19 +260,19 @@ export function Subscription() {
       {unico && s.current_period_end && <p className="bl-info">Plano Completo: acesso até {dBR(s.current_period_end)}. Depois disso a comunidade continua; treino e avaliação nova pedem um novo plano.</p>}
       {!s.is_free && s.provider && <div className="bl-actions">
         {['inadimplente', 'carencia', 'suspensa'].includes(s.status) && <button className="bl-btn" disabled={busy} onClick={async () => { setBusy(true); setNote(null); try { const r = await post('/api/billing/pay-now', { audience: aud }); if (r.checkout_url) window.location.assign(r.checkout_url); else { setNote({ ok: true, t: r.result === 'ativa' ? 'Pagamento aprovado. Assinatura em dia.' : 'Pagamento em análise.' }); await load() } } catch (e) { setNote({ ok: false, t: e.message }) } finally { setBusy(false) } }} data-testid={'pay-now-' + aud}>Pagar agora</button>}
-        {!cfg.hosted_checkout && <button className="g-btn" onClick={() => setCardFor(cardFor === aud ? null : aud)} data-testid={'change-card-' + aud}>{s.payment_type === 'pix' ? 'Adicionar cartão' : 'Trocar cartão'}</button>}
-        {!unico && s.cancel_at_period_end ? <button className="g-btn" disabled={busy} onClick={() => act('/api/billing/reactivate', { audience: aud }, 'Cancelamento desfeito.')} data-testid={'reactivate-' + aud}>Desfazer cancelamento</button>
-          : !unico && s.status !== 'cancelada' && <button className="g-btn bl-danger" disabled={busy} onClick={async () => { const reason = await askText('Quer nos contar o motivo? (opcional)', { ok: 'Cancelar assinatura', cancel: 'Voltar' }); if (reason === null || reason === undefined) return; act('/api/billing/cancel', { audience: aud, reason }, r => r.result === 'agendado' ? `Cancelamento agendado: acesso até ${dBR(r.until)}.` : 'Assinatura encerrada.') }} data-testid={'cancel-' + aud}>Cancelar assinatura</button>}
+        {!cfg.hosted_checkout && <Btn onClick={() => setCardFor(cardFor === aud ? null : aud)} data-testid={'change-card-' + aud}>{s.payment_type === 'pix' ? 'Adicionar cartão' : 'Trocar cartão'}</Btn>}
+        {!unico && s.cancel_at_period_end ? <Btn disabled={busy} onClick={() => act('/api/billing/reactivate', { audience: aud }, 'Cancelamento desfeito.')} data-testid={'reactivate-' + aud}>Desfazer cancelamento</Btn>
+          : !unico && s.status !== 'cancelada' && <Btn className="bl-danger" disabled={busy} onClick={async () => { const reason = await askText('Quer nos contar o motivo? (opcional)', { ok: 'Cancelar assinatura', cancel: 'Voltar' }); if (reason === null || reason === undefined) return; act('/api/billing/cancel', { audience: aud, reason }, r => r.result === 'agendado' ? `Cancelamento agendado: acesso até ${dBR(r.until)}.` : 'Assinatura encerrada.') }} data-testid={'cancel-' + aud}>Cancelar assinatura</Btn>}
       </div>}
       {cardFor === aud && <div className="bl-cardpick">
-        {me.cards.filter(c => c.id !== s.card?.id).map(c => <button key={c.id} className="g-btn" onClick={() => act('/api/billing/change-card', { audience: aud, card_id: c.id }, 'Cartão atualizado.').then(() => setCardFor(null))}>Usar {(c.brand || 'cartão') + ' final ' + c.last4}</button>)}
+        {me.cards.filter(c => c.id !== s.card?.id).map(c => <Btn key={c.id}  onClick={() => act('/api/billing/change-card', { audience: aud, card_id: c.id }, 'Cartão atualizado.').then(() => setCardFor(null))}>Usar {(c.brand || 'cartão') + ' final ' + c.last4}</Btn>)}
         <NewCard cfg={cfg} onCancel={() => setCardFor(null)} onSaved={c => act('/api/billing/change-card', { audience: aud, card_id: c.id }, 'Cartão atualizado.').then(() => setCardFor(null))} />
       </div>}
     </section>
     })}
 
     {me.access?.coupon_card && <section className="bl-sub" data-testid="trial-coupon"><h3>Tem um cupom de acesso experimental?</h3>
-      <div className="bl-row bl-coupon"><input className="g-in" placeholder="Código do cupom" value={code} onChange={e => setCode(e.target.value)} /><button className="g-btn" disabled={busy || !code.trim()} onClick={() => act('/api/billing/coupon/redeem', { code: code.trim() }, 'Acesso experimental ativado.')}>Ativar</button></div></section>}
+      <div className="bl-row bl-coupon"><In placeholder="Código do cupom" value={code} onChange={e => setCode(e.target.value)} /><Btn disabled={busy || !code.trim()} onClick={() => act('/api/billing/coupon/redeem', { code: code.trim() }, 'Acesso experimental ativado.')}>Ativar</Btn></div></section>}
 
     <h2 className="bl-h2">Planos disponíveis</h2>
     <PlansCompare plans={plans.plans} current={current} testMode={plans.test_mode} hostedCheckout={cfg.hosted_checkout} initialAud={me.subscriptions.profissional !== undefined ? 'profissional' : 'aluno'} cta={p => current[p.audience] === p.id ? <span className="pl-btn pl-sec" data-testid={'current-' + p.id}>Seu plano atual</span>
@@ -279,10 +280,10 @@ export function Subscription() {
       : <button className="pl-btn" onClick={() => setBuy(p)} data-testid={'buy-' + p.id}>{me.subscriptions[p.audience] && !me.subscriptions[p.audience].is_free ? 'Mudar para o ' + p.name : 'Assinar o ' + p.name}</button>} />
     <Faq />
 
-    {me.charges.length > 0 && <section className="bl-sub" data-testid="charges"><h3>Histórico de cobranças</h3><ul className="rf-people" data-testid="charges-list">{me.charges.map(c => <li key={c.id}><span><b>{brl(c.amount_cents)}</b> · {c.description || c.kind}<br /><small className="bl-fine">{dBR(c.created_at)} · {c.provider}{c.confirmed_payment_method ? ' · ' + (c.confirmed_payment_method === 'pix' ? 'Pix' : 'Cartão') : ''}{c.failure_message ? ' · ' + c.failure_message : ''}</small></span><span>{c.status === 'pendente' && c.checkout_url && new Date(c.checkout_expires_at) > new Date() && <a className="g-btn" href={c.checkout_url}>Abrir checkout</a>} <span className={'rf-st' + (c.status === 'paga' ? ' assinante' : '')}>{{ paga: 'Paga', recusada: 'Recusada', pendente: 'Pendente', estornada: 'Estornada' }[c.status] || c.status}</span></span></li>)}</ul></section>}
+    {me.charges.length > 0 && <section className="bl-sub" data-testid="charges"><h3>Histórico de cobranças</h3><ul className="rf-people" data-testid="charges-list">{me.charges.map(c => <li key={c.id}><span><b>{brl(c.amount_cents)}</b> · {c.description || c.kind}<br /><small className="bl-fine">{dBR(c.created_at)} · {c.provider}{c.confirmed_payment_method ? ' · ' + (c.confirmed_payment_method === 'pix' ? 'Pix' : 'Cartão') : ''}{c.failure_message ? ' · ' + c.failure_message : ''}</small></span><span>{c.status === 'pendente' && c.checkout_url && new Date(c.checkout_expires_at) > new Date() && <Btn href={c.checkout_url}>Abrir checkout</Btn>} <span className={'rf-st' + (c.status === 'paga' ? ' assinante' : '')}>{{ paga: 'Paga', recusada: 'Recusada', pendente: 'Pendente', estornada: 'Estornada' }[c.status] || c.status}</span></span></li>)}</ul></section>}
 
     {!cfg.hosted_checkout && me.cards.length > 0 && <section className="bl-sub" data-testid="cards"><h3>Cartões salvos</h3>{me.cards.map(c => <div key={c.id} className="bl-row bl-cardrow"><span>{(c.brand || 'Cartão') + ' final ' + c.last4} · {String(c.exp_month).padStart(2, '0')}/{c.exp_year}</span><span className="bl-sp" />
-      <button className="g-btn" disabled={busy} onClick={async () => (await ask('Remover este cartão?', { ok: 'Remover', cancel: 'Voltar', danger: true })) && act('/api/billing/cards/remove', { id: c.id }, 'Cartão removido.')}>Remover</button></div>)}</section>}
+      <Btn disabled={busy} onClick={async () => (await ask('Remover este cartão?', { ok: 'Remover', cancel: 'Voltar', danger: true })) && act('/api/billing/cards/remove', { id: c.id }, 'Cartão removido.')}>Remover</Btn></div>)}</section>}
     <p className="bl-fine"><a href="#/precos">Ver página pública de planos</a> · <a href="#/legal/assinatura">Termos de assinatura</a></p>
     <ReferralPanel />
     {buy && <Checkout plan={buy} cfg={cfg} cards={me.cards} onClose={() => setBuy(null)} onDone={t => { setBuy(null); setNote({ ok: true, t }); load(); accessChanged() }} />}

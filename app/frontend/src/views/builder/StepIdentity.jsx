@@ -10,7 +10,7 @@ import { useState } from 'react'
 import { GOALS } from '../../lib/care.js'
 import { fieldId } from '../../lib/workout-validate.js'
 import Icon from '../../components/Icon.jsx'
-import { Av } from '../app/kit.jsx'
+import { Av } from '../../ui/gkit.jsx'
 import PickerSheet from './PickerSheet.jsx'
 
 const alunoHint = s => ('plan' in s

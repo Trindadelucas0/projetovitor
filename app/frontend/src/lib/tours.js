@@ -62,6 +62,23 @@ export const TOURS = {
       S('upn-avancado', 'Detalhes avançados', 'Código público, edição da conta e dados técnicos ficam aqui, recolhidos.')],
     liberacoes: [S('adm-suspensoes', 'Suspensões de acesso', 'Contas pagas usam o sistema automaticamente. Suspenda somente em situação excepcional, sempre registrando o motivo.')],
     assinaturas: [S('adm-subs', 'Assinaturas', 'Veja e troque a assinatura de cada conta. "A definir" = limite ainda não decidido.')],
+    inicio: [S('inicio-pendencias', 'Pendências de hoje', 'Cada cartão é uma tarefa: quem adicionar ou remover do Close Friends, calls do dia, perguntas da live e alunos sem personal. Toque para resolver.'),
+      S('inicio-atalhos', 'Atalhos', 'As telas mais usadas no dia a dia, a um toque.'),
+      S('tour-restart', 'Ajuda desta tela', 'Use este botão em qualquer tela para rever a explicação.')],
+    personais: [S('personais-principais', 'Personal principal', 'Aluno novo vai sozinho para o personal principal do público dele (homens ou mulheres).'),
+      S('np-open', 'Cadastrar personal', 'Crie a conta do personal. Ele recebe um link para definir a senha.'),
+      S('personal-row', 'Público e agenda', 'Troque quem o personal atende e veja se ele já tem horários de call.')],
+    'planos-regras': [S('regras-individual', 'Cotas do Básico', 'Quantas fichas novas e calls o aluno tem por janela, Close Friends e grupos do WhatsApp.'),
+      S('regras-completo', 'Cotas do Completo', 'As mesmas regras para o plano Completo. Salve cada plano no botão do cartão.')],
+    calls: [S('calls-todas', 'Todas as calls', 'As calls marcadas de todos os personais nos próximos 14 dias. Confirme pelo WhatsApp.'),
+      S('calls-personal', 'Agenda de um personal', 'Escolha o personal para ver e editar os horários livres e o link do Zoom dele.'),
+      S('agenda-disponibilidade', 'Horários e Zoom', 'Cadastre as faixas de horário livres e o link fixo do Zoom. Depois toque em Salvar.')],
+    'comunidade-externa': [S('roster-tab-add', 'Quem adicionar', 'As abas mostram quem adicionar, quem remover e quem já está. Marque depois de fazer no Instagram ou WhatsApp.'),
+      S('comunidade-links', 'Convites dos grupos', 'Os links de convite dos grupos do WhatsApp que o aluno recebe.')],
+    lives: [S('live-nova', 'Marcar live', 'Defina título, data e hora (Brasília) e o link do YouTube.'),
+      S('live-select', 'Escolher a live', 'Troque a live para ver e responder as perguntas dela.')],
+    cobranca: [S('bill-tab-geral', 'Cobrança', 'Visão geral dos pagamentos. Nas abas: Planos e preços, Cupons e Quem está pagando.'),
+      S('bill-tab-planos', 'Planos e preços', 'Preços do Básico e do Completo e o que cada plano libera.')],
     lgpd: [S('adm-title', 'LGPD', 'Pedidos de cópia dos dados (enviados por e-mail) e de exclusão. Nada é apagado sem a sua análise.')]
   }
 }

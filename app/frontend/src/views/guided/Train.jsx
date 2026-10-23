@@ -7,7 +7,7 @@ import { G, loadSession, saveSessionLocal, newSession, payloadOf, mediaOf, RESTR
 import { OpenSessionScreen, TimeFix } from './SessionRecovery.jsx'
 import { Spin } from './Programs.jsx'
 import { C } from '../../lib/care.js'
-import { ReportSheet, AskSheet } from '../app/Acompanhamento.jsx'
+import { ReportSheet, AskSheet } from '../app/CareSheets.jsx'
 import ExercisePlayer from '../../components/ExercisePlayer.jsx'
 import { parseVideo } from '../../lib/video.js'
 import './guided.css'

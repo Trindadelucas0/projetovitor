@@ -7,7 +7,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Icon from '../../components/Icon.jsx'
 import { useStore } from '../../store/useStore.js'
 import { C, F, REPORT_PT, dt } from '../../lib/care.js'
-import { Av, Empty, Load, Err, useLoad, Sheet, Field } from './kit.jsx'
+import { Av, Empty, Load, Err, useLoad, Sheet, Field, Btn, In, TextArea, Pill, Note } from '../../ui/gkit.jsx'
 import { buildThreads, visibleCount, REPLIES_PREVIEW } from '../../lib/commentTree.js'
 import GSelect from '../../components/GSelect.jsx'
 import './comments.css'
@@ -23,13 +23,13 @@ function CommentItem({ c, user, canReply, onReply, reload, reply }) {
   return <div className={'com-c' + (reply ? ' com-reply' : '')} data-testid={reply ? 'comment-reply' : 'comment'} data-id={c.id}>
     <Av name={c.author_name} url={c.author_photo} size={reply ? 28 : 34} />
     <div className="com-c-b">
-      <div className="g-row" style={{ gap: 6, flexWrap: 'wrap' }}><b className="g-sm">{c.author_name}</b>{c.author_official ? <span className="g-pill g-ok">Perfil oficial</span> : c.author_pro && <span className="g-pill g-ok">profissional</span>}<span className="g-xs g-dim">{dt(c.created_at)}</span></div>
+      <div className="g-row" style={{ gap: 6, flexWrap: 'wrap' }}><b className="g-sm">{c.author_name}</b>{c.author_official ? <Pill className="g-pill g-ok">Perfil oficial</Pill> : c.author_pro && <Pill className="g-pill g-ok">profissional</Pill>}<span className="g-xs g-dim">{dt(c.created_at)}</span></div>
       {c.reply_to && <p className="g-xs g-mut">respondendo a {c.reply_to}</p>}
       <p className="g-sm" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{gone ? (c.body != null ? <i className="g-dim">[{c.status}] {c.body}</i> : <i className="g-dim">Comentário removido.</i>) : c.body}</p>
       {!gone && <div className="g-row com-c-act">
         <button className={'g-link g-xs' + (lk.on ? ' g-acc' : '')} aria-pressed={lk.on} aria-label={(lk.on ? 'Descurtir' : 'Curtir') + ' comentário' + (lk.n ? ', ' + lk.n + ' curtida(s)' : '')} onClick={like} data-testid="comment-like"><Icon name="heart" /> <span data-testid="comment-likes">{lk.n || 'Curtir'}</span></button>
-        {canReply && <button className="g-link g-xs" onClick={() => onReply(c)} data-testid="comment-reply-btn">Responder</button>}
-        {(c.mine || user?.admin) && <button className="g-link g-xs" onClick={del} data-testid="comment-delete">Excluir</button>}
+        {canReply && <Btn variant="tertiary" className="g-xs" onClick={() => onReply(c)} data-testid="comment-reply-btn">Responder</Btn>}
+        {(c.mine || user?.admin) && <Btn variant="tertiary" className="g-xs" onClick={del} data-testid="comment-delete">Excluir</Btn>}
         {!c.mine && <ReportBtn type="comment" id={c.id} />}
       </div>}
     </div>
@@ -45,19 +45,19 @@ function CommentThreads({ post, comments, meta, user, reload }) {
   }
   return <section aria-labelledby="com-c-title" data-testid="comments">
     <h2 id="com-c-title">Comentários <span className="g-mut" data-testid="comments-count">({n})</span></h2>
-    {can ? <div className="g-card"><Field label="Escreva um comentário"><textarea className="g-in" value={body} onChange={e => setBody(e.target.value)} maxLength={1500} data-testid="comment-body" /></Field>
-      <button className="g-btn" style={{ marginTop: 10 }} disabled={!body.trim() || busy} onClick={() => send(body)} data-testid="comment-send">Comentar</button>
-      {hint && <p className="g-note" style={{ marginTop: 8 }}>{hint}</p>}</div>
+    {can ? <div className="g-card"><Field label="Escreva um comentário"><TextArea value={body} onChange={e => setBody(e.target.value)} maxLength={1500} data-testid="comment-body" /></Field>
+      <Btn style={{ marginTop: 10 }} disabled={!body.trim() || busy} onClick={() => send(body)} data-testid="comment-send">Comentar</Btn>
+      {hint && <Note type="info">{hint}</Note>}</div>
       : <p className="g-mut g-xs" style={{ marginTop: 10 }}>{meta?.comment_block_reason || 'Comentários indisponíveis para a sua conta no momento.'}</p>}
     <div className="g-card g-list" style={{ marginTop: 10 }}>{threads.length ? threads.map(({ root, replies }) => {
       const all = !!open[root.id], shown = all ? replies : replies.slice(0, REPLIES_PREVIEW), hidden = replies.length - shown.length
       return <div key={root.id} className="com-thread" data-testid="comment-thread">
         <CommentItem c={root} user={user} canReply={can} onReply={c => { setTo({ ...c, root: root.id }); setRbody('') }} reload={reload} />
         {shown.map(r => <CommentItem key={r.id} c={r} user={user} reply canReply={can} onReply={c => { setTo({ ...c, root: root.id }); setRbody('') }} reload={reload} />)}
-        {hidden > 0 && <button className="g-link g-xs com-more" onClick={() => setOpen(o => ({ ...o, [root.id]: true }))} aria-expanded="false" data-testid="comment-expand">Ver mais {hidden} {hidden === 1 ? 'resposta' : 'respostas'}</button>}
-        {all && replies.length > REPLIES_PREVIEW && <button className="g-link g-xs com-more" onClick={() => setOpen(o => ({ ...o, [root.id]: false }))} aria-expanded="true">Recolher discussão</button>}
-        {to?.root === root.id && <div className="com-reply-box"><Field label={'Responder a ' + to.author_name}><textarea className="g-in" autoFocus value={rbody} onChange={e => setRbody(e.target.value)} maxLength={1500} data-testid="reply-body" /></Field>
-          <div className="g-row" style={{ marginTop: 8 }}><button className="g-btn g-sm" disabled={!rbody.trim() || busy} onClick={() => send(rbody, to)} data-testid="reply-send">Responder</button><button className="g-btn g-ghost g-sm" onClick={() => setTo(null)}>Cancelar</button></div></div>}
+        {hidden > 0 && <Btn variant="tertiary" className="g-xs com-more" onClick={() => setOpen(o => ({ ...o, [root.id]: true }))} aria-expanded="false" data-testid="comment-expand">Ver mais {hidden} {hidden === 1 ? 'resposta' : 'respostas'}</Btn>}
+        {all && replies.length > REPLIES_PREVIEW && <Btn variant="tertiary" className="g-xs com-more" onClick={() => setOpen(o => ({ ...o, [root.id]: false }))} aria-expanded="true">Recolher discussão</Btn>}
+        {to?.root === root.id && <div className="com-reply-box"><Field label={'Responder a ' + to.author_name}><TextArea autoFocus value={rbody} onChange={e => setRbody(e.target.value)} maxLength={1500} data-testid="reply-body" /></Field>
+          <div className="g-row" style={{ marginTop: 8 }}><Btn size="sm" disabled={!rbody.trim() || busy} onClick={() => send(rbody, to)} data-testid="reply-send">Responder</Btn><Btn variant="secondary" size="sm" onClick={() => setTo(null)}>Cancelar</Btn></div></div>}
       </div>
     }) : <Empty icon="chat">Nenhum comentário ainda. Comece a conversa.</Empty>}</div>
   </section>
@@ -65,12 +65,12 @@ function CommentThreads({ post, comments, meta, user, reload }) {
 function ReportBtn({ type, id }) {
   const [open, setOpen] = useState(false), [reason, setReason] = useState(''), [det, setDet] = useState(''), [msg, setMsg] = useState('')
   return <>
-    <button className="g-link g-xs" style={{ color: 'var(--ag-dim)' }} onClick={() => setOpen(true)}>Denunciar</button>
+    <Btn variant="tertiary" className="g-xs" style={{ color: 'var(--ag-dim)' }} onClick={() => setOpen(true)}>Denunciar</Btn>
     {open && <Sheet title="Denunciar conteúdo" onClose={() => setOpen(false)}>
       {msg ? <p className="g-acc">{msg}</p> : <>
         <div className="g-opts">{Object.entries(REPORT_PT).map(([k, l]) => <button key={k} className={'g-opt' + (reason === k ? ' g-sel' : '')} onClick={() => setReason(k)}>{l}</button>)}</div>
-        <Field label="Descrição (opcional)"><textarea className="g-in" value={det} onChange={e => setDet(e.target.value)} /></Field>
-        <button className="g-btn" style={{ marginTop: 12 }} disabled={!reason} onClick={async () => { try { const r = await F.report({ target_type: type, target_id: id, reason, details: det }); setMsg(r.message || 'Denúncia enviada.') } catch (e) { setMsg(e.message) } }}>Enviar denúncia</button></>}
+        <Field label="Descrição (opcional)"><TextArea value={det} onChange={e => setDet(e.target.value)} /></Field>
+        <Btn style={{ marginTop: 12 }} disabled={!reason} onClick={async () => { try { const r = await F.report({ target_type: type, target_id: id, reason, details: det }); setMsg(r.message || 'Denúncia enviada.') } catch (e) { setMsg(e.message) } }}>Enviar denúncia</Btn></>}
     </Sheet>}
   </>
 }
@@ -81,7 +81,7 @@ export function PostCard({ p, onChange, full }) {
   return <article className="g-card g-post" data-testid="post">
     <div className="g-row"><button className="g-row" style={{ background: 'none', border: 0, color: 'inherit', padding: 0, cursor: 'pointer', textAlign: 'left' }} onClick={() => !p.author_admin && nav('/profissional/' + p.author_id)}>
       <Av name={p.author_name} url={p.author_photo} /><span><b>{p.author_name}</b><br /><span className="g-mut g-xs">{p.official ? 'Perfil oficial' : p.author_admin && !p.verified.length ? 'Administração ORNY' : p.verified.length ? '✓ ' + p.verified.join(' · ') : 'Profissional'} · {dt(p.publish_at || p.created_at)}{p.edited_at ? ' · editado' : ''}</span></span></button>
-      <span className="g-sp" />{p.status !== 'publicado' && <span className="g-pill g-warn2">{p.status}</span>}</div>
+      <span className="g-sp" />{p.status !== 'publicado' && <Pill className="g-pill g-warn2">{p.status}</Pill>}</div>
     <h3 style={{ marginTop: 10, cursor: full ? 'auto' : 'pointer' }} onClick={() => !full && nav('/post/' + p.id)}>{p.title}</h3>
     <p className="g-sm" style={{ whiteSpace: 'pre-wrap', marginTop: 4 }}>{full ? p.body : p.body.length > 280 ? p.body.slice(0, 280) + '…' : p.body}</p>
     {p.image_url && <img src={p.image_url} alt="" className="g-postimg" loading="lazy" />}
@@ -100,16 +100,16 @@ function Compose({ cats, post, onClose, onDone }) {
   const save = async status => { setBusy(true); setErr(''); try { await F.save({ ...f, id: post?.id, status }); onDone() } catch (e) { setErr(e.message) } finally { setBusy(false) } }
   return <Sheet title={post ? 'Editar publicação' : 'Nova publicação'} onClose={onClose}>
     {prev ? <PostCard p={{ ...f, id: 'preview', author_name: 'Você', verified: [], created_at: new Date(), likes: 0, comments: 0, status: 'publicado' }} full /> : <>
-      <Field label="Título"><input className="g-in" value={f.title} maxLength={140} onChange={e => setF({ ...f, title: e.target.value })} data-testid="post-title" /></Field>
+      <Field label="Título"><In value={f.title} maxLength={140} onChange={e => setF({ ...f, title: e.target.value })} data-testid="post-title" /></Field>
       <Field label="Categoria"><GSelect label="Categoria" value={f.category} onChange={v => setF({ ...f, category: v })} options={cats.map(c => [c.id, c.name_pt])} testid="post-cat" /></Field>
-      <Field label="Conteúdo"><textarea className="g-in" style={{ minHeight: 140 }} value={f.body} maxLength={5000} onChange={e => setF({ ...f, body: e.target.value })} data-testid="post-body" /></Field>
+      <Field label="Conteúdo"><TextArea style={{ minHeight: 140 }} value={f.body} maxLength={5000} onChange={e => setF({ ...f, body: e.target.value })} data-testid="post-body" /></Field>
       <Field label="Imagem (opcional)"><input type="file" accept="image/png,image/jpeg,image/webp" onChange={pick} /></Field>
       {f.image_url && <img src={f.image_url} alt="" className="g-postimg" />}
       <p className="g-xs g-mut" style={{ marginTop: 8 }}>Conteúdo educativo e geral. Não exponha dados de alunos nem substitua uma orientação individual.</p></>}
-    {err && <p className="g-warn" style={{ marginTop: 8 }}>{err}</p>}
-    <div className="g-actions"><button className="g-btn g-ghost g-sm" onClick={() => setPrev(!prev)}>{prev ? 'Voltar a editar' : 'Pré-visualizar'}</button>
-      <button className="g-btn g-ghost g-sm" disabled={busy} onClick={() => save('rascunho')}>Salvar rascunho</button>
-      <button className="g-btn g-sm" disabled={busy} onClick={() => save('publicado')} data-testid="post-publish">Publicar</button></div>
+    {err && <Note style={{ marginTop: 8 }}>{err}</Note>}
+    <div className="g-actions"><Btn variant="secondary" size="sm" onClick={() => setPrev(!prev)}>{prev ? 'Voltar a editar' : 'Pré-visualizar'}</Btn>
+      <Btn variant="secondary" size="sm" disabled={busy} onClick={() => save('rascunho')}>Salvar rascunho</Btn>
+      <Btn size="sm" disabled={busy} onClick={() => save('publicado')} data-testid="post-publish">Publicar</Btn></div>
   </Sheet>
 }
 
@@ -121,15 +121,15 @@ function NoticeCard({ notice, focused, onEdit, onCancel, preview = false }) {
     {image ? <img className="com-notice-img" src={image} alt={`Banner do aviso: ${notice.title}`} loading={preview ? undefined : 'lazy'} />
       : <div className="com-notice-img com-notice-placeholder" aria-hidden="true"><Icon name="bell" /></div>}
     <div className="com-notice-body">
-      <div className="g-row" style={{ alignItems: 'flex-start' }}><div style={{ minWidth: 0 }}><h3>{notice.title || 'Título do aviso'}</h3><p className="g-xs g-mut">{notice.author_name || 'Seu perfil'} · {dt(notice.published_at || new Date())}</p></div><span className="g-sp" />{aoVivo && <span className="g-pill g-bad2" data-testid="notice-live">Ao vivo agora</span>}{!active && <span className="g-pill g-warn2">Encerrado</span>}</div>
+      <div className="g-row" style={{ alignItems: 'flex-start' }}><div style={{ minWidth: 0 }}><h3>{notice.title || 'Título do aviso'}</h3><p className="g-xs g-mut">{notice.author_name || 'Seu perfil'} · {dt(notice.published_at || new Date())}</p></div><span className="g-sp" />{aoVivo && <Pill className="g-pill g-bad2" data-testid="notice-live">Ao vivo agora</Pill>}{!active && <Pill className="g-pill g-warn2">Encerrado</Pill>}</div>
       <p className="g-sm com-notice-message">{(aoVivo && notice.reminder_body) || notice.notification_body || 'Mensagem que o aluno receberá na notificação.'}</p>
       {notice.can_manage && !preview && <div className="com-notice-meta" aria-label="Resumo do envio">
         <span><Icon name="users" /> {notice.recipient_count} aluno(s) notificado(s)</span>
         {notice.reminder_at && <span><Icon name="bell" /> {notice.reminder_sent_at ? 'Lembrete enviado' : `Lembrete: ${dt(notice.reminder_at)}`}</span>}
       </div>}
       <div className="g-actions com-notice-actions">
-        {active && notice.destination_url && <a className="g-btn g-sm" href={notice.destination_url} target="_blank" rel="noopener noreferrer" data-testid="notice-open"><Icon name="link" /> {aoVivo ? 'Assistir agora' : 'Abrir live ou conteúdo'}</a>}
-        {notice.can_manage && active && !preview && <><button className="g-btn g-ghost g-sm" onClick={() => onEdit(notice)}><Icon name="pencil" /> Editar</button><button className="g-link g-xs com-notice-end" onClick={() => onCancel(notice)}>Encerrar aviso</button></>}
+        {active && notice.destination_url && <Btn size="sm" href={notice.destination_url} target="_blank" rel="noopener noreferrer" data-testid="notice-open"><Icon name="link" /> {aoVivo ? 'Assistir agora' : 'Abrir live ou conteúdo'}</Btn>}
+        {notice.can_manage && active && !preview && <><Btn variant="secondary" size="sm" onClick={() => onEdit(notice)}><Icon name="pencil" /> Editar</Btn><Btn variant="tertiary" className="g-xs com-notice-end" onClick={() => onCancel(notice)}>Encerrar aviso</Btn></>}
       </div>
     </div>
   </article>
@@ -171,10 +171,10 @@ function NoticeForm({ notice, recipientCount, onClose, onDone }) {
   }
   const preview = { ...notice, ...form, image_url: previewImage, published_at: notice?.published_at || new Date(), author_name: notice?.author_name || 'Seu perfil', status: 'ativo' }
   return <Sheet title={notice ? 'Editar aviso' : 'Novo aviso'} onClose={onClose}>
-    {showPreview ? <><NoticeCard notice={preview} preview /><button className="g-btn g-ghost" style={{ marginTop: 12 }} onClick={() => setShowPreview(false)}>Voltar a editar</button></>
+    {showPreview ? <><NoticeCard notice={preview} preview /><Btn variant="secondary" style={{ marginTop: 12 }} onClick={() => setShowPreview(false)}>Voltar a editar</Btn></>
       : <form onSubmit={save} className="com-notice-form" data-testid="notice-form">
-        <Field label="Título do aviso *"><input className="g-in" value={form.title} onChange={e => set('title', e.target.value)} maxLength={140} required data-testid="notice-title" /></Field>
-        <Field label="Link HTTPS *"><input className="g-in" type="url" inputMode="url" value={form.destination_url} onChange={e => set('destination_url', e.target.value)} placeholder="https://youtube.com/..." required data-testid="notice-url" /></Field>
+        <Field label="Título do aviso *"><In value={form.title} onChange={e => set('title', e.target.value)} maxLength={140} required data-testid="notice-title" /></Field>
+        <Field label="Link HTTPS *"><In type="url" inputMode="url" value={form.destination_url} onChange={e => set('destination_url', e.target.value)} placeholder="https://youtube.com/..." required data-testid="notice-url" /></Field>
         <fieldset className="com-notice-fieldset"><legend>Imagem do card</legend>
           <label className="g-chk"><input type="radio" name="notice-image" checked={form.image_mode === 'auto'} onChange={() => set('image_mode', 'auto')} /> Automática do YouTube</label>
           <label className="g-chk"><input type="radio" name="notice-image" checked={form.image_mode === 'upload'} onChange={() => set('image_mode', 'upload')} /> Enviar minha imagem</label>
@@ -182,13 +182,13 @@ function NoticeForm({ notice, recipientCount, onClose, onDone }) {
           {form.image_mode === 'auto' && <p className="g-xs g-mut">{automatic ? 'Miniatura encontrada. Você pode conferir na pré-visualização.' : 'Cole um link de vídeo do YouTube ou escolha outra opção.'}</p>}
           {form.image_mode === 'upload' && <label className="g-btn g-ghost g-sm com-file">{form.image_url ? 'Trocar imagem' : 'Escolher imagem'}<input type="file" hidden accept="image/png,image/jpeg,image/webp" onChange={pick} /></label>}
         </fieldset>
-        <Field label="Mensagem da notificação *"><textarea className="g-in" rows={4} value={form.notification_body} onChange={e => set('notification_body', e.target.value)} maxLength={240} required data-testid="notice-message" /></Field>
+        <Field label="Mensagem da notificação *"><TextArea rows={4} value={form.notification_body} onChange={e => set('notification_body', e.target.value)} maxLength={240} required data-testid="notice-message" /></Field>
         <label className="g-chk com-notice-remind"><input type="checkbox" checked={form.remind} disabled={!!notice?.reminder_sent_at} onChange={e => set('remind', e.target.checked)} /> Notificar novamente</label>
         {form.remind && <Field label="Data e hora do lembrete *"><input className="g-in" type="datetime-local" value={form.reminder_at} min={localDateTime(new Date(Date.now() + 60000))} disabled={!!notice?.reminder_sent_at} onChange={e => set('reminder_at', e.target.value)} required data-testid="notice-reminder" /></Field>}
         {notice?.reminder_sent_at && <p className="g-xs g-mut">O lembrete já foi enviado e não pode ser reagendado.</p>}
-        {!notice && <p className="g-note" role="status">Este aviso será enviado a <b>{recipientCount}</b> aluno(s). A publicação envia a primeira notificação imediatamente.</p>}
-        {error && <p className="g-warn g-sm" role="alert">{error}</p>}
-        <div className="g-actions"><button type="button" className="g-btn g-ghost g-sm" onClick={() => setShowPreview(true)}>Pré-visualizar</button><button className="g-btn g-sm" disabled={busy} aria-busy={busy}>{busy ? 'Salvando…' : notice ? 'Salvar alterações' : 'Publicar aviso'}</button></div>
+        {!notice && <Note type="info" role="status">Este aviso será enviado a <b>{recipientCount}</b> aluno(s). A publicação envia a primeira notificação imediatamente.</Note>}
+        {error && <Note role="alert">{error}</Note>}
+        <div className="g-actions"><Btn type="button" variant="secondary" size="sm" onClick={() => setShowPreview(true)}>Pré-visualizar</Btn><Btn type="submit" size="sm" disabled={busy} aria-busy={busy}>{busy ? 'Salvando…' : notice ? 'Salvar alterações' : 'Publicar aviso'}</Btn></div>
       </form>}
   </Sheet>
 }
@@ -207,7 +207,7 @@ function Notices({ focusedId }) {
   if (error) return <Err msg={error} retry={reload} />
   if (!data) return <Load />
   return <section className="com-notices" aria-labelledby="com-notices-title">
-    <div className="g-row com-notices-head"><div><h2 id="com-notices-title">Avisos</h2><p className="g-xs g-mut">Lives, vídeos, promoções e comunicados do seu personal.</p></div><span className="g-sp" />{data.can_publish && <button className="g-btn" onClick={() => setCreating(true)} data-testid="new-notice"><Icon name="plus" /> Novo aviso</button>}</div>
+    <div className="g-row com-notices-head"><div><h2 id="com-notices-title">Avisos</h2><p className="g-xs g-mut">Lives, vídeos, promoções e comunicados do seu personal.</p></div><span className="g-sp" />{data.can_publish && <Btn onClick={() => setCreating(true)} data-testid="new-notice"><Icon name="plus" /> Novo aviso</Btn>}</div>
     {!data.can_publish && data.publish_block_reason && isNonTrainee(useStore.getState().user) && <div className="g-card" role="status"><b className="g-sm">Criação de avisos indisponível</b><p className="g-xs g-mut">{data.publish_block_reason}</p></div>}
     <div className="com-notice-list">{data.notices.length ? data.notices.map(notice => <NoticeCard key={notice.id} notice={notice} focused={notice.id === focusedId} onEdit={setEditing} onCancel={cancel} />) : <Empty icon="bell">Ainda não há avisos para você.</Empty>}</div>
     {(creating || editing) && <NoticeForm notice={editing} recipientCount={data.recipient_count_preview || 0} onClose={() => { setCreating(false); setEditing(null) }} onDone={() => { setCreating(false); setEditing(null); reload() }} />}
@@ -232,9 +232,9 @@ function Feed() {
       <button className={'g-chipbtn' + (!mode ? ' g-on' : '')} aria-pressed={!mode} onClick={() => setSp({})}>Todos</button>
       <button className={'g-chipbtn' + (mode === 'seguindo' ? ' g-on' : '')} aria-pressed={mode === 'seguindo'} onClick={() => set('modo', mode === 'seguindo' ? '' : 'seguindo')}>Seguindo</button>
     </div>
-    {meta?.can_publish && <div className="com-feed-tools"><button className="g-btn" onClick={() => setComp(true)} data-testid="new-post"><Icon name="plus" /> Nova publicação</button></div>}
+    {meta?.can_publish && <div className="com-feed-tools"><Btn onClick={() => setComp(true)} data-testid="new-post"><Icon name="plus" /> Nova publicação</Btn></div>}
     {!meta?.can_publish && meta?.publish_block_reason && <div className="g-card" role="status" data-testid="publish-blocked" data-code={meta.publish_block_reason.code} style={{ marginTop: 10 }}><b className="g-sm">{meta.publish_block_reason.title}</b><p className="g-xs g-mut" style={{ margin: '4px 0 0' }}>{meta.publish_block_reason.message}</p></div>}
-    <div style={{ marginTop: 10 }}>{err ? <Err msg={err} retry={reload} /> : !d ? <Load /> : d.posts.length ? d.posts.map(p => <PostCard key={p.id} p={p} onChange={reload} />)
+    <div style={{ marginTop: 10 }}>{err ? <Err msg={err} retry={reload} /> : !d ? <Load /> : d.posts?.length ? d.posts.map(p => <PostCard key={p.id} p={p} onChange={reload} />)
       : <Empty icon="users">{mode === 'seguindo' ? 'Siga profissionais para ver as publicações deles aqui.' : 'Ainda não há publicações.'}</Empty>}</div>
     {comp && meta && <Compose cats={meta.categories} onClose={() => setComp(false)} onDone={() => { setComp(false); reload() }} />}
   </div>
@@ -244,9 +244,9 @@ export function Profissionais() {
   const [d, err, reload] = useLoad(() => C.pros())
   if (err) return <Err msg={err} retry={reload} />
   if (!d) return <Load />
-  return <div className="g-card g-list">{d.professionals.length ? d.professionals.map(p => <button key={p.id} className="g-li" onClick={() => nav('/profissional/' + p.id)} data-testid="pro-card">
+  return <div className="g-card g-list">{d.professionals?.length ? d.professionals.map(p => <button key={p.id} className="g-li" onClick={() => nav('/profissional/' + p.id)} data-testid="pro-card">
     <Av name={p.name} url={p.photo_url} /><span style={{ minWidth: 0 }}><b>{p.name}</b><br /><span className="g-mut g-xs">{(p.specialties || []).join(' · ') || 'Profissional'}{p.verified.length ? ' · ✓ verificado' : ''} · {p.followers} seguidor(es)</span></span>
-    {p.following && <span className="g-pill g-ok" style={{ marginLeft: 'auto' }}>seguindo</span>}</button>) : <Empty icon="users">Nenhum profissional ativo ainda.</Empty>}</div>
+    {p.following && <Pill className="g-pill g-ok" style={{ marginLeft: 'auto' }}>seguindo</Pill>}</button>) : <Empty icon="users">Nenhum profissional ativo ainda.</Empty>}</div>
 }
 export default function Comunidade() {
   const [sp, setSp] = useSearchParams()
@@ -270,14 +270,14 @@ export function PostPage() {
   const [meta] = useLoad(() => F.cats())
   const [body, setBody] = useState(''), [hint, setHint] = useState(''), [edit, setEdit] = useState(false)
   const user = useStore(s => s.user)
-  if (err) return <div className="ag"><button className="g-link" onClick={() => nav(-1)}>← Voltar</button><Err msg={err} /></div>
+  if (err) return <div className="ag"><Btn variant="tertiary" onClick={() => nav(-1)}>← Voltar</Btn><Err msg={err} /></div>
   if (!d) return <div className="ag"><Load /></div>
   const mine = d.post.author_id === user?.id
   return <div className="ag" data-testid="post-page">
-    <button className="g-link" onClick={() => nav(-1)}>← Voltar</button>
+    <Btn variant="tertiary" onClick={() => nav(-1)}>← Voltar</Btn>
     <PostCard p={d.post} full onChange={reload} />
-    {(mine || user?.admin) && <div className="g-actions">{mine && <button className="g-btn g-ghost g-sm" onClick={() => setEdit(true)}>Editar</button>}
-      <button className="g-btn g-danger g-sm" onClick={async () => { if (await ask('Excluir esta publicação?', { ok: 'Excluir', danger: true })) { await F.del(d.post.id); nav('/comunidade') } }}>Excluir</button></div>}
+    {(mine || user?.admin) && <div className="g-actions">{mine && <Btn variant="secondary" size="sm" onClick={() => setEdit(true)}>Editar</Btn>}
+      <Btn variant="destructive" size="sm" onClick={async () => { if (await ask('Excluir esta publicação?', { ok: 'Excluir', danger: true })) { await F.del(d.post.id); nav('/comunidade') } }}>Excluir</Btn></div>}
     <CommentThreads post={d.post} comments={d.comments} meta={meta} user={user} reload={reload} />
     {edit && meta && <Compose cats={meta.categories} post={d.post} onClose={() => setEdit(false)} onDone={() => { setEdit(false); reload() }} />}
   </div>
@@ -287,13 +287,13 @@ export function ProfessionalPage() {
   const [d, err, reload] = useLoad(() => C.pro(id), [id])
   const [posts] = useLoad(() => F.feed({ author: id }), [id])
   const [f, setF] = useState(null)
-  if (err) return <div className="ag"><button className="g-link" onClick={() => nav(-1)}>← Voltar</button><Err msg={err} /></div>
+  if (err) return <div className="ag"><Btn variant="tertiary" onClick={() => nav(-1)}>← Voltar</Btn><Err msg={err} /></div>
   if (!d) return <div className="ag"><Load /></div>
   const p = d.professional, following = f ?? p.following
   return <div className="ag" data-testid="pro-page">
-    <button className="g-link" onClick={() => nav(-1)}>← Voltar</button>
+    <Btn variant="tertiary" onClick={() => nav(-1)}>← Voltar</Btn>
     <div className="g-row" style={{ marginTop: 6 }}><Av name={p.name} url={p.photo_url} size={64} /><div><h1 style={{ margin: 0 }}>{p.name}</h1><p className="g-mut g-sm">{(p.specialties || []).join(' · ')}</p></div></div>
-    <button className={'g-btn' + (following ? ' g-ghost' : '')} style={{ marginTop: 12 }} onClick={async () => { const r = await F.follow(p.id, !following); setF(r.following); reload() }} data-testid="follow">{following ? 'Seguindo ✓' : 'Seguir'}</button>
+    <Btn variant={(following) ? 'secondary' : 'primary'} style={{ marginTop: 12 }} onClick={async () => { const r = await F.follow(p.id, !following); setF(r.following); reload() }} data-testid="follow">{following ? 'Seguindo ✓' : 'Seguir'}</Btn>
     <p className="g-xs g-mut" style={{ marginTop: 6 }}>Seguir mostra as publicações no seu feed. O vínculo de acompanhamento é feito pela administração.</p>
     {p.bio && <div className="g-card" style={{ marginTop: 12 }}><p className="g-sm" style={{ whiteSpace: 'pre-wrap' }}>{p.bio}</p></div>}
     <div className="g-card" style={{ marginTop: 12 }}>

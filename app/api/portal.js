@@ -59,21 +59,38 @@ export function portalRoutes({ json, readBody }) {
     'GET /api/pro/home': async (req, res) => {
       const u = await proOnly(req, res, json); if (!u) return
       const st = await proState(u.id)
-      const [stu, noplan, live, th, occ, pr, act, rq] = await Promise.all([
-        q(`select count(*)::int n from coach_students where coach_id=$1 and status='ativo'`, [u.id]),
-        q(`select count(*)::int n from coach_students cs where cs.coach_id=$1 and cs.status='ativo' and not exists (select 1 from pro_plans p where p.student_id=cs.student_id and p.owner_id=$1 and p.status='ativo')`, [u.id]),
-        q(`select count(*)::int n from sessions s join coach_students cs on cs.student_id=s.user_id and cs.coach_id=$1 and cs.status='ativo' where s.status='in_progress' and s.started_at > now() - interval '6 hours'`, [u.id]),
-        q(`select count(*)::int n from threads where (responsible_id=$1 or assigned_to=$1) and status='aguardando'`, [u.id]),
-        q(`select count(*)::int n from occurrences where (responsible_id=$1 or assigned_to=$1) and status<>'encerrada'`, [u.id]),
-        q(`select count(*)::int n from change_proposals where status='pendente' and (decider_id=$1 or author_id=$1)`, [u.id]),
+      const [stu, noplan, live, th, occ, pr, act, rq, trends] = await Promise.all([
+        q(`select count(*)::int n from coach_students where coach_id=$1 and tenant_id=$2 and status='ativo'`, [u.id, u.tenant_id]),
+        q(`select count(*)::int n from coach_students cs where cs.coach_id=$1 and cs.tenant_id=$2 and cs.status='ativo' and not exists (select 1 from pro_plans p where p.student_id=cs.student_id and p.owner_id=$1 and p.tenant_id=$2 and p.status='ativo')`, [u.id, u.tenant_id]),
+        q(`select count(distinct s.id)::int n from sessions s join coach_students cs on cs.student_id=s.user_id and cs.coach_id=$1 and cs.tenant_id=$2 and cs.status='ativo' where s.tenant_id=$2 and s.status='in_progress' and s.started_at > now() - interval '6 hours'`, [u.id, u.tenant_id]),
+        q(`select count(*)::int n from threads where tenant_id=$2 and (responsible_id=$1 or assigned_to=$1) and status='aguardando'`, [u.id, u.tenant_id]),
+        q(`select count(*)::int n from occurrences where tenant_id=$2 and (responsible_id=$1 or assigned_to=$1) and status<>'encerrada'`, [u.id, u.tenant_id]),
+        q(`select count(*)::int n from change_proposals where tenant_id=$2 and status='pendente' and (decider_id=$1 or author_id=$1)`, [u.id, u.tenant_id]),
         q(`select s.id, s.started_at, s.workout_name, s.sets_count, x.name student, x.id student_id from sessions s join coach_students cs on cs.student_id=s.user_id and cs.coach_id=$1 and cs.status='ativo'
-            join users x on x.id=s.user_id where s.status='done' order by s.started_at desc limit 8`, [u.id]),
-        q(`select count(*)::int n from pro_requests where professional_id=$1 and status = any($2)`, [u.id, OPEN])])
+            join users x on x.id=s.user_id where s.tenant_id=$2 and cs.tenant_id=$2 and ${countsInMetrics('s')} order by s.started_at desc limit 8`, [u.id, u.tenant_id]),
+        q(`select count(*)::int n from pro_requests where professional_id=$1 and tenant_id=$2 and status = any($3)`, [u.id, u.tenant_id, OPEN]),
+        q(`with weeks as (
+              select generate_series(date_trunc('week', now()) - interval '7 weeks', date_trunc('week', now()), interval '1 week') wk
+            ), completed as (
+              select date_trunc('week', s.started_at) wk, count(distinct s.id)::int n
+              from sessions s
+              join coach_students cs on cs.student_id=s.user_id and cs.coach_id=$1 and cs.tenant_id=$2 and cs.status='ativo'
+              where s.tenant_id=$2 and ${countsInMetrics('s')} and s.started_at >= date_trunc('week', now()) - interval '7 weeks'
+              group by 1
+            ), linked as (
+              select date_trunc('week', cs.since) wk, count(*)::int n
+              from coach_students cs
+              where cs.coach_id=$1 and cs.tenant_id=$2 and cs.since >= date_trunc('week', now()) - interval '7 weeks'
+              group by 1
+            )
+            select w.wk::date week_start, coalesce(c.n,0)::int completed_sessions, coalesce(l.n,0)::int new_links
+            from weeks w left join completed c on c.wk=w.wk left join linked l on l.wk=w.wk order by w.wk`, [u.id, u.tenant_id])])
       const lim = await capacitySummary(u.id)
-      json(res, 200, { name: st?.display_name || u.name, state: st?.state || 'ativo', can_publish: !!st && st.state === 'ativo' && !st.publication_suspended_at, limit: lim,
+      const profile = { name: st?.display_name || u.name, photo_url: st?.photo_url || null, specialties: st?.specialties || [], service_modes: st?.service_modes || [], state: st?.state || 'ativo' }
+      json(res, 200, { name: profile.name, state: profile.state, can_publish: !!st && st.state === 'ativo' && !st.publication_suspended_at, limit: lim, profile,
         kpis: { students: stu.rows[0].n, capacity: lim.effective_limit, available: lim.available, sem_prescricao: noplan.rows[0].n,
           em_andamento: live.rows[0].n, mensagens: th.rows[0].n, ocorrencias: occ.rows[0].n, propostas: pr.rows[0].n, solicitacoes: rq.rows[0].n },
-        activity: act.rows })
+        trends: trends.rows, activity: act.rows })
     },
     // somente alunos com vínculo ativo — nunca busca aberta na base
     'GET /api/pro/students': async (req, res) => {

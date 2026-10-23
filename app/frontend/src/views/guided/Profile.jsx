@@ -14,6 +14,7 @@ import './guided.css'
 import { askText, ask, notify, notifyError } from '../../lib/dialog.js'
 import { api } from '../../lib/api.js'
 import { openDeviceSetup } from '../../components/DeviceSetupFlow.jsx'
+import { Btn, Pass, Note } from '../../ui/gkit.jsx'
 
 export default function Profile() {
   const nav = useNavigate(), [sp] = useSearchParams()
@@ -23,7 +24,7 @@ export default function Profile() {
   const Li = ({ icon, t, s, to, onClick, testid }) => <button className="g-li" onClick={onClick || (() => nav(to))} data-testid={testid}><span className="g-ico"><Icon name={icon} /></span><span><b>{t}</b>{s && <><br /><span className="g-mut g-xs">{s}</span></>}</span><span className="g-chev"><Icon name="play" /></span></button>
   const titles = { preferencias: 'Preferências', privacidade: 'Privacidade e segurança', ajuda: 'Ajuda e suporte', dados: 'Conta', indicacoes: 'Indicações' }
   return <div className="ag" data-testid="profile">
-    {section !== 'conta' && <button className="g-link org-back" onClick={() => nav('/perfil')}>← Perfil</button>}
+    {section !== 'conta' && <Btn variant="tertiary" className="org-back" onClick={() => nav('/perfil')}>← Perfil</Btn>}
     <span className="g-eyebrow">Perfil</span><h1>{titles[section] || user?.name || 'Visitante'}</h1>
     {section === 'conta' && <>
       <p className="g-mut g-sm">{user?.email}{user?.tenant?.name ? ' · ' + user.tenant.name : ''}</p>
@@ -42,7 +43,7 @@ export default function Profile() {
       {user && user.status === 'ativo' && !user.admin && <ReferralPanel compact />}
       {user?.admin && <div className="org-list"><Li icon="shield" t="Painel administrativo" s="Alunos, fichas e meu perfil de personal" to="/admin/painel" testid="admin-area" /></div>}
       {user?.pro && !proAcc && !user?.admin && <Li icon="clipboard" t="Área profissional" to="/pro" testid="pro-area" />}
-      {user && <button className="g-btn g-ghost org-list" onClick={signOut}>Sair da conta</button>}
+      {user && <Btn variant="secondary" className="org-list" onClick={signOut}>Sair da conta</Btn>}
     </>}
     {section === 'indicacoes' && user && <ReferralPanel />}
     {section === 'dados' && <><p className="g-mut">{user?.name} · {user?.email}</p>{user && !proAcc && user.status === 'ativo' && <><MyCodePanel /><MyInvites /></>}</>}
@@ -71,8 +72,8 @@ function Support() {
       </a> : <div className="g-li" style={{ display: 'block' }} data-testid="support-unavailable"><b>Contato de suporte</b><br /><span className="g-mut g-xs">O e-mail ainda não foi informado pela administração.</span></div>}
     </div>
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-      <button className="g-btn" data-testid="device-setup-open" onClick={openDeviceSetup}>Instalar no celular e notificações</button>
-      <button className="g-btn" data-testid="tour-restart" onClick={() => dispatchEvent(new Event('avagym:tour-restart'))}>Rever orientações</button>
+      <Btn data-testid="device-setup-open" onClick={openDeviceSetup}>Instalar no celular e notificações</Btn>
+      <Btn data-testid="tour-restart" onClick={() => dispatchEvent(new Event('avagym:tour-restart'))}>Rever orientações</Btn>
     </div>
   </>
 }
@@ -90,8 +91,8 @@ function MyCode({ code }) {
   const share = async () => { try { await navigator.share({ title: 'Meu código ORNY', text: 'Meu código de aluno no ORNY: ' + code }) } catch { /* cancelado */ } }
   return <div className="g-card" style={{ marginBottom: 10 }} data-testid="my-code"><span className="g-mut g-xs">Meu código de aluno — envie ao seu profissional para ele te convidar</span>
     <div className="g-row" style={{ gap: 8, alignItems: 'center' }}><b style={{ fontSize: 24, letterSpacing: '.12em', flex: 1 }}>{code}</b>
-      <button className="g-btn g-ghost g-sm" onClick={copy} data-testid="my-code-copy">{ok || 'Copiar'}</button>
-      {typeof navigator !== 'undefined' && navigator.share && <button className="g-btn g-ghost g-sm" onClick={share}>Compartilhar</button>}</div></div>
+      <Btn variant="secondary" size="sm" onClick={copy} data-testid="my-code-copy">{ok || 'Copiar'}</Btn>
+      {typeof navigator !== 'undefined' && navigator.share && <Btn variant="secondary" size="sm" onClick={share}>Compartilhar</Btn>}</div></div>
 }
 function MeusDados() {
   const user = useStore(s => s.user)
@@ -104,7 +105,7 @@ function MeusDados() {
     <div className="g-card" style={{ marginBottom: 10 }}><ExportRequest /></div>
     <div className="g-card g-list" data-testid="meus-dados">
       {open ? <div className="g-li" style={{ display: 'block' }}><b>Pedido de exclusão em análise</b><p className="g-mut g-xs">Enviado em {new Date(open.created_at).toLocaleDateString('pt-BR')}. A administração confirma antes de excluir.</p>
-        <button className="g-btn g-ghost g-sm" onClick={async () => { await C.cancelDelete(); load() }}>Cancelar pedido</button></div>
+        <Btn variant="secondary" size="sm" onClick={async () => { await C.cancelDelete(); load() }}>Cancelar pedido</Btn></div>
       : <button className="g-li" onClick={async () => { const r = await askText('Pedir a exclusão da conta?', { text: 'A administração analisa o pedido. Conte o motivo (opcional).', multiline: true, ok: 'Enviar pedido', danger: true }); if (r == null) return; try { await C.deleteRequest(r); setMsg('Pedido enviado à administração.'); load() } catch (e) { setMsg(e.message) } }} data-testid="delete-request">
         <span className="g-ico"><Icon name="trash" /></span><span><b>Pedir exclusão da conta</b><br /><span className="g-mut g-xs">Nada é apagado sem a confirmação da administração</span></span></button>}
     </div>
@@ -128,13 +129,13 @@ function Seguranca() {
   return <>
     <h2>Segurança</h2>
     <div className="g-card" data-testid="security">
-      {!open ? <button className="g-btn g-ghost g-sm" onClick={() => setOpen(true)} data-testid="pw-open">Trocar senha</button> : <>
-        <label className="g-sm">Senha atual<input className="g-in" type="password" autoComplete="current-password" value={f.current_password} onChange={e => setF({ ...f, current_password: e.target.value })} data-testid="pw-cur" /></label>
-        <label className="g-sm" style={{ display: 'block', marginTop: 8 }}>Nova senha (mínimo 8 caracteres)<input className="g-in" type="password" autoComplete="new-password" value={f.new_password} onChange={e => setF({ ...f, new_password: e.target.value })} data-testid="pw-new" /></label>
-        {err && <p className="g-warn g-sm" role="alert">{err}</p>}
-        <div className="g-actions" style={{ marginTop: 10 }}><button className="g-btn g-sm" disabled={busy} onClick={save} data-testid="pw-save">{busy ? 'Salvando…' : 'Salvar nova senha'}</button><button className="g-btn g-ghost g-sm" onClick={() => setOpen(false)}>Cancelar</button></div>
+      {!open ? <Btn variant="secondary" size="sm" onClick={() => setOpen(true)} data-testid="pw-open">Trocar senha</Btn> : <>
+        <label className="g-sm">Senha atual<Pass autoComplete="current-password" value={f.current_password} onChange={e => setF({ ...f, current_password: e.target.value })} data-testid="pw-cur" /></label>
+        <label className="g-sm" style={{ display: 'block', marginTop: 8 }}>Nova senha (mínimo 8 caracteres)<Pass autoComplete="new-password" value={f.new_password} onChange={e => setF({ ...f, new_password: e.target.value })} data-testid="pw-new" /></label>
+        {err && <Note role="alert">{err}</Note>}
+        <div className="g-actions" style={{ marginTop: 10 }}><Btn size="sm" disabled={busy} onClick={save} data-testid="pw-save">{busy ? 'Salvando…' : 'Salvar nova senha'}</Btn><Btn variant="secondary" size="sm" onClick={() => setOpen(false)}>Cancelar</Btn></div>
       </>}
-      <button className="g-btn g-ghost g-sm" style={{ marginTop: 10 }} onClick={all} data-testid="logout-all">Sair de todos os aparelhos</button>
+      <Btn variant="secondary" size="sm" style={{ marginTop: 10 }} onClick={all} data-testid="logout-all">Sair de todos os aparelhos</Btn>
       <p className="g-xs g-mut" style={{ marginTop: 8 }}>Use se perdeu um aparelho ou acha que alguém entrou na sua conta.</p>
     </div>
   </>

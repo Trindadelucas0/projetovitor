@@ -76,4 +76,12 @@
 @keyframes sp-fade{from{opacity:0}to{opacity:1}}
 @keyframes sp-pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 @keyframes sp-up{from{transform:translateY(100%)}to{transform:none}}
-@media (prefers-reduced-motion:reduce){.sp-back,.sp-dlg{animation:none}}
+@media (prefers-reduced-motion:reduce){.sp-back,.sp-dlg{animation:none}}/* fase 6: botões de foto numa linha só, alvo de toque 40px */
+.av-ed-c .av-ed-btns{flex-wrap:nowrap;gap:6px}
+.av-ed-c .av-ed-btns .g-btn,.av-ed-c .av-ed-btns .g-link{min-height:40px;padding:8px 11px;font-size:13px;white-space:nowrap}
+@media (max-width:360px){.av-ed-c .av-ed-btns{flex-wrap:wrap}}
+/* compacto: os dois botões de foto cabem numa linha ao lado da foto (sem quebra); "Remover foto" vai para a linha de baixo */
+.av-ed-c .av-ed-btns .g-btn{flex:1 1 auto;min-width:0;justify-content:center;gap:4px;padding:8px 9px;font-size:12.5px}
+.av-ed-c .av-ed-btns .g-btn svg{width:13px;height:13px}
+.av-ed-c .av-ed-btns:has(.g-link){flex-wrap:wrap}
+.av-ed-c .av-ed-btns .g-link{flex-basis:100%;justify-content:flex-start}

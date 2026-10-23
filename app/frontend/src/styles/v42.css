@@ -6,8 +6,7 @@
 .v42-cred code{display:block;padding:10px;border-radius:10px;background:#00000033;letter-spacing:.06em;user-select:all;word-break:break-all}
 /* V4.3 · painel do usuário (admin) */
 .upn{padding:0 !important}
-.upn-head{position:sticky;top:0;z-index:2;display:flex;gap:10px;align-items:flex-start;padding:14px 16px;background:inherit;border-bottom:1px solid var(--ag-line)}
-.upn-head h2{margin:0;font-size:20px;line-height:1.2;word-break:break-word}.upn-head p{margin:2px 0 0;opacity:.75;font-size:14px;word-break:break-all}
+
 .upn-close{margin-left:auto;flex:none;width:44px;height:44px;border-radius:12px;border:1px solid var(--ag-line);background:var(--ag-card-2,transparent);color:inherit;font-size:18px;cursor:pointer}
 .upn-sec{padding:14px 16px;border-bottom:1px solid var(--ag-line)}
 .upn-sec h3{margin:0 0 6px;font-size:16px}.upn-sec h4{margin:12px 0 4px;font-size:14px}

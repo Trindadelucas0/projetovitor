@@ -13,6 +13,7 @@ import BodyMap from '../../components/BodyMap.jsx'
 import { useStore } from '../../store/useStore.js'
 import './guided.css'
 import './lote7.css'
+import { Btn } from '../../ui/gkit.jsx'
 
 const DEMO = { chest: 9, deltoids: 6, triceps: 4, quadriceps: 10, gluteal: 7, abs: 4, 'upper-back': 5, biceps: 3 }
 export function ProgressLocked() {
@@ -35,7 +36,7 @@ export default function Progress() {
   const [d, setD] = useState(null), [retry, setRetry] = useState(0)
   useEffect(() => { let live = true; setD(null); if (!locked) Promise.all([G.progress(), G.stats(30), G.home()]).then(([progress, stats, home]) => { if (live) setD({ progress, stats, home }) }).catch(() => { if (live) setD(false) }); return () => { live = false } }, [locked, retry])
   if (locked) return <ProgressLocked />
-  if (d === false) return <div className="ag"><h1>Progresso</h1><p className="g-mut">Não foi possível carregar seu progresso.</p><button className="g-btn" onClick={() => setRetry(v => v + 1)}>Tentar novamente</button></div>
+  if (d === false) return <div className="ag"><h1>Progresso</h1><p className="g-mut">Não foi possível carregar seu progresso.</p><Btn onClick={() => setRetry(v => v + 1)}>Tentar novamente</Btn></div>
   if (!d) return <Spin />
 
   const { progress: p, stats: s, home: h } = d
@@ -55,7 +56,7 @@ export default function Progress() {
 
   return <div className="ag" data-testid="progress">
     <span className="g-eyebrow">Progresso</span>
-    <div className="pr-head"><h1>Seu progresso</h1><button className="g-btn g-ghost" onClick={() => nav('/compartilhar?tipo=semana')} data-testid="progress-share"><Icon name="sparkles" /> Compartilhar #TáPago</button></div>
+    <div className="pr-head"><h1>Seu progresso</h1><Btn variant="secondary" onClick={() => nav('/compartilhar?tipo=semana')} data-testid="progress-share"><Icon name="sparkles" /> Compartilhar #TáPago</Btn></div>
     <section className="g-card pr-week" aria-labelledby="pr-week-title">
       <div className="pr-week-top"><div><span className="g-eyebrow">Esta semana</span><h2 id="pr-week-title">{remaining ? `Falta ${remaining} ${remaining === 1 ? 'treino' : 'treinos'} para sua meta` : 'Meta semanal atingida'}</h2></div><b>{weekN} de {target}</b></div>
       <div className="pr-track" role="progressbar" aria-valuemin="0" aria-valuemax={target} aria-valuenow={Math.min(weekN, target)}><i style={{ width: `${Math.min(100, weekN / target * 100)}%` }} /></div>
@@ -66,11 +67,11 @@ export default function Progress() {
         <div className="pr-muscle-body"><BodyMap load={muscleLoad} body={body} /></div>
         {topGroup && totalGroupSets > 0 ? <p className="pr-muscle-summary"><span>Grupo mais trabalhado</span><b>{groupPt(topGroup.group_id)} · {Math.round(topGroup.sets / totalGroupSets * 100)}% das séries efetivas</b></p>
           : <p className="g-mut g-sm pr-muscle-empty">Nenhum músculo treinado nos últimos 30 dias. Conclua um treino para ver o mapa colorir.</p>}
-        <button className="g-link pr-muscle-link" onClick={() => nav('/estatisticas')}>Ver estatísticas detalhadas <Icon name="chevronRight" /></button>
+        <Btn variant="tertiary" className="pr-muscle-link" onClick={() => nav('/estatisticas')}>Ver estatísticas detalhadas <Icon name="chevronRight" /></Btn>
       </div>
       {!!highlights.length && <div className="pr-highlights">{highlights.map(x => <div className="pr-highlight" key={x.label}><span className="g-ico"><Icon name={x.icon} /></span><div><span>{x.label}</span><b>{x.value}</b></div></div>)}</div>}
     </section>
     <section aria-labelledby="pr-analysis"><h2 id="pr-analysis">Análises</h2><div className="pr-actions"><button className="g-card pr-action" onClick={() => nav('/estatisticas')} data-testid="open-estatisticas"><span className="g-ico"><Icon name="chart" /></span><span><b>Estatísticas detalhadas</b><small>Compare frequência, volume, força e consistência</small></span><Icon name="chevronRight" /></button>{can('musculos') && <button className="g-card pr-action" onClick={() => nav('/muscles')} data-testid="open-3d"><span className="g-ico"><Icon name="person" /></span><span><b>Corpo 3D</b><small>Veja os músculos trabalhados</small></span><Icon name="chevronRight" /></button>}</div></section>
-    <section aria-labelledby="pr-history"><div className="pr-section-head"><h2 id="pr-history">Treinos recentes</h2>{p.history.length > 3 && <button className="g-link" onClick={() => nav('/history')}>Ver histórico</button>}</div><div className="g-card g-list">{p.history.length ? p.history.slice(0, 3).map(item => <div key={item.id} className="g-li pr-history-row"><span className="g-ico"><Icon name="check" /></span><span style={{ minWidth: 0 }}><b>{item.workout_name}</b><br /><span className="g-mut g-xs">{new Date(item.started_at).toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })} · {fmtMin(item.corrected && item.manual_sec != null ? item.manual_sec : item.duration_sec)} · {item.sets_count} séries{item.pain ? ' · dor registrada' : ''}{item.counts_in_metrics === false ? ' · fora das métricas' : ''}</span>{item.timing && !item.corrected && <><br /><TimingSummary t={item.timing} compact /></>}</span><span className="g-mut g-sm pr-history-volume">{fmtKg(item.volume)}</span></div>) : <><p className="g-mut g-sm">Nenhum treino concluído ainda.</p><button className="g-btn" style={{ marginTop: 10 }} onClick={() => nav('/hoje')}>Começar primeiro treino</button></>}</div></section>
+    <section aria-labelledby="pr-history"><div className="pr-section-head"><h2 id="pr-history">Treinos recentes</h2>{p.history.length > 3 && <Btn variant="tertiary" onClick={() => nav('/history')}>Ver histórico</Btn>}</div><div className="g-card g-list">{p.history.length ? p.history.slice(0, 3).map(item => <div key={item.id} className="g-li pr-history-row"><span className="g-ico"><Icon name="check" /></span><span style={{ minWidth: 0 }}><b>{item.workout_name}</b><br /><span className="g-mut g-xs">{new Date(item.started_at).toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })} · {fmtMin(item.corrected && item.manual_sec != null ? item.manual_sec : item.duration_sec)} · {item.sets_count} séries{item.pain ? ' · dor registrada' : ''}{item.counts_in_metrics === false ? ' · fora das métricas' : ''}</span>{item.timing && !item.corrected && <><br /><TimingSummary t={item.timing} compact /></>}</span><span className="g-mut g-sm pr-history-volume">{fmtKg(item.volume)}</span></div>) : <><p className="g-mut g-sm">Nenhum treino concluído ainda.</p><Btn style={{ marginTop: 10 }} onClick={() => nav('/hoje')}>Começar primeiro treino</Btn></>}</div></section>
   </div>
 }

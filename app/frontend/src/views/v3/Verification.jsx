@@ -1,7 +1,7 @@
 // V3 · verificação profissional: dados do registro, especialidades e documento. Revisão humana pelo admin.
 import { useState } from 'react'
 import { V, VER_PT, readFileAsDataURL } from '../../lib/v3.js'
-import { Load, Err, useLoad, Field } from '../app/kit.jsx'
+import { Load, Err, useLoad, Field, Btn, In, Note } from '../../ui/gkit.jsx'
 
 export default function Verification() {
   const [d, err, reload] = useLoad(() => V.verification())
@@ -27,21 +27,21 @@ export default function Verification() {
     <div className={'g-card'} style={{ borderColor: locked ? 'var(--ag-acc)' : undefined }}>
       <span className="g-eyebrow">Situação</span>
       <h3 style={{ margin: '4px 0' }} data-testid="ver-status">{VER_PT[d.status] || d.status}</h3>
-      {d.status === 'correcao_solicitada' && d.note && <p className="g-warn g-sm">Correção pedida: {d.note}</p>}
+      {d.status === 'correcao_solicitada' && d.note && <Note>Correção pedida: {d.note}</Note>}
       {!locked && <p className="g-xs g-mut">Enquanto não for verificado, você pode treinar como aluno, mas não envia treinos nem convida alunos.</p>}
     </div>
     {!locked && <div className="g-card" style={{ marginTop: 12 }}>
-      <Field label="Nome completo (como no registro)"><input className="g-in" value={form.full_name} onChange={set('full_name')} data-testid="ver-name" /></Field>
+      <Field label="Nome completo (como no registro)"><In value={form.full_name} onChange={set('full_name')} data-testid="ver-name" /></Field>
       {errs.full_name && <em className="g-warn g-xs">{errs.full_name}</em>}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <Field label="Conselho"><select className="g-in" value={form.council} onChange={set('council')} data-testid="ver-council">{d.councils.map(c => <option key={c}>{c}</option>)}</select></Field>
         <Field label="UF"><select className="g-in" value={form.registry_uf} onChange={set('registry_uf')}><option value="">—</option>{d.ufs.map(c => <option key={c}>{c}</option>)}</select></Field>
       </div>
-      <Field label="Número do registro"><input className="g-in" value={form.registry_number} onChange={set('registry_number')} data-testid="ver-number" /></Field>
+      <Field label="Número do registro"><In value={form.registry_number} onChange={set('registry_number')} data-testid="ver-number" /></Field>
       {errs.registry_number && <em className="g-warn g-xs">{errs.registry_number}</em>}
-      <Field label="Especialidades (separe por vírgula)"><input className="g-in" value={form.specialties} onChange={set('specialties')} placeholder="Musculação, Reabilitação" data-testid="ver-spec" /></Field>
+      <Field label="Especialidades (separe por vírgula)"><In value={form.specialties} onChange={set('specialties')} placeholder="Musculação, Reabilitação" data-testid="ver-spec" /></Field>
       {errs.specialties && <em className="g-warn g-xs">{errs.specialties}</em>}
-      <button className="g-btn" style={{ marginTop: 12 }} disabled={busy} onClick={send} data-testid="ver-send">{busy ? 'Enviando…' : s ? 'Atualizar dados' : 'Enviar dados'}</button>
+      <Btn style={{ marginTop: 12 }} disabled={busy} onClick={send} data-testid="ver-send">{busy ? 'Enviando…' : s ? 'Atualizar dados' : 'Enviar dados'}</Btn>
     </div>}
     {s && <div className="g-card" style={{ marginTop: 12 }}>
       <b className="g-sm">Documentos</b>
@@ -49,6 +49,6 @@ export default function Verification() {
         : <p className="g-mut g-xs">Nenhum documento anexado.</p>}
       {!locked && <label className="g-btn g-ghost g-sm" style={{ marginTop: 8 }}>Anexar documento (PDF, PNG ou JPEG até 4 MB)<input type="file" accept="application/pdf,image/png,image/jpeg" hidden onChange={upload} data-testid="ver-file" /></label>}
     </div>}
-    {msg && <p className="g-note" role="status" style={{ marginTop: 10 }}>{msg}</p>}
+    {msg && <Note type="info" role="status">{msg}</Note>}
   </div>
 }

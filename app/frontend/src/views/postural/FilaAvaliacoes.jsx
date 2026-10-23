@@ -5,7 +5,13 @@
 import { useState } from 'react'
 import Icon from '../../components/Icon.jsx'
 import RevisaoAvaliacao from './RevisaoAvaliacao.jsx'
-import { Btn, Empty, Err, Load, Field, Tabs, useLoad, useAutoRefresh } from '../app/kit.jsx'
+import { Empty, Err, Load, useLoad, useAutoRefresh } from '../app/kit.jsx'
+import { Badge, Checkbox, Input, Segmented, Statistic } from 'antd'
+import { SearchOutlined } from '@ant-design/icons'
+import { Btn as KBtn, TextIn, NumIn, Area, Sel, Card, Field, Warn } from '../../ui/kit.jsx'
+import SubTabs from '../../ui/SubTabs.jsx'
+// usada pelo admin e pelo /pro (ambos dentro de AntProvider); Btn legado (variant/loading) mapeado para antd
+const Btn = ({ variant, ...p }) => <KBtn v={variant === 'tertiary' ? 'ghost' : 'primary'} {...p} />
 import { notify, notifyError } from '../../lib/dialog.js'
 import { APV, STATUS_PT, EXAMPLES } from '../../lib/postural.js'
 import ExampleEditor from './ExampleEditor.jsx'
@@ -20,18 +26,18 @@ function PersonalExamples() {
   const [steps, stepsError] = useLoad(() => protocolId ? EXAMPLES.steps(protocolId) : Promise.resolve({ steps: [] }), [protocolId])
   const [stepId, setStepId] = useState('')
   if (error || stepsError) return <Err msg={error || stepsError} />
-  return <div className="g-card ap-solicitar">
+  return <Card className="ap-solicitar">
     <p className="g-sm">Adicione exemplos seus para os alunos das próximas avaliações que você solicitar.</p>
-    <Field label="Protocolo"><select className="g-in" value={protocolId} onChange={e => { setProtocolId(e.target.value); setStepId('') }}>
+    <Field label="Protocolo"><Sel style={{ width: '100%' }} value={protocolId} onChange={e => { setProtocolId(e.target.value); setStepId('') }}>
       <option value="">Selecione…</option>
       {(protocols?.protocols || []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-    </select></Field>
-    {protocolId && <Field label="Etapa"><select className="g-in" value={stepId} onChange={e => setStepId(e.target.value)}>
+    </Sel></Field>
+    {protocolId && <Field label="Etapa"><Sel style={{ width: '100%' }} value={stepId} onChange={e => setStepId(e.target.value)}>
       <option value="">Selecione…</option>
       {(steps?.steps || []).map(s => <option key={s.id} value={s.id}>{s.position}. {s.title}</option>)}
-    </select></Field>}
+    </Sel></Field>}
     {stepId && <ExampleEditor stepId={stepId} />}
-  </div>
+  </Card>
 }
 
 function Solicitar({ onDone }) {
@@ -58,39 +64,36 @@ function Solicitar({ onDone }) {
     } catch (e) { notifyError(e) } finally { setBusy(false) }
   }
 
-  return <div className="g-card ap-solicitar">
+  return <Card className="ap-solicitar">
     <Field label="Aluno">
       {lista.length > 0
-        ? <select className="g-in" value={f.student_id} onChange={e => setF({ ...f, student_id: e.target.value })} data-testid="ap-sol-aluno">
+        ? <Sel style={{ width: '100%' }} showSearch optionFilterProp="label" value={f.student_id} onChange={e => setF({ ...f, student_id: e.target.value })} data-testid="ap-sol-aluno">
           <option value="">Selecione…</option>
           {lista.map(s => <option key={s.id || s.student_id} value={s.id || s.student_id}>{s.name || s.student}</option>)}
-        </select>
-        : <input className="g-in" placeholder="Identificador do aluno" value={f.student_id} onChange={e => setF({ ...f, student_id: e.target.value })} data-testid="ap-sol-aluno" />}
+        </Sel>
+        : <TextIn placeholder="Identificador do aluno" value={f.student_id} onChange={e => setF({ ...f, student_id: e.target.value })} data-testid="ap-sol-aluno" />}
     </Field>
     <Field label="Protocolo">
-      <select className="g-in" value={f.protocol_id} onChange={e => setF({ ...f, protocol_id: e.target.value })} data-testid="ap-sol-protocolo">
+      <Sel style={{ width: '100%' }} value={f.protocol_id} onChange={e => setF({ ...f, protocol_id: e.target.value })} data-testid="ap-sol-protocolo">
         <option value="">Selecione…</option>
         {disponiveis.map(p => <option key={p.id} value={p.id}>{p.name}{p.oficial ? ' (oficial)' : ''}</option>)}
-      </select>
+      </Sel>
     </Field>
-    {disponiveis.length === 0 && <p className="g-note g-sm">Nenhum protocolo publicado disponível. A administração pode publicar um protocolo.</p>}
+    {disponiveis.length === 0 && <Warn type="info">Nenhum protocolo publicado disponível. A administração pode publicar um protocolo.</Warn>}
     <Field label="Prazo (dias)">
-      <input className="g-in" type="number" min={1} max={90} value={f.due_days} onChange={e => setF({ ...f, due_days: e.target.value })} data-testid="ap-sol-prazo" />
+      <NumIn min={1} max={90} value={f.due_days} onChange={e => setF({ ...f, due_days: e.target.value })} data-testid="ap-sol-prazo" />
     </Field>
     <Field label="Recado para o aluno (opcional)">
-      <textarea className="g-in" rows={2} value={f.message} onChange={e => setF({ ...f, message: e.target.value })} maxLength={1000} />
+      <Area rows={2} value={f.message} onChange={e => setF({ ...f, message: e.target.value })} maxLength={1000} />
     </Field>
-    <label className="g-chk" data-testid="ap-sol-recorrente">
-      <input type="checkbox" checked={f.recorrente} onChange={e => setF({ ...f, recorrente: e.target.checked })} />
-      <span>Repetir automaticamente</span>
-    </label>
+    <Checkbox className="ap-sol-rec" checked={f.recorrente} onChange={e => setF({ ...f, recorrente: e.target.checked })} data-testid="ap-sol-recorrente">Repetir automaticamente</Checkbox>
     {f.recorrente && <div className="g-grid2">
-      <Field label="A cada quantos meses"><input className="g-in" type="number" min={1} max={12} value={f.period_months} onChange={e => setF({ ...f, period_months: e.target.value })} /></Field>
-      <Field label="Dia do mês (1 a 28)"><input className="g-in" type="number" min={1} max={28} value={f.day_of_month} onChange={e => setF({ ...f, day_of_month: e.target.value })} /></Field>
+      <Field label="A cada quantos meses"><NumIn min={1} max={12} value={f.period_months} onChange={e => setF({ ...f, period_months: e.target.value })} /></Field>
+      <Field label="Dia do mês (1 a 28)"><NumIn min={1} max={28} value={f.day_of_month} onChange={e => setF({ ...f, day_of_month: e.target.value })} /></Field>
     </div>}
     <p className="g-mut g-xs">Cada repetição gera uma avaliação própria; nada é sobrescrito. Se o ciclo anterior ainda estiver aberto, a geração é adiada.</p>
     <Btn onClick={enviar} loading={busy} data-testid="ap-sol-enviar">Enviar solicitação</Btn>
-  </div>
+  </Card>
 }
 
 function Recorrencias() {
@@ -109,7 +112,7 @@ function Recorrencias() {
     try { await APV.recorrencia({ student_id: r.student_id, protocol_id: r.protocol_id, period_months: r.period_months, day_of_month: r.day_of_month, due_days: r.due_days }); await reload(); notify('Repetição retomada.') }
     catch (e) { notifyError(e) } finally { setBusy(false) }
   }
-  return <div className="g-card g-list">{d.recurrences.map(r => (
+  return <Card className="ap-list">{d.recurrences.map(r => (
     <div key={r.id} className="g-li" data-testid={'ap-rec-' + r.id}>
       <span className="g-ico"><Icon name="calendar" /></span>
       <span><b className="g-sm">{r.student_name}</b><br />
@@ -120,7 +123,7 @@ function Recorrencias() {
         ? <Btn variant="tertiary" onClick={() => pausar(r)} disabled={busy}>Pausar</Btn>
         : <Btn variant="tertiary" onClick={() => retomar(r)} disabled={busy}>Retomar</Btn>}
     </div>
-  ))}</div>
+  ))}</Card>
 }
 
 export default function FilaAvaliacoes() {
@@ -138,12 +141,12 @@ export default function FilaAvaliacoes() {
   const c = d.counts || {}
   return (
     <div data-testid="ap-fila">
-      <p className="adm-sub">
+      <p className="orny-muted">
         Solicite a avaliação, acompanhe o preenchimento e publique a devolutiva. As fotos e vídeos do aluno
         ficam em área privada: saem só por aqui, e todo acesso é registrado.
       </p>
 
-      <Tabs tabs={[['fila', 'Fila', c.aguardando_analise || 0], ['solicitar', 'Nova solicitação'], ['exemplos', 'Meus exemplos'], ['recorrencias', 'Repetições'], ['duvidas', 'Dúvidas', c.duvidas || 0]]} cur={aba} set={setAba} />
+      <SubTabs current={aba} onChange={setAba} items={[['fila', <>Fila <Badge count={c.aguardando_analise || 0} size="small" /></>], ['solicitar', 'Nova solicitação'], ['exemplos', 'Meus exemplos'], ['recorrencias', 'Repetições'], ['duvidas', <>Dúvidas <Badge count={c.duvidas || 0} size="small" /></>]]} />
 
       {aba === 'solicitar' && <Solicitar onDone={() => { setAba('fila'); reload() }} />}
       {aba === 'exemplos' && <PersonalExamples />}
@@ -155,22 +158,19 @@ export default function FilaAvaliacoes() {
       {aba === 'fila' && <>
         <div className="ap-kpis">
           {[['Solicitadas', c.solicitadas], ['Em andamento', c.em_andamento], ['Aguardando análise', c.aguardando_analise], ['Em revisão', c.em_revisao], ['Recaptura', c.recaptura], ['Concluídas', c.concluidas]].map(([l, v]) => (
-            <div key={l} className="av-kpi"><b>{v || 0}</b><span>{l}</span></div>
+            <Card key={l} className="orny-kpi ap-kpi"><Statistic value={v || 0} title={l} /></Card>
           ))}
         </div>
 
         <div className="g-row ap-filtros">
-          <input className="g-in" placeholder="Buscar aluno…" value={termo} onChange={e => setTermo(e.target.value)} data-testid="ap-fila-busca" />
-          <div className="g-row ap-fila-chips">
-            {[['abertas', 'Abertas'], ['enviada', 'Aguardando análise'], ['publicada', 'Concluídas'], ['todas', 'Todas']].map(([k, l]) => (
-              <button key={k} type="button" className={'g-chipbtn' + (filtro === k ? ' g-on' : '')} onClick={() => setFiltro(k)} data-testid={'ap-fila-f-' + k}>{l}</button>
-            ))}
-          </div>
+          <Input allowClear prefix={<SearchOutlined />} placeholder="Buscar aluno…" value={termo} onChange={e => setTermo(e.target.value)} data-testid="ap-fila-busca" aria-label="Buscar aluno" />
+          <div className="ap-seg-scroll"><Segmented value={filtro} onChange={setFiltro}
+            options={[['abertas', 'Abertas'], ['enviada', 'Aguardando análise'], ['publicada', 'Concluídas'], ['todas', 'Todas']].map(([k, l]) => ({ value: k, label: <span data-testid={'ap-fila-f-' + k}>{l}</span> }))} /></div>
         </div>
 
         {d.assessments.length === 0
           ? <Empty icon="clipboard">Nenhuma avaliação com esse filtro.</Empty>
-          : <div className="g-card g-list">{d.assessments.map(x => (
+          : <Card className="ap-list">{d.assessments.map(x => (
             <button key={x.id} className="g-li" onClick={() => setAberta(x.id)} data-testid={'ap-fila-' + x.id}>
               <span className="g-ico"><Icon name={x.status === 'publicada' ? 'checkCircle' : x.a_revisar ? 'flag' : 'clipboard'} /></span>
               <span>
@@ -185,7 +185,7 @@ export default function FilaAvaliacoes() {
               <span className="g-sp" />
               <Icon name="chevronRight" />
             </button>
-          ))}</div>}
+          ))}</Card>}
       </>}
     </div>
   )

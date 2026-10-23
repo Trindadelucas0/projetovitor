@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon.jsx'
 import MediaLightbox from '../../components/MediaLightbox.jsx'
-import { Btn, Empty, Err, Load, useLoad } from '../app/kit.jsx'
+import { Btn, Empty, Err, Load, useLoad, Pill } from '../../ui/gkit.jsx'
 import { AP, DECISION_PT, KIND_PT } from '../../lib/postural.js'
 import './postural.css'
 
@@ -69,7 +69,7 @@ export default function Devolutiva() {
               </button>
               <b className="g-xs">{x.step.position}. {x.step.title}</b>
               <span className="g-mut g-xs">{KIND_PT[x.step.capture_kind]}</span>
-              {x.cap.review_status && <span className="g-pill g-xs">{DECISION_PT[x.cap.review_status]}</span>}
+              {x.cap.review_status && <Pill className="g-pill g-xs">{DECISION_PT[x.cap.review_status]}</Pill>}
               {x.cap.review_note && <p className="g-mut g-xs ap-pre" data-testid={'ap-dev-note-' + x.step.code}>{x.cap.review_note}</p>}
             </div>
           ))}

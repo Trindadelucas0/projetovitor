@@ -25,3 +25,4 @@ if (!MOBILE && 'serviceWorker' in navigator && location.protocol === 'https:') {
 import './styles/organization.css'
 
 import './styles/orny.css'
+import './styles/polish.css'

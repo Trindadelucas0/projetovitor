@@ -19,6 +19,7 @@ import { Av } from './app/kit.jsx'
 import './settings.css'
 
 import { installTipKind } from '../lib/installTip.js'
+import { Btn } from '../ui/gkit.jsx'
 const TIP = {
   ios: ['No Safari: toque em Compartilhar e depois em "Adicionar à Tela de Início"', 'for iOS Safari'],
   'ios-other': ['Abra esta página no Safari, toque em Compartilhar e depois em "Adicionar à Tela de Início"', 'for iOS other browser'],
@@ -37,7 +38,7 @@ function AccountCard({ user, nav }) {
       <span className="st-acc-h" data-testid="settings-handle">{handle ? '@' + handle : t('Sem @identificador')}</span>
       {user.email && <span className="st-acc-e">{user.email}</span>}
     </div>
-    <button className="g-btn g-ghost g-sm st-acc-b" onClick={() => nav('/perfil/social')} data-testid="settings-edit-social">{t('Editar perfil')}</button>
+    <Btn variant="secondary" size="sm" className="st-acc-b" onClick={() => nav('/perfil/social')} data-testid="settings-edit-social">{t('Editar perfil')}</Btn>
   </div>
 }
 
@@ -87,7 +88,7 @@ export default function Settings() {
 
   const tip = installTipKind()
   return <div className="narrow ag st" data-testid="settings">
-    <button className="g-link org-back" onClick={() => nav('/perfil?secao=preferencias')} aria-label="Voltar às preferências">‹ {t('Preferências')}</button>
+    <Btn variant="tertiary" className="org-back" onClick={() => nav('/perfil?secao=preferencias')} aria-label="Voltar às preferências">‹ {t('Preferências')}</Btn>
     <span className="g-eyebrow">{t('Perfil')}</span>
     <h1>{t('Idioma e treino')}</h1>
     <p className="g-mut g-sm st-lead">{t('Unidades, descanso, som, lembretes e aparência.')}</p>

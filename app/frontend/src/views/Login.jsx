@@ -8,11 +8,14 @@ import { authLogin, authRegister, api } from '../lib/api.js'
 import { applyPalette } from '../lib/theme.js'
 import { t } from '../lib/i18n.js'
 import { DEMO, REPO } from '../lib/demo.js'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { useTerms, TermsText } from './app/Terms.jsx'
 import { readRef, saveRef } from './billing/Referral.jsx'   // Monetizacao F5
 import { PlanCard, SELLABLE } from './billing/PlansShowcase.jsx'
 import useMedia from '../lib/useMedia.js'
+import { emptyProfileChoice, PROFILE_LABELS, PALETTE_LABELS } from '../components/profileChoiceData.js'
+// antd só entra quando o cadastro mostra a escolha de perfil (chunk lazy), não no bundle inicial do login.
+const ProfileChoice = lazy(() => import('../components/ProfileChoice.jsx').then(m => ({ default: m.ProfileChoiceAnt })))
 import './login.css'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
@@ -86,8 +89,8 @@ function LoginForm() {
   // Link /convite/CODIGO: guarda a oferta e abre o cadastro com o cupom configurado pelo administrador.
   const [ref, setRef] = useState(() => readRef())
   // Cadastro em 5 etapas (Perfil, Acesso, Seus dados, Assinatura, Confirmação).
-  const [step, setStep] = useState(1), [perfil, setPerfil] = useState(''), [choice, setChoice] = useState(() => requestedPlan || ''), [plans, setPlans] = useState(null), [plansError, setPlansError] = useState(''), [plansBusy, setPlansBusy] = useState(false)
-  const pickPerfil = v => { setPerfil(v); setMsg(''); setErrs({ ...errs, perfil: undefined }); applyPalette(v === 'feminino' ? 'feminino' : 'masculino') }
+  const [step, setStep] = useState(1), [profile, setProfile] = useState(emptyProfileChoice), [choice, setChoice] = useState(() => requestedPlan || ''), [plans, setPlans] = useState(null), [plansError, setPlansError] = useState(''), [plansBusy, setPlansBusy] = useState(false)
+  const pickProfile = v => { setProfile(v); setMsg(''); setErrs({ ...errs, perfil: undefined }); applyPalette(v.accent_palette) }
   const loadPlans = useCallback(async () => {
     setPlansBusy(true); setPlansError('')
     try { setPlans(await api('/api/public/plans')) }
@@ -110,7 +113,7 @@ function LoginForm() {
   const S2 = ['name', 'email', 'password', 'confirm']
   const errorsOf = () => {
     const e = {}
-    if (reg && !perfil) e.perfil = 'Escolha Homem ou Mulher'
+    if (reg && !profile.profile_kind) e.perfil = 'Escolha Menino, Menina ou Outro'
     if (reg && f.name.trim().length < 2) e.name = 'Informe seu nome'
     if (!f.email.trim()) e.email = 'Informe seu e-mail'
     else if (!EMAIL_RE.test(f.email.trim())) e.email = 'E-mail inválido'
@@ -126,7 +129,7 @@ function LoginForm() {
   const stepOf = k => k === 'perfil' ? 1 : S2.includes(k) ? 2 : k === 'terms' ? 5 : 3
   const validate = () => { const e = errorsOf(); setErrs(e); if (reg && Object.keys(e).length) setStep(Math.min(...Object.keys(e).map(stepOf))); return !Object.keys(e).length }
   const next = () => {
-    if (step === 1 && !perfil) { setErrs({ perfil: 'Escolha Homem ou Mulher' }); return setMsg('Escolha Homem ou Mulher') }
+    if (step === 1 && !profile.profile_kind) { setErrs({ perfil: 'Escolha Menino, Menina ou Outro' }); return setMsg('Escolha Menino, Menina ou Outro') }
     const e = Object.fromEntries(Object.entries(errorsOf()).filter(([k]) => stepOf(k) === step))
     setErrs(e); setMsg(''); if (Object.keys(e).length) return
     if (step === 4 && !choice) return setMsg('Escolha o plano para continuar. O acesso começa após a confirmação do pagamento.')
@@ -139,10 +142,9 @@ function LoginForm() {
     if (busy || !validate()) return
     setBusy(true); setMsg('')
     try {
-      const result = reg ? await authRegister(f.name.trim(), f.email.trim(), f.password, terms && agree ? terms.version : undefined, { accept: agree, birth_date: f.birth_date, health, contact: toApi(ct), plan_id: choice, perfil }) : null
+      const result = reg ? await authRegister(f.name.trim(), f.email.trim(), f.password, terms && agree ? terms.version : undefined, { accept: agree, birth_date: f.birth_date, health, contact: toApi(ct), plan_id: choice, ...profile }) : null
       const u = reg ? result.user : await authLogin(f.email.trim(), f.password)
-      if (u?.palette === 'feminino') applyPalette('feminino')
-      else applyPalette('masculino')
+      applyPalette(u?.palette)
       if (reg) { try { localStorage.removeItem('avagym_ref') } catch { /* */ } setUser(u); await pullState(); useUI.getState().toast(`Conta criada, ${u.name.split(' ')[0]}! Escolha seu plano para continuar.`); location.hash = '#/assinatura'; return }
       setUser(u); await pullState()
       useUI.getState().toast(reg ? `Bem-vindo(a), ${u.name}!` : `Bem-vindo(a) de volta, ${u.name}!`)
@@ -150,7 +152,6 @@ function LoginForm() {
       if (e.errors) setErrs(e.errors)
       setExists(reg && e.code === 'EMAIL_EXISTS')
       setMsg(e.status === 0 || !e.status ? 'Não foi possível conectar ao servidor' : e.message)
-      if (reg && e.code === 'PERSONAL_FEMININO_UNAVAILABLE') setStep(1)
     } finally { setBusy(false) }
   }
   const field = (k, label, type, auto, extra) => (
@@ -195,17 +196,7 @@ function LoginForm() {
         <div className="lg-brand"><Brand /></div>
         <p className="lg-sub">{reg ? 'Crie sua conta e comece a treinar.' : 'Seu progresso começa aqui'}</p>
         {reg && <p className="lg-sub" data-testid="signup-step" style={{ marginTop: 0 }}>Etapa {step} de 5 · {['Perfil', 'Acesso', 'Seus dados', 'Assinatura', 'Confirmação'][step - 1]}</p>}
-        {reg && step === 1 && <div className="lg-intent" role="radiogroup" aria-label="Perfil" style={{ display: 'grid', gap: 10 }} data-testid="signup-perfil">
-          <label style={{ cursor: 'pointer', border: '1px solid var(--ag-line,#ffffff26)', borderRadius: 14, padding: 14, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <input type="radio" name="signup-perfil" checked={perfil === 'masculino'} onChange={() => pickPerfil('masculino')} data-testid="signup-perfil-homem" />
-            <span><b>Homem</b><br /><small className="lg-sub">Verde · personal atual</small></span>
-          </label>
-          <label style={{ cursor: 'pointer', border: '1px solid var(--ag-line,#ffffff26)', borderRadius: 14, padding: 14, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <input type="radio" name="signup-perfil" checked={perfil === 'feminino'} onChange={() => pickPerfil('feminino')} data-testid="signup-perfil-mulher" />
-            <span><b>Mulher</b><br /><small className="lg-sub">Rosa · personal feminina</small></span>
-          </label>
-          {errs.perfil && <em style={{ color: 'var(--ag-bad,#ff6b6b)' }}>{errs.perfil}</em>}
-        </div>}
+        {reg && step === 1 && <Suspense fallback={<div className="g-skel profile-choice-skel" role="status" aria-label="Carregando perfis" />}><ProfileChoice value={profile} onChange={pickProfile} error={errs.perfil} testId="signup-perfil" /></Suspense>}
         {(!reg || step === 2) && <>
         {reg && field('name', 'Nome', 'text', 'name', { maxLength: 80 })}
         {field('email', 'E-mail', 'email', 'email', { inputMode: 'email', placeholder: 'Digite seu e-mail' })}
@@ -228,7 +219,9 @@ function LoginForm() {
         </div>}
         {reg && step === 5 && <div className="lg-sub" data-testid="signup-summary" style={{ textAlign: 'left' }}>
           <p><b>{f.name}</b> · {f.email}</p>
-          <p>Perfil: {perfil === 'feminino' ? 'Mulher' : 'Homem'}</p>
+          <p>Perfil: {PROFILE_LABELS[profile.profile_kind]} · {PALETTE_LABELS[profile.accent_palette]}</p>
+          {profile.prefers_female_coach && <p>Preferência: atendimento por uma personal mulher</p>}
+          <p>Personal: será escolhido pelo administrador depois do cadastro.</p>
           <p>Plano: {plans?.plans?.find(p => p.id === choice)?.name || choice} (pagamento antes de acessar o sistema)</p>
           <p data-testid="signup-pay-note">Depois de criar a conta, abrimos <b>Planos e pagamento</b> com o plano escolhido. Você conclui o pagamento por cartão ou Pix; nada é cobrado sem sua confirmação.</p>
         </div>}

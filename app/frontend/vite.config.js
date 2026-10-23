@@ -49,6 +49,8 @@ const noReplacementChar = () => ({
 export default defineConfig({
   plugins: [react(), tailwindcss(), devMedia(), buildStamp(), noReplacementChar()],
   define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
+  // Ant Design (só admin, /pro e construtor, todos lazy) num chunk com nome claro: assets/antd-*.js
+  build: { rolldownOptions: { output: { codeSplitting: { includeDependenciesRecursively: false, groups: [{ name: 'antd', test: /[\\/]src[\\/]ui[\\/][^\\/]+\.(jsx?|css)$|[\\/]node_modules[\\/](antd|@ant-design|@rc-component|rc-[^\\/]+|dayjs|scroll-into-view-if-needed|compute-scroll-into-view|throttle-debounce|json2mq|string-convert|stylis|@emotion[\\/](hash|unitless))[\\/]/ }] } } } },
   // V4 · F1: specs do Playwright (e2e/) não rodam no vitest
   test: { exclude: ['test-artifacts/**', 'e2e-results/**', '.cache/**', 'e2e/**', 'node_modules/**', 'android/**', 'ios/**'] },
   server: {

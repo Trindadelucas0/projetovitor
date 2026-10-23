@@ -1,0 +1,112 @@
+/* Polimento final (CSS puro, sem antd) das telas estáticas: Início, Treinos, Login/Cadastro, gates,
+   folhas "Tenho uma dúvida"/"Relatar problema", Treinar/Concluído. Regras:
+   - só cores que já existem (vars --ag-*; nada de cor nova);
+   - raio/altura alinhados ao tema antd (ui/antTheme.js: controlHeight 40/44, radius 12/16);
+   - não muda markup testado (PlanGrid/PlanCard, testids, classes). */
+:root{--pz-s1:4px;--pz-s2:8px;--pz-s3:12px;--pz-s4:16px;--pz-s5:20px;--pz-s6:24px;
+  --pz-r-sm:12px;--pz-r:16px;--pz-r-lg:20px;
+  --pz-shadow:0 1px 0 #ffffff08 inset,0 10px 28px -18px #000000cc}
+:root[data-theme="light"]{--pz-shadow:0 1px 2px #0000000d,0 10px 26px -18px #00000040}
+
+/* ---- cartões: mesmo raio/borda/sombra em todas as telas do aluno ---- */
+.ag .g-card{border-radius:var(--pz-r-lg);box-shadow:var(--pz-shadow)}
+.ag .g-hero{box-shadow:var(--pz-shadow)}
+.ag .g-card.g-list{padding-top:6px;padding-bottom:6px}
+.ag .g-list .g-li:first-child{border-top:0}
+.ag .g-list .g-li{min-height:56px}
+
+/* ---- tipografia: Montserrat nos títulos, Inter no corpo, hierarquia clara ---- */
+.ag h1,.ag .g-h1{font-family:var(--font-head);font-weight:800;letter-spacing:-.025em;line-height:1.15;margin:4px 0 6px}
+.ag .g-h1{font-size:clamp(22px,6.4vw,26px)}
+.ag h2{font-family:var(--font-head);letter-spacing:-.015em;line-height:1.25}
+.ag .g-eyebrow{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.12em;margin-bottom:2px}
+.ag p{line-height:1.5}
+.ag .g-sm{line-height:1.45}.ag .g-xs{line-height:1.4}
+
+/* ---- botões coerentes com o kit (altura, raio, estados) ---- */
+.ag .g-btn{border-radius:var(--pz-r);font-family:var(--font-head);letter-spacing:.005em;transition:transform .12s ease,filter .15s ease,opacity .15s ease}
+.ag .g-btn:not(:disabled):active{transform:scale(.985)}
+.ag .g-btn:not(:disabled):hover{filter:brightness(1.06)}
+.ag .g-btn:disabled{opacity:.5;cursor:not-allowed}
+.ag .g-btn.g-ghost,.ag .g-btn.ghost{background:var(--ag-card);color:var(--ag-txt);border:1px solid var(--ag-line);box-shadow:none}
+.ag .g-btn.ghost{justify-content:flex-start;min-height:48px;font-size:15px;font-weight:700}
+.ag .g-btn.g-ghost:not(:disabled):hover,.ag .g-btn.ghost:not(:disabled):hover{border-color:var(--ag-acc);filter:none}
+.ag .g-btn.g-block{width:100%}
+
+/* ---- alvos de toque >= 40px ---- */
+.ag .g-icbtn{min-width:40px;min-height:40px}
+.ag .g-row>.g-link,.ag .g-card>.g-link,.ag .g-link.g-block{min-height:40px;display:inline-flex;align-items:center}
+.ag .g-chipbtn{min-height:40px}
+
+/* ---- anéis de foco (também fora do .ag: login, cadastro, gates, vitrine) ---- */
+.lg-wrap :is(button,a,input,select,textarea,[tabindex]):focus-visible,
+.bl-page :is(button,a,summary,[tabindex]):focus-visible{outline:2.5px solid var(--ag-acc);outline-offset:2px;border-radius:10px}
+.lg-input:has(input:focus-visible){outline:2.5px solid var(--ag-acc);outline-offset:1px}
+.lg-input input:focus-visible{outline:0}
+
+/* ---- campos ---- */
+.ag .g-field>span:first-child{font-weight:600}
+.ag .g-field>input:not([type=checkbox]):not([type=radio]){width:100%;min-height:48px;border-radius:var(--pz-r-sm);border:1px solid var(--ag-line);background:var(--ag-card-2);color:var(--ag-txt);padding:12px 14px;font:inherit;font-size:16px}
+.ag :is(input.g-in,textarea.g-in,select.g-in,.g-field>input){transition:border-color .15s ease}
+.ag :is(input.g-in,textarea.g-in,select.g-in,.g-field>input):focus{border-color:var(--ag-acc);outline:0}
+.ag :is(input.g-in,textarea.g-in,select.g-in,.g-field>input):focus-visible{outline:2px solid var(--ag-acc);outline-offset:1px}
+
+/* ---- mensagens de erro soltas (gates) ---- */
+.ag p.g-bad2{background:color-mix(in srgb,var(--ag-bad) 12%,transparent);border:1px solid color-mix(in srgb,var(--ag-bad) 35%,transparent);color:var(--ag-txt);border-radius:var(--pz-r-sm);padding:10px 12px;font-size:14px;margin:12px 0 0}
+
+/* ---- gates (senha provisória / termos) ---- */
+.ag.g-page{padding-top:max(32px,env(safe-area-inset-top));padding-bottom:32px}
+.ag.g-page>.g-ico{width:56px;height:56px;border-radius:var(--pz-r);background:var(--ag-card);border:1px solid var(--ag-line);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:14px;box-shadow:var(--pz-shadow)}
+.ag.g-page>.g-mut{margin:0 0 6px}
+.ag.g-page .g-card .g-btn.ghost{border:0;background:none;padding:6px 2px;min-height:44px}
+
+/* ---- login / cadastro / escolha Homem-Mulher ---- */
+.lg-card{gap:14px}
+.lg-brand{font-family:var(--font-head)}
+.lg-sub{line-height:1.45}
+.lg-field{font-weight:600}
+.lg-input{border-radius:var(--pz-r-sm);min-height:50px}
+.lg-btn{min-height:52px;border-radius:var(--pz-r);font-family:var(--font-head);transition:transform .12s ease,filter .15s ease}
+.lg-btn:not(:disabled):hover{filter:brightness(1.06)}
+.lg-btn:disabled{cursor:not-allowed}
+.lg-forgot,.lg-link{min-height:40px;display:inline-flex;align-items:center}
+.lg-intent-op{min-height:72px;border-radius:var(--pz-r);padding:12px 14px;transition:border-color .15s ease,background .15s ease}
+.lg-intent-op b{font-family:var(--font-head)}
+.lg-msg{border-radius:var(--pz-r-sm);line-height:1.45}
+
+/* ---- folhas "Tenho uma dúvida" / "Relatar problema": opções compactas em grade, com marcador ---- */
+.ag.ag-sheet h2,.ag.ag-sheet h3{font-family:var(--font-head)}
+.ag-sheet .cs-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ag-sheet .cs-opts>.g-opt{min-height:52px;padding:10px 12px;gap:10px;border-radius:var(--pz-r-sm);font-size:15px;font-weight:600;text-align:left;line-height:1.25}
+.ag-sheet .cs-opts>.g-opt::before{content:"";flex:none;width:18px;height:18px;border-radius:50%;border:2px solid var(--ag-dim);box-sizing:border-box}
+.ag-sheet .cs-opts>.g-opt.g-sel::before{border-color:var(--ag-acc);background:var(--ag-acc);box-shadow:inset 0 0 0 3px var(--ag-card)}
+.ag-sheet .cs-opts>.g-opt:last-child:nth-child(odd){grid-column:1/-1}
+.ag-sheet textarea.g-in{min-height:110px}
+@media (max-width:340px){.ag-sheet .cs-opts{grid-template-columns:1fr}}
+
+/* ---- vitrine /precos (só o invólucro; PlanGrid/PlanCard intactos) ---- */
+.pl-trust span{padding:8px 12px;border:1px solid var(--ag-line);border-radius:999px;background:var(--ag-card)}
+.pl-note a,.bl-foot a{display:inline-flex;align-items:center;min-height:40px;padding:0 4px}
+.bl-load{min-height:240px;margin:24px auto;max-width:880px;border-radius:var(--pz-r-lg);display:flex;align-items:center;justify-content:center}
+
+/* ---- esqueletos de carregamento ---- */
+.g-skel{display:block;position:relative;overflow:hidden;background:var(--ag-card);border-radius:var(--pz-r-sm)}
+.g-skel::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--ag-txt) 7%,transparent),transparent);animation:g-skel 1.3s ease-in-out infinite}
+@keyframes g-skel{to{transform:translateX(100%)}}
+.g-skel-line{height:12px;width:45%;margin:6px 0}
+.g-skel-h1{height:28px;width:65%;margin:8px 0 14px;border-radius:10px}
+.g-skel-card{height:150px;margin-top:12px;border-radius:var(--pz-r-lg)}
+.g-skel-card.sm{height:76px}
+.g-skel-btn{height:52px;margin-top:12px;border-radius:var(--pz-r)}
+.bl-load.g-skel{color:var(--ag-mut)}
+
+@media (prefers-reduced-motion:reduce){
+  .g-skel::after{animation:none!important;display:none}
+  .ag .g-btn:not(:disabled):active,.lg-btn:not(:disabled):active{transform:none}
+}
+
+/* ---- escolha de perfil (Menino/Menina/Outro): esqueleto enquanto o chunk lazy carrega ---- */
+.profile-choice-skel{height:96px;border-radius:var(--pz-r)}
+@media(max-width:560px){.profile-choice-skel{height:216px}}
+.profile-gate-card{border-radius:24px}
+.profile-gate-card .ant-btn{min-height:52px;border-radius:var(--pz-r);font-family:var(--font-head)}

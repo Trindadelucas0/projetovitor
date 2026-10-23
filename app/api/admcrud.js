@@ -8,6 +8,7 @@ import { anonymizeUser } from './lgpd.js'
 import { normDays, planProblems, flat } from './portal.js'
 import { likeTerm, likeEsc, pageNum } from './sqlsafe.js'
 import { fichaQuotaWarning } from './plan-rules.js'
+import { normalizeProfileChoice } from './profile-choice.js'
 
 const isUuid = s => /^[0-9a-f-]{36}$/i.test(String(s || ''))
 const txt = (s, n = 2000) => String(s ?? '').trim().slice(0, n)
@@ -48,20 +49,20 @@ export function adminCrudRoutes({ json, readBody }) {
       await audit(u.tenant_id, u.id, 'usuario.editado', 'user', b.id, { before, after: { name, email, sex: perfil || before?.sex || null } })
       json(res, 200, { ok: true, perfil: perfil || before?.sex || null })
     },
-    // Só cor Homem/Mulher — não mexe em nome/e-mail (evita falha silenciosa no select do painel).
+    // Compatibilidade para correção administrativa do perfil visual; nunca altera vínculo.
     'POST /api/adm/users/perfil': async (req, res) => {
       const u = await admin(req, res, json); if (!u) return
       const b = await readBody(req)
       if (!(await sameTenant(b.id, u.tenant_id))) return json(res, 404, { error: 'Usuário não encontrado' })
-      const perfil = b.perfil === 'feminino' || b.perfil === 'masculino' ? b.perfil
-        : b.sex === 'feminino' || b.sex === 'masculino' ? b.sex : null
-      if (!perfil) return json(res, 400, { error: 'Escolha Homem ou Mulher', errors: { perfil: 'Escolha Homem ou Mulher' } })
-      const before = (await q('select sex from user_profiles where user_id=$1', [b.id])).rows[0]?.sex || null
+      let profile
+      try { profile = normalizeProfileChoice({ ...b, perfil: b.perfil || b.sex }) } catch (e) { return json(res, 400, { error: e.message, code: e.code, errors: { perfil: e.message } }) }
+      const before = (await q('select sex,profile_kind,accent_palette,prefers_female_coach from user_profiles where user_id=$1', [b.id])).rows[0] || null
       const tid = (await q('select tenant_id from users where id=$1', [b.id])).rows[0]?.tenant_id || u.tenant_id
-      await q(`insert into user_profiles(user_id, tenant_id, sex) values($1,$2,$3)
-        on conflict (user_id) do update set sex=excluded.sex`, [b.id, tid, perfil])
-      await audit(u.tenant_id, u.id, 'usuario.perfil', 'user', b.id, { before, after: perfil })
-      json(res, 200, { ok: true, perfil, palette: perfil === 'feminino' ? 'feminino' : 'masculino' })
+      await q(`insert into user_profiles(user_id,tenant_id,sex,profile_kind,accent_palette,prefers_female_coach) values($1,$2,$3,$4,$5,$6)
+        on conflict (user_id) do update set sex=excluded.sex,profile_kind=excluded.profile_kind,accent_palette=excluded.accent_palette,prefers_female_coach=excluded.prefers_female_coach`,
+        [b.id, tid, profile.sex, profile.profile_kind, profile.accent_palette, profile.prefers_female_coach])
+      await audit(u.tenant_id, u.id, 'usuario.perfil', 'user', b.id, { before, after: profile })
+      json(res, 200, { ok: true, profile_kind: profile.profile_kind, palette: profile.accent_palette, prefers_female_coach: profile.prefers_female_coach })
     },
     'POST /api/adm/users/delete': async (req, res) => {
       const u = await admin(req, res, json); if (!u) return

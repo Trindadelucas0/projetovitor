@@ -3,8 +3,19 @@
 //      notify('Salvo') / notifyError(e) → aviso não bloqueante (role=status / role=alert).
 import { create } from 'zustand'
 
-export const useDialog = create(set => ({ dlg: null, notes: [], set }))
+export const useDialog = create(set => ({ dlg: null, notes: [], hosts: [], set }))
 let seq = 0
+
+// Ponte antd (Fase 3): as áreas com Ant Design (admin, agenda do personal) registram um hospedeiro antd.
+// Enquanto houver um registrado, os modais/avisos saem como Modal/Alert do antd (mesmos data-testid:
+// dialog, dialog-input, dialog-value, dialog-ok, dialog-cancel, notice). Sem hospedeiro, segue o DialogHost antigo.
+// A API (ask/askText/showValue/notify/notifyError) não muda.
+export function registerHost(id) {
+  useDialog.setState(s => ({ hosts: s.hosts.includes(id) ? s.hosts : [...s.hosts, id] }))
+  return () => useDialog.setState(s => ({ hosts: s.hosts.filter(h => h !== id) }))
+}
+/** Hospedeiro que deve desenhar agora: 'legacy' ou o id do primeiro hospedeiro antd registrado. */
+export const activeHost = (s = useDialog.getState()) => s.hosts[0] ?? 'legacy'
 
 function open(d) {
   return new Promise(resolve => {

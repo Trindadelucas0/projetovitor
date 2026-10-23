@@ -54,7 +54,7 @@ export default function AvatarEditor({ avatar, name, onChange, compact = false }
     </div> : <>
       {avatar?.url ? <img src={avatar.url} alt="Sua foto de perfil" data-testid="avatar-current" className="av-ed-img" style={{ width: compact ? 96 : 112, height: compact ? 96 : 112, borderRadius: '50%', objectFit: 'cover' }} />
         : <span data-testid="avatar-initials" className="av-ed-img" style={{ display: 'inline-block', borderRadius: '50%' }}><Av name={name} size={compact ? 96 : 112} /></span>}
-      <div className="g-row av-ed-btns" style={compact ? { gap: 8, flexWrap: 'wrap' } : { justifyContent: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+      <div className="g-row av-ed-btns" style={compact ? undefined : { justifyContent: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
         <label className={'g-btn g-ghost' + (compact ? ' g-sm' : '')} style={{ cursor: 'pointer' }}><Icon name="plus" /> {avatar?.url ? 'Trocar foto' : 'Escolher foto'}<input type="file" accept="image/*" onChange={pick} data-testid="avatar-file" style={{ display: 'none' }} /></label>
         <label className={'g-btn g-ghost' + (compact ? ' g-sm' : '')} style={{ cursor: 'pointer' }}>Tirar foto<input type="file" accept="image/*" capture="user" onChange={pick} style={{ display: 'none' }} /></label>
         {avatar?.url && !avatar.legacy && <button className="g-link" disabled={busy} onClick={remove} data-testid="avatar-remove">Remover foto</button>}

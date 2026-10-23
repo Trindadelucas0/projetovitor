@@ -62,3 +62,9 @@ frontend/public/models/corpo.glb deriva do Z-Anatomy (Lluís Vinent Juanico, htt
 
 
 Mídias locais de exercícios (frontend/public/media/exercicios): fotos da Wikimedia Commons — perdigueiro (PTPioneer, CC BY 2.0) e pêndulo de Codman (M.C. Morgan, CC0). Detalhes: frontend/public/media/exercicios/CREDITS.md.
+
+## Imagem da tela de perfil
+
+`frontend/public/brand/profile-gym.jpg` e `profile-gym.webp` derivam de foto de Tima Miroshnichenko no Pexels:
+https://www.pexels.com/photo/black-exercise-equipment-on-gray-floor-6389865/
+Uso conforme a licença do Pexels: https://www.pexels.com/legal-pages/license/

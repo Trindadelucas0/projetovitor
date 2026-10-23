@@ -97,7 +97,7 @@
 .ap-filtros { flex-wrap: wrap; gap: 10px; align-items: center; }
 .ap-filtros .g-in { flex: 1 1 200px; }
 /* filtros da fila: chips em linha que quebram no celular, em vez da lista empilhada do g-opts */
-.ap-fila-chips { flex-wrap: wrap; }
+
 /* nome e versao do protocolo no painel: nao pode usar g-eyebrow, que o admin esconde (avadesk.css) */
 .ap-vers-label { font-size: 12.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ag-acc); }
 .ap-rev { display: grid; gap: 12px; }
