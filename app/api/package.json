@@ -20,6 +20,8 @@
     "test:beneficios:integration": "node test/beneficios.integration.mjs",
     "dev": "node server.js",
     "create-admin": "node scripts/create-admin.mjs",
+    "criar-ficha-demo": "node scripts/criar-ficha-demo.mjs",
+    "liberar-aluno-teste": "node scripts/liberar-aluno-teste.mjs",
     "zerar-dados": "node scripts/zerar-dados.mjs",
     "remover-usuarios": "node scripts/remover-usuarios.mjs"
   },

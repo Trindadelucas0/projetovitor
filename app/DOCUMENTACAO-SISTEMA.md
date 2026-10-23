@@ -81,6 +81,23 @@ Antes da limpeza, foi criado e validado o dump `backups/avagym_20261021_154519_a
 
 A conta de aluno de teste do banco local recebeu assinatura `individual` ativa e uma cobrança `paga` de `provider = 'fixture'`, pela mesma fixture usada pelos testes de integração (`paidAccess` em `api/test/postural.integration.mjs`), para permitir percorrer as áreas internas sem checkout. Antes disso, `GET /api/access/me` devolvia `has: false` e as rotas internas respondiam `402 ACCESS_REQUIRED`; depois, `has: true` e `commercial_status: "ativa"`, confirmado por chamada autenticada. **Nenhuma regra comercial ou código de produto foi alterado:** `monetizationOn()` continua fixo em `true`, o `monetizationGate` segue negando por padrão e a exigência de cobrança paga com `provider <> 'simulado'` permanece. O `provider = 'fixture'` existe para que esse registro não seja confundido com pagamento real; ele não deve ser reproduzido em produção nem contado em relatório de receita. A conta do personal principal não precisou disso: ela já tem acesso pela origem `personal_interno`, que continua não se estendendo aos alunos vinculados.
 
+### Ficha de demonstração do aluno de teste (23/10/2026)
+
+`api/scripts/criar-ficha-demo.mjs` publica uma ficha ABCD de hipertrofia (halteres e máquinas, 4 dias, 22 exercícios) para a conta de aluno informada, com o personal que já tem vínculo ativo com ela. Serve para percorrer a área do aluno e a tela de execução com dado realista, sem montar a ficha à mão no construtor.
+
+Ela não é dado de produto: **nenhuma ficha, conta ou vínculo viaja no deploy** — `app/scripts/deploy-vps.sh` propaga código, migrations e catálogo oficial. O script é versionado justamente para ser executado no ambiente onde a ficha é desejada.
+
+- Prévia (não grava nada, mostra o que faria): `cd app/api && node scripts/criar-ficha-demo.mjs`
+- Publicar: `npm run criar-ficha-demo -- --apply` (ou `node scripts/criar-ficha-demo.mjs --apply`)
+- Outro aluno ou personal: `--aluno=<e-mail>` (padrão `aluno.teste.fluxo@orny.local`) e `--personal=<e-mail>`
+- Em `NODE_ENV=production` exige também `--permitir-producao`, como confirmação de que a conta informada é de teste.
+
+A rotina reaproveita a validação e as regras de publicação da própria API, em uma transação: `normDays`/`flat` (`api/workout-schema.js`), `planProblems` (`api/portal.js`), `supersedeOthers` (`api/pro.js`) e `enforceOneActive` (`api/active-training.js`). Consequências esperadas, iguais às de publicar pelo construtor: a ficha ativa anterior do aluno é **arquivada** com `superseded_by` (histórico somente leitura, nada apagado), um programa do sistema ativo é pausado, e `student_active_training` passa a apontar para a ficha nova. É idempotente: rodar de novo com o mesmo título gera `version + 1` na mesma ficha, sem duplicar.
+
+Os exercícios ficam sem `video_url`, de propósito. A tela de execução (`frontend/src/views/guided/Train.jsx`) então cai na mídia padrão do catálogo — `exercises.media_url` no formato `exdb:<id>`, resolvido por `mediaOf` (`frontend/src/lib/guided.js`) no dataset embutido `frontend/src/lib/exercises-data.js` — e o aluno vê o GIF animado de execução. É o comportamento real de quando o personal ainda não anexou vídeo, e vale para os 20 exercícios usados, todos com `media_url` preenchido pelo seed.
+
+Aplicada no banco local em 23/10/2026: ficha ativa com 4 dias e 22 exercícios, `goal = hypertrophy`, `format_version = 2`; a ficha "LUCAS  TREINO TESTE", até então ativa, ficou arquivada com `superseded_by`. Segunda execução confirmou a idempotência (`version = 2`, uma só linha).
+
 ### Conferência e ajuste do banco local (21/10/2026)
 
 Conferência somente leitura do banco `avagym` (21/10/2026) apurou que as 72 migrations do repositório constavam aplicadas, sem pendência, e que o catálogo estava no modelo anterior (`individual` a 3990). **Alvo atual do repositório:** após `075_dois_planos_aluno.sql`, `individual` (Básico) a 4990 e `completo` a 49900, ambos ativos e vendáveis; `pro`, `pro_ilimitado` e `profissional_free` fora de venda; `aluno_free` preservado; `price_cents` das assinaturas `individual` já ativas não é reescrito até a renovação. Sobram em `schema_migrations` duas linhas órfãs de arquivos renumerados (`034_resend_transactional.sql` e `068_dados_legais_ornygym.sql`): inofensivas, porque o conteúdo atual consta aplicado sob os nomes novos.
