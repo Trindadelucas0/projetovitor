@@ -90,12 +90,10 @@ try {
     if (SENHA) {
       if (SENHA.length < 10) throw new Error('senha curta (mínimo 10 caracteres)')
       log('senha: REDEFINIR para a informada em --senha')
-      if (apply) await q(`update users set password_hash=$2, must_change_password=false, updated_at=now() where id=$1`, [user.id, await bcrypt.hash(SENHA, 12)])
+      if (apply) await q(`update users set password_hash=$2, must_change_password=false where id=$1`, [user.id, await bcrypt.hash(SENHA, 12)])
     }
     if (apply) {
-      await q(`update users set status='ativo', disabled_at=null, access_suspended_at=null, access_suspension_reason=null, updated_at=now() where id=$1`, [user.id]).catch(async () => {
-        await q(`update users set status='ativo', disabled_at=null, updated_at=now() where id=$1`, [user.id])
-      })
+      await q(`update users set status='ativo', disabled_at=null, access_suspended_at=null, access_suspended_by=null, access_suspension_reason=null where id=$1`, [user.id])
       await q(`insert into user_roles values($1,$2,'aluno') on conflict do nothing`, [user.id, user.tenant_id || tenant.id])
       await q(`insert into term_acceptances(user_id,version) select $1, version from terms_versions on conflict do nothing`, [user.id]).catch(() => {})
     }
