@@ -110,6 +110,32 @@ Benefícios (cota de ficha/call, Close Friends, grupos de WhatsApp, prioridade n
 
 Ao fim o script confere com as funções do próprio app (`accessOf`, `resolve`) e imprime `has`, `commercial_status`, plano, features e validade; sai com código 1 se o acesso continuar negado. Aplicado no banco local em 23/10/2026: `has: true`, `commercial_status: "ativa"`, plano `completo` ativo até 23/01/2027, comunidade liberada e as 8 features (incluindo `avaliacao_postural`).
 
+### Remoção do código órfão de Desafios, Grupos e Ranking (23/10/2026)
+
+`071_remover_grupos_desafios_ranking.sql` retirou os recursos do banco em 21/10/2026, mas os módulos da API continuaram no repositório. Como as rotas já não eram montadas em `server.js` (`GET /api/challenges` respondia 404), o único efeito observável era `api/guided.js` chamar `checkGoals` ao encerrar um treino e a consulta falhar em `challenges`, escrevendo `[checkGoals] relação "challenges" não existe` no log — erro engolido pelo `try/catch` da própria função, sem afetar o salvamento.
+
+Removidos nesta entrega: a chamada e o import de `checkGoals` em `api/guided.js`, e os sete módulos do bloco — `challenge-feed.js`, `challenge-rules.js`, `challenge-score.js`, `challenges.js`, `prizes.js`, `groups.js` e `ranking.js`. Eles formavam um grafo fechado: só se importavam entre si, e `api/guided.js` era a única entrada externa, de modo que `prizes.js` (que importa `challenges.js`) não poderia ficar sem os demais. Saíram junto os três testes que exercitavam apenas essas funções puras e que nenhum script npm ou passo de CI executava: `test/challenge-rules.test.mjs`, `test/challenge-score.test.mjs` e `test/ranking.test.mjs`. Um comentário em `api/postural-media.js` que apontava para `challenge-feed.js` passou a citar `exmedia.js`, que usa o mesmo sniff de assinatura.
+
+Conferido depois da remoção: nenhuma referência restante aos módulos, `server.js` carrega sem erro, e `npm run check:sensitive`, `npm run test:email` (10 testes) e `npm run test:plano-unico` (11 testes) passam — os mesmos passos que o CI executa para a API. O processo da API em execução precisa ser reiniciado para deixar de registrar o erro de `checkGoals`, porque carregou o código anterior.
+
+**Resíduo conhecido no frontend, não tratado:** `src/views/app/Desafios.jsx`, `DesafioFeed.jsx`, `DesafioRanking.jsx`, `Trofeus.jsx` e `src/lib/challenges.js` continuam no repositório. As telas já são inalcançáveis — `src/App.jsx` redireciona `/desafio/:id` e `/desafios/criar` para `/comunidade` — mas os arquivos não foram removidos aqui por serem mudança de interface.
+
+### Telas órfãs de Desafios, Grupos e Ranking removidas do frontend (23/10/2026)
+
+Complemento da remoção do código órfão da API. Saíram sete arquivos que nenhuma rota importava — `src/views/app/Desafios.jsx`, `DesafioFeed.jsx`, `DesafioRanking.jsx`, `Trofeus.jsx`, `Grupos.jsx`, `Ranking.jsx` e `src/lib/challenges.js` — mais um bloco fechado, como no backend: `Grupos.jsx` e `DesafioRanking.jsx` importavam de `DesafioFeed.jsx`, e `Desafios.jsx` importava dos outros três. As ocorrências de "Grupos" em `AdminBeneficios.jsx` e `Beneficios.jsx` são texto de interface sobre grupos do WhatsApp, não imports.
+
+Saíram também as oito rotas de redirecionamento de `src/App.jsx` (`/grupo/:id`, `/desafio/:id`, `/desafios/criar` e `/ranking`, nos dois shells). **Mudança de comportamento:** esses endereços antigos iam para `/comunidade` e agora caem no `*`, que leva a `/admin/painel` no shell do admin e a `/hoje` (ou `/pro`) no do aluno. Nenhum link interno aponta para eles e a `071` já apagou as notificações com esses endereços, então o efeito se limita a favoritos externos. `OLD_TABS` em `src/views/admin/adminNav.js` ainda mapeia as abas antigas `desafios`, `grupos` e `ranking` para `publicacoes`; é só tradução de nome de aba, não referência às telas, e foi mantida.
+
+Conferido: `npm test` do frontend passa (39 arquivos, 481 testes), `npm run build` compila, o app carrega, e `/#/desafio/123` agora termina em `/hoje` sem erro. Esta remoção ainda não foi publicada: a VPS segue com as telas e as rotas antigas até o próximo deploy.
+
+### Ficha de demonstração publicada na VPS (23/10/2026)
+
+Com o deploy do commit `458b4cc` concluído (workflow "Publicar na VPS", 22:47), `scripts/criar-ficha-demo.mjs` passou a existir em `/opt/projetovitor/app/api`. A rotina foi executada lá por SSH, primeiro em prévia e depois com `--apply`.
+
+Resultado conferido no banco da VPS: uma ficha ativa, `Hipertrofia ABCD — halteres e máquinas`, v1, 4 dias, 22 exercícios, `goal = hypertrophy`, para `aluno.teste.fluxo@orny.local` com o personal principal; `student_active_training` apontando para ela; nenhum dos 19 exercícios distintos sem `media_url`, de modo que o GIF de execução aparece também em produção. Nenhuma ficha anterior foi arquivada, porque não havia ficha ativa naquele banco. `https://academia.avadesk.com.br/` e `/api/health` responderam 200 depois da operação.
+
+**Diferença conhecida em relação a publicar pelo construtor:** o script não envia a notificação "Novo treino do seu profissional" que `POST /api/pro/prescriptions/publish` dispara (`notify(student, 'plano', …)`). A ficha aparece normalmente em `/treinos`; o que falta é só o aviso. Confirmado em ambos os bancos: nenhuma notificação de `kind = 'plano'` foi criada.
+
 ### Ficha de demonstração do aluno de teste (23/10/2026)
 
 `api/scripts/criar-ficha-demo.mjs` publica uma ficha ABCD de hipertrofia (halteres e máquinas, 4 dias, 22 exercícios) para a conta de aluno informada, com o personal que já tem vínculo ativo com ela. Serve para percorrer a área do aluno e a tela de execução com dado realista, sem montar a ficha à mão no construtor.

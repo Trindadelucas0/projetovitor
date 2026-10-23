@@ -166,10 +166,6 @@ function Shell() {
               <Route path="/library" element={<Library />} />
               <Route path="/admin/programas" element={<Navigate to="/admin/painel?tab=exercicios" replace />} />
               <Route path="/comunidade" element={<Gate title="Comunidade" allow="comunidade"><Comunidade /></Gate>} />
-              <Route path="/grupo/:id" element={<Navigate to="/comunidade" replace />} />
-              <Route path="/desafio/:id" element={<Navigate to="/comunidade" replace />} />
-              <Route path="/desafios/criar" element={<Navigate to="/comunidade" replace />} />
-              <Route path="/ranking" element={<Navigate to="/comunidade" replace />} />
               <Route path="/post/:id" element={<Gate title="Comunidade"><PostPage /></Gate>} />
               <Route path="/profissional/:id" element={<Gate title="Comunidade"><ProfessionalPage /></Gate>} />
               <Route path="/conversa/:id" element={<Gate title="Conversa"><Conversa /></Gate>} />
@@ -193,12 +189,8 @@ function Shell() {
               <Route path="/beneficios" element={<Beneficios />} />{/* a própria tela explica o que depende do plano */}
               <Route path="/conversa/:id" element={<Gate title="Conversa"><Conversa /></Gate>} />
               <Route path="/avisos" element={<Avisos />} />
-              <Route path="/grupo/:id" element={<Navigate to="/comunidade" replace />} />
-              <Route path="/desafio/:id" element={<Navigate to="/comunidade" replace />} />
-              <Route path="/desafios/criar" element={<Navigate to="/comunidade" replace />} />
               <Route path="/post/:id" element={<Gate title="Comunidade" allow="comunidade"><PostPage /></Gate>} />
               <Route path="/profissional/:id" element={<Gate title="Comunidade" allow="comunidade"><ProfessionalPage /></Gate>} />
-              <Route path="/ranking" element={<Navigate to="/comunidade" replace />} />
               <Route path="/pro" element={isProAccount(user) ? <Lz><ProPortal /></Lz> : <Navigate to="/hoje" replace />} />
               <Route path="/pro/programas" element={<Navigate to={user?.admin ? '/admin/painel?tab=usuarios' : '/hoje'} replace />} />
               <Route path="/pro/assinatura" element={<Navigate to="/assinatura" replace />} />
