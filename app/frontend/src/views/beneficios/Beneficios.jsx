@@ -8,6 +8,33 @@ import { ask, notify, notifyError } from '../../lib/dialog.js'
 import { quotaText, spDateTime, spDate } from '../../lib/plans.js'
 
 const CHIP = { flex: '0 0 auto', width: 'auto', minWidth: 72, padding: '8px 12px' }
+const DOW_MON = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'] // semana começa na segunda
+
+function addMinLabel(time, mins = 15) {
+  const [h, m] = String(time).slice(0, 5).split(':').map(Number)
+  const t = h * 60 + m + mins
+  return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
+}
+function slotRangeLabel(s) {
+  if (s.ends_at) {
+    const end = new Date(s.ends_at).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).slice(0, 5)
+    return `${s.time}–${end}`
+  }
+  return `${s.time}–${addMinLabel(s.time)}`
+}
+/** Células do mês (seg→dom). dateStr = YYYY-MM-DD ou null (fora do mês). */
+function monthCells(year, month) {
+  const first = new Date(Date.UTC(year, month - 1, 1))
+  const startPad = (first.getUTCDay() + 6) % 7 // segunda = 0
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate()
+  const cells = []
+  for (let i = 0; i < startPad; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push(`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
+  }
+  while (cells.length % 7) cells.push(null)
+  return cells
+}
 
 function Plano({ d }) {
   const nav = useNavigate()
@@ -28,10 +55,55 @@ function Plano({ d }) {
 function Calls() {
   const [d, err, reload] = useLoad(() => B.meCalls())
   const [busy, setBusy] = useState(false), [day, setDay] = useState(null)
-  const byDay = useMemo(() => { const m = new Map(); for (const s of d?.slots || []) { if (!m.has(s.date)) m.set(s.date, []); m.get(s.date).push(s) } return [...m.entries()] }, [d])
+  const [cursor, setCursor] = useState(null) // { y, m } — mês exibido
+  const byDay = useMemo(() => {
+    const m = new Map()
+    for (const s of d?.slots || []) { if (!m.has(s.date)) m.set(s.date, []); m.get(s.date).push(s) }
+    return m
+  }, [d])
+  const windowDates = useMemo(() => [...byDay.keys()].sort(), [byDay])
+  const minDate = windowDates[0] || null, maxDate = windowDates.at(-1) || null
+  const ym = useMemo(() => {
+    if (cursor) return cursor
+    if (minDate) { const [y, m] = minDate.split('-').map(Number); return { y, m } }
+    const now = new Date()
+    return { y: now.getFullYear(), m: now.getMonth() + 1 }
+  }, [cursor, minDate])
+
   if (err) return <Err msg={err} retry={reload} />
   if (!d) return <Load />
+
   const q = d.quota, upcoming = d.bookings.filter(b => b.status === 'reservada' && new Date(b.starts_at) > new Date())
+  const goMonth = (dy) => {
+    let y = ym.y, m = ym.m + dy
+    if (m < 1) { y -= 1; m = 12 }
+    if (m > 12) { y += 1; m = 1 }
+    const monthStart = `${y}-${String(m).padStart(2, '0')}-01`
+    const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate()
+    const monthEnd = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    if (minDate && monthEnd < minDate) return
+    if (maxDate && monthStart > maxDate) return
+    setCursor({ y, m }); setDay(null)
+  }
+  const canPrev = (() => {
+    if (!minDate) return false
+    let y = ym.y, m = ym.m - 1
+    if (m < 1) { y -= 1; m = 12 }
+    const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate()
+    const monthEnd = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    return monthEnd >= minDate
+  })()
+  const canNext = (() => {
+    if (!maxDate) return false
+    let y = ym.y, m = ym.m + 1
+    if (m > 12) { y += 1; m = 1 }
+    const monthStart = `${y}-${String(m).padStart(2, '0')}-01`
+    return monthStart <= maxDate
+  })()
+  const monthTitle = new Date(Date.UTC(ym.y, ym.m - 1, 15)).toLocaleDateString('pt-BR', { timeZone: 'UTC', month: 'long', year: 'numeric' })
+  const cells = monthCells(ym.y, ym.m)
+  const daySlots = day ? (byDay.get(day) || []) : []
+
   const reservar = async s => {
     if (!(await ask('Reservar esta call?', { text: `${spDateTime(s.starts_at)} (horário de Brasília) com ${d.personal?.name}. Dá para cancelar até ${d.settings.cancelamento}h antes.`, ok: 'Reservar' }))) return
     setBusy(true)
@@ -42,7 +114,7 @@ function Calls() {
     if (!(await ask('Cancelar a call?', { text: spDateTime(b.starts_at), ok: 'Cancelar call', danger: true }))) return
     try { await B.cancelar({ id: b.id }); notify('Call cancelada.'); reload() } catch (e) { notifyError(e) }
   }
-  const dayLabel = date => new Date(date + 'T12:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC', weekday: 'short', day: '2-digit', month: '2-digit' })
+
   return <div className="g-card" data-testid="ben-calls"><h3 style={{ marginTop: 0 }}>Calls com o personal</h3>
     {q.plan && <p className="g-sm">{q.label}: {q.limit} call {q.unit} de {q.minutes} min. {q.window_end && <>Esta janela vai até {spDate(q.window_end)}.</>} Call não usada não acumula.</p>}
     {upcoming.map(b => <div key={b.id} className="g-li" style={{ display: 'block' }} data-testid="ben-call-marcada">
@@ -51,10 +123,37 @@ function Calls() {
     {!q.can_book && q.reason && <p className="g-note g-sm" role="status" data-testid="ben-calls-bloqueio">{q.reason}</p>}
     {q.can_book && !d.personal && <p className="g-warn g-sm">Você ainda não tem personal vinculado.</p>}
     {q.can_book && d.personal && <>
-      <p className="g-mut g-xs">Escolha um horário (Brasília). Reserve com pelo menos {d.settings.antecedencia}h de antecedência.</p>
-      {!byDay.length ? <p className="g-mut g-sm">Seu personal ainda não abriu horários. Tente mais tarde.</p> : <>
-        <div className="g-scrollx" style={{ display: 'flex', gap: 6, marginBottom: 8, overflowX: 'auto' }}>{byDay.map(([date]) => <button key={date} style={CHIP} className={'g-btn g-sm ' + (day === date ? '' : 'g-ghost')} onClick={() => setDay(date)} data-testid="ben-dia">{dayLabel(date)}</button>)}</div>
-        {day && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{byDay.find(x => x[0] === day)?.[1].map(s => <button key={s.starts_at} style={CHIP} className="g-btn g-ghost g-sm" disabled={busy} onClick={() => reservar(s)} data-testid="ben-slot">{s.time}</button>)}</div>}
+      <p className="g-mut g-xs">Escolha um dia com abertura e um horário (Brasília). Reserve com pelo menos {d.settings.antecedencia}h de antecedência.</p>
+      {!windowDates.length ? <p className="g-mut g-sm">Seu personal ainda não abriu horários. Tente mais tarde.</p> : <>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }} data-testid="ben-mini-cal">
+          <button type="button" className="g-btn g-ghost g-sm" disabled={!canPrev} onClick={() => goMonth(-1)} aria-label="Mês anterior">‹</button>
+          <span className="g-sm" style={{ flex: 1, textAlign: 'center', textTransform: 'capitalize' }}>{monthTitle}</span>
+          <button type="button" className="g-btn g-ghost g-sm" disabled={!canNext} onClick={() => goMonth(1)} aria-label="Próximo mês">›</button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 10 }} role="grid" aria-label="Calendário de horários livres">
+          {DOW_MON.map(l => <div key={l} className="g-mut g-xs" style={{ textAlign: 'center' }}>{l}</div>)}
+          {cells.map((date, i) => {
+            if (!date) return <div key={'e' + i} />
+            const has = byDay.has(date)
+            const selected = day === date
+            const muted = !has
+            return <button key={date} type="button" data-testid="ben-dia" disabled={muted}
+              className={'g-btn g-sm ' + (selected ? '' : 'g-ghost')}
+              onClick={() => setDay(date)}
+              aria-pressed={selected}
+              style={{
+                ...CHIP, width: '100%', minWidth: 0, padding: '8px 4px',
+                opacity: muted ? 0.35 : 1, fontWeight: has ? 700 : 400,
+              }}>
+              {Number(date.slice(8, 10))}
+            </button>
+          })}
+        </div>
+        {day && (daySlots.length
+          ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {daySlots.map(s => <button key={s.starts_at} style={CHIP} className="g-btn g-ghost g-sm" disabled={busy} onClick={() => reservar(s)} data-testid="ben-slot">{slotRangeLabel(s)}</button>)}
+          </div>
+          : <p className="g-mut g-sm">Nenhum horário livre neste dia.</p>)}
       </>}
     </>}
   </div>

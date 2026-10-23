@@ -20,7 +20,7 @@ PG_CONTAINER="${PG_CONTAINER:-projetovitor-postgres}"
 PM2_API="${PM2_API:-projetovitor-api}"
 PM2_WEB="${PM2_WEB:-projetovitor-web}"
 API_HEALTH="${API_HEALTH:-http://127.0.0.1:8798/api/health}"
-WEB_HEALTH="${WEB_HEALTH:-http://127.0.0.1:4461/api/health}"
+WEB_HEALTH="${WEB_HEALTH:-http://127.0.0.1:4461/}"
 KEEP_BACKUPS="${KEEP_BACKUPS:-10}"
 
 log() { printf '\n==> %s\n' "$*"; }

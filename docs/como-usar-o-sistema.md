@@ -36,6 +36,20 @@ Para publicar, o personal ativo ou administrador abre **Comunidade → Avisos �
 
 Para a **Live semanal**, o administrador não precisa repetir esse cadastro. Em **Admin → Comunidade → Live semanal**, informe título e data/hora futura; o link do YouTube é opcional e pode ser acrescentado depois. Ao salvar como **Agendada**, o sistema publica um único card em Avisos, notifica os alunos na hora e agenda outro lembrete para o horário da live. Sem link, o card fica visível sem o botão de acesso; ao editar a live e informar o link, o mesmo card recebe o botão e a miniatura, sem nova notificação inicial. Encerrar ou cancelar a live também encerra o card e o lembrete pendente.
 
+## Aluno: Meus benefícios (calls)
+
+1. Com plano ativo, abra **Perfil › Meus benefícios** (ou `/beneficios`).
+2. Em **Calls com o personal**, use o mini calendário: dias com abertura aparecem destacados; os demais ficam desabilitados. Troque o mês só dentro da janela que o app já mostrou.
+3. Toque no dia, escolha um horário livre (`HH:MM–HH:MM`) e confirme a reserva. O personal confirma pelo WhatsApp com o link do Zoom. Para remarcar, cancele a call (até 6 h antes) e reserve de novo.
+
+## Personal: Agenda de calls
+
+1. Na área profissional, abra **/pro** e a aba **Agenda** (o administrador usa **Agenda de calls** escolhendo o personal).
+2. Informe o **link fixo do Zoom**.
+3. Marque os dias da semana (Dom–Sáb) e, em cada dia, os blocos de 15 minutos entre 06:00 e 22:00 (ex.: `08:00–08:15`). Use **Copiar horários deste dia para os outros marcados** se a grade for a mesma.
+4. Toque em **Salvar agenda**. Os horários se repetem toda semana; um bloco reservado por um aluno deixa de aparecer para os outros do mesmo personal.
+5. Nas próximas calls, use o botão do WhatsApp para confirmar. A marcação manual, cotas e regras de 12 h / 6 h continuam iguais.
+
 ## Personal principal: atender
 
 1. Entre com a conta do personal no contexto **Área profissional**; o painel abre em `/pro`. Mesmo que essa conta também tenha acesso administrativo, use o contexto **Administração** apenas para abrir `/admin/painel`. Em **Alunos**, use **Adicionar aluno** para cadastrar uma conta nova ou enviar convite para uma conta existente.

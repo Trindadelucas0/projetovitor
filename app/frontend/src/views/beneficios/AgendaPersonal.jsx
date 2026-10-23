@@ -1,37 +1,142 @@
 // Agenda do personal: link do Zoom, horários da semana, calls marcadas (com botão de WhatsApp) e marcação manual.
 // Usada no Portal /pro (aba Agenda) e no Admin > Agenda de calls (com o personal escolhido).
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { B, P } from '../../lib/care.js'
 import { useLoad } from '../app/kit.jsx'
 import { notify, notifyError, askText } from '../../lib/dialog.js'
 import { WEEKDAYS, spDateTime } from '../../lib/plans.js'
+import { rangesToBlocks, blocksToRanges, blockLabel, gridBlockStarts } from '../../lib/availabilityBlocks.js'
 
 const ST = { reservada: 'Marcada', realizada: 'Realizada', faltou: 'Aluno faltou', cancelada_aluno: 'Cancelada pelo aluno', cancelada_personal: 'Cancelada pelo personal' }
+const GRID = gridBlockStarts()
+const SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+const blockKey = (wd, start) => `${wd}|${start}`
+
+function blocksFromAvailability(availability) {
+  const set = new Set()
+  for (const b of rangesToBlocks(availability || [])) set.add(blockKey(b.weekday, b.start))
+  return set
+}
 
 export function AvailabilityEditor({ personalId, data, onSaved }) {
-  const [zoom, setZoom] = useState(data.zoom_url || ''), [rows, setRows] = useState(data.availability || []), [busy, setBusy] = useState(false)
-  useEffect(() => { setZoom(data.zoom_url || ''); setRows(data.availability || []) }, [data])
-  const upd = (i, k, v) => setRows(r => r.map((x, j) => j === i ? { ...x, [k]: k === 'weekday' ? +v : v } : x))
-  const save = async () => {
-    setBusy(true)
-    try { await B.saveAgenda({ personal_id: personalId, zoom_url: zoom, availability: rows }); notify('Agenda salva.'); onSaved && onSaved() }
-    catch (e) { notifyError(e) } finally { setBusy(false) }
+  const [zoom, setZoom] = useState(data.zoom_url || '')
+  const [blocks, setBlocks] = useState(() => blocksFromAvailability(data.availability))
+  const [marked, setMarked] = useState(() => new Set(rangesToBlocks(data.availability || []).map(b => b.weekday)))
+  const [current, setCurrent] = useState(() => {
+    const wds = rangesToBlocks(data.availability || []).map(b => b.weekday)
+    return wds.length ? wds[0] : 1
+  })
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    setZoom(data.zoom_url || '')
+    const next = blocksFromAvailability(data.availability)
+    setBlocks(next)
+    const wds = new Set([...next].map(k => +k.split('|')[0]))
+    setMarked(wds)
+    setCurrent(wds.size ? [...wds].sort((a, b) => a - b)[0] : 1)
+  }, [data])
+
+  const byHour = useMemo(() => {
+    const m = new Map()
+    for (const start of GRID) {
+      const h = start.slice(0, 2)
+      if (!m.has(h)) m.set(h, [])
+      m.get(h).push(start)
+    }
+    return [...m.entries()]
+  }, [])
+
+  const toggleDay = wd => {
+    if (marked.has(wd) && current === wd) {
+      setMarked(prev => { const n = new Set(prev); n.delete(wd); return n })
+      setBlocks(b => { const nb = new Set(b); for (const k of [...nb]) if (k.startsWith(wd + '|')) nb.delete(k); return nb })
+      return
+    }
+    setCurrent(wd)
+    setMarked(prev => new Set(prev).add(wd))
   }
+
+  const toggleBlock = start => {
+    if (!marked.has(current)) setMarked(m => new Set(m).add(current))
+    const key = blockKey(current, start)
+    setBlocks(prev => {
+      const n = new Set(prev)
+      if (n.has(key)) n.delete(key)
+      else n.add(key)
+      return n
+    })
+  }
+
+  const copyToMarked = () => {
+    const source = GRID.filter(s => blocks.has(blockKey(current, s)))
+    if (!source.length) return notify('Marque horários neste dia antes de copiar.', 'error')
+    const targets = [...marked].filter(d => d !== current)
+    if (!targets.length) return notify('Marque outros dias (Dom–Sáb) para copiar.', 'error')
+    setBlocks(prev => {
+      const n = new Set(prev)
+      for (const wd of targets) {
+        for (const s of GRID) n.delete(blockKey(wd, s))
+        for (const s of source) n.add(blockKey(wd, s))
+      }
+      return n
+    })
+    notify(`Horários copiados para ${targets.length} dia(s).`)
+  }
+
+  const save = async () => {
+    const list = [...blocks].map(k => { const [wd, start] = k.split('|'); return { weekday: +wd, start } })
+    const availability = blocksToRanges(list)
+    setBusy(true)
+    try {
+      await B.saveAgenda({ personal_id: personalId, zoom_url: zoom, availability })
+      notify('Agenda salva.')
+      onSaved && onSaved()
+    } catch (e) { notifyError(e) } finally { setBusy(false) }
+  }
+
+  const dayStarts = GRID.filter(s => blocks.has(blockKey(current, s)))
+
   return <div className="g-card" data-testid="agenda-disponibilidade">
     <h3 style={{ marginTop: 0 }}>Link do Zoom e horários livres</h3>
     <label className="g-field"><span className="g-mut g-xs">Link fixo da sua sala no Zoom (vai na mensagem de confirmação)</span>
       <input className="g-in" value={zoom} onChange={e => setZoom(e.target.value)} placeholder="https://us02web.zoom.us/j/..." data-testid="agenda-zoom" /></label>
-    <p className="g-mut g-xs">Horários de Brasília. O aluno vê blocos de 15 minutos dentro destas faixas.</p>
-    {rows.map((r, i) => <div key={i} className="g-row" style={{ gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
-      <select className="g-in" style={{ maxWidth: 150 }} value={r.weekday} onChange={e => upd(i, 'weekday', e.target.value)} aria-label="Dia da semana">{WEEKDAYS.map((d, k) => <option key={k} value={k}>{d}</option>)}</select>
-      <input className="g-in" style={{ maxWidth: 120 }} type="time" step="900" value={r.start_time} onChange={e => upd(i, 'start_time', e.target.value)} aria-label="Início" />
-      <span className="g-mut">até</span>
-      <input className="g-in" style={{ maxWidth: 120 }} type="time" step="900" value={r.end_time} onChange={e => upd(i, 'end_time', e.target.value)} aria-label="Fim" />
-      <button className="g-btn g-ghost g-sm" onClick={() => setRows(x => x.filter((_, j) => j !== i))} aria-label="Remover faixa">Remover</button>
-    </div>)}
-    {!rows.length && <p className="g-mut g-sm">Nenhum horário cadastrado — os alunos ainda não conseguem reservar.</p>}
-    <div className="g-actions" style={{ gap: 8, display: 'flex', flexWrap: 'wrap' }}>
-      <button className="g-btn g-ghost" onClick={() => setRows(x => [...x, { weekday: 1, start_time: '08:00', end_time: '10:00' }])} data-testid="agenda-add">+ Faixa de horário</button>
+    <p className="g-mut g-xs">Horários de Brasília. Marque o dia e os blocos de 15 minutos (06:00–22:00). Eles se repetem toda semana.</p>
+    <div className="g-row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 10 }} role="group" aria-label="Dias da semana">
+      {WEEKDAYS.map((_, wd) => {
+        const on = marked.has(wd), focus = current === wd
+        const has = [...blocks].some(k => k.startsWith(wd + '|'))
+        return <button key={wd} type="button" className={'g-btn g-sm ' + (focus ? '' : 'g-ghost')}
+          aria-pressed={on} title={WEEKDAYS[wd] + (has ? ' (com horários)' : '')}
+          onClick={() => toggleDay(wd)} style={{ minWidth: 48, opacity: on || focus ? 1 : 0.7, outline: has && !focus ? '2px solid var(--ag-acc, #20f51b)' : undefined }}>
+          {SHORT[wd]}
+        </button>
+      })}
+    </div>
+    {!marked.has(current) ? <p className="g-mut g-sm">Toque em um dia acima para marcar horários.</p> : <>
+      <p className="g-sm" style={{ marginBottom: 8 }}><b>{WEEKDAYS[current]}</b>
+        {dayStarts.length ? <span className="g-mut g-xs"> — {dayStarts.length} bloco(s)</span> : <span className="g-mut g-xs"> — nenhum bloco ainda</span>}
+      </p>
+      <div style={{ display: 'grid', gap: 10, marginBottom: 10 }}>
+        {byHour.map(([hour, starts]) => <div key={hour}>
+          <div className="g-mut g-xs" style={{ marginBottom: 4 }}>{hour}:00</div>
+          <div className="g-row" style={{ gap: 6, flexWrap: 'wrap' }}>
+            {starts.map(start => {
+              const on = blocks.has(blockKey(current, start))
+              return <button key={start} type="button" className={'g-btn g-sm ' + (on ? '' : 'g-ghost')}
+                aria-pressed={on} onClick={() => toggleBlock(start)} style={{ minWidth: 96, padding: '6px 10px' }}>
+                {blockLabel(start)}
+              </button>
+            })}
+          </div>
+        </div>)}
+      </div>
+      <button type="button" className="g-btn g-ghost g-sm" onClick={copyToMarked} data-testid="agenda-copiar-dia">
+        Copiar horários deste dia para os outros marcados
+      </button>
+    </>}
+    {!blocks.size && <p className="g-mut g-sm" style={{ marginTop: 8 }}>Nenhum horário cadastrado — os alunos ainda não conseguem reservar.</p>}
+    <div className="g-actions" style={{ gap: 8, display: 'flex', flexWrap: 'wrap', marginTop: 12 }}>
       <button className="g-btn" onClick={save} disabled={busy} data-testid="agenda-salvar">{busy ? 'Salvando…' : 'Salvar agenda'}</button>
     </div>
   </div>
