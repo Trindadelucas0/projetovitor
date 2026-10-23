@@ -26,7 +26,7 @@ export const WANT = {
 }
 export const wantOf = ct => WANT[String(ct || '').split(';')[0].trim().toLowerCase()] || null
 
-// assinatura real do arquivo pelos primeiros bytes (mesmo sniff de challenge-feed.js)
+// assinatura real do arquivo pelos primeiros bytes (mesmo sniff de exmedia.js)
 export function sniff(buf) {
   const h = buf.subarray(0, 12)
   if (h.toString('hex').startsWith('89504e47')) return ['foto', 'png']
