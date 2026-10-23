@@ -15,7 +15,7 @@ import { proRoutes } from './pro.js';
 import { communityRoutes } from './community.js';
 import { communityWorkoutRoutes } from './community-workout-post.js';
 import { communityEditorialRoutes } from './community-editorial.js';
-import { communityNoticeRoutes, startNoticeReminderJob } from './community-notices.js';
+import { communityNoticeRoutes, startLiveNoticeReconciliation, startNoticeReminderJob } from './community-notices.js';
 import { socialRoutes } from './social.js';
 import { tapagoRoutes } from './tapago.js';
 import { posturalRoutes } from './postural.js';
@@ -440,7 +440,7 @@ Object.assign(routes, billingRoutes({ json, readBody }));
 Object.assign(routes, contactRoutes({ json, readBody }));  // V5: monetizacao (planos, cupons, cobranca, parceiros, webhooks)
 Object.assign(routes, personaisRoutes({ json, readBody }));
 Object.assign(routes, callsRoutes({ json, readBody }));
-Object.assign(routes, comunidadeRoutes({ json, readBody }));
+Object.assign(routes, comunidadeRoutes({ json, readBody }, { push: sendPush }));
 Object.assign(routes, beneficiosRoutes({ json, readBody }));
 Object.assign(routes, appStateRoutes({ json, readBody, readSession, dataDir: DATA }));  // V3 F7: estado do usuário no Postgres  // V3 F5: código público do aluno + visão 360° do admin
 
@@ -570,5 +570,6 @@ startMailer();
 startAuditPurge();   // V5: retencao da auditoria (app_settings auditoria_retencao_dias; padrao AUDIT_RETENTION_DAYS ou 180)
 setBillingPush(sendPush);   // V5: eventos de cobranca tambem saem por push
 startNoticeReminderJob(sendPush);   // lembrete persistido dos avisos da Comunidade
+startLiveNoticeReconciliation(sendPush); // publica cards das lives futuras anteriores a integracao
 startPosturalRecurrence();   // Avaliação Postural: recorrência mensal idempotente e retenção da mídia (POSTURAL_RECURRENCE=off desliga)
 startBillingJob();          // V5: renovacao, retentativa, carencia, suspensao e reconciliacao (BILLING_TICK=off desliga)   // V4.2: fila de e-mail (só envia com SMTP configurado)

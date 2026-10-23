@@ -89,6 +89,77 @@ async function sendPushes(userIds, notice, phase, push) {
   }).catch(error => console.error('[community-notice] push', error.message))))
 }
 
+const liveDateTime = value => new Intl.DateTimeFormat('pt-BR', {
+  timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric',
+  hour: '2-digit', minute: '2-digit'
+}).format(new Date(value))
+
+/**
+ * Mantem uma live e seu card em sincronia. Deve rodar dentro da mesma transacao
+ * que grava a live; o push e enviado pelo chamador somente depois do commit.
+ */
+export async function syncLiveNotice(live, { query = q } = {}) {
+  const current = (await query('select * from community_notices where live_id=$1 and tenant_id=$2 for update', [live.id, live.tenant_id])).rows[0]
+  if (live.status !== 'agendada') {
+    if (!current) return { notice: null, delivered: [], created: false }
+    const notice = (await query(`update community_notices set status='encerrado',reminder_at=null,ended_at=coalesce(ended_at,now()),updated_at=now()
+      where id=$1 and tenant_id=$2 returning *`, [current.id, live.tenant_id])).rows[0]
+    return { notice, delivered: [], created: false }
+  }
+  if (!live.created_by) return { notice: null, delivered: [], created: false }
+
+  const destination = live.youtube_url || null
+  const image = youtubeThumbnail(destination)
+  const body = `Marcada para ${liveDateTime(live.starts_at)}. Acompanhe o card para acessar.`
+  if (current) {
+    const notice = (await query(`update community_notices set author_id=$3,title=$4,notification_body=$5,destination_url=$6,
+      image_url=$7,image_source=$8,audience_scope='tenant_students',status='ativo',
+      reminder_at=case when reminder_sent_at is null then $9 else reminder_at end,ended_at=null,updated_at=now()
+      where id=$1 and tenant_id=$2 returning *`, [current.id, live.tenant_id, live.created_by, live.title, body, destination, image, image ? 'youtube' : 'none', live.starts_at])).rows[0]
+    return { notice, delivered: [], created: false }
+  }
+
+  let notice = (await query(`insert into community_notices(tenant_id,author_id,title,notification_body,destination_url,image_url,image_source,
+    audience_scope,reminder_at,live_id) values($1,$2,$3,$4,$5,$6,$7,'tenant_students',$8,$9) returning *`,
+  [live.tenant_id, live.created_by, live.title, body, destination, image, image ? 'youtube' : 'none', live.starts_at, live.id])).rows[0]
+  const delivered = await insertDeliveries(notice, 'initial', query)
+  notice = (await query('update community_notices set recipient_count=$2 where id=$1 returning *', [notice.id, delivered.length])).rows[0]
+  return { notice, delivered, created: true }
+}
+
+export async function sendLiveNoticePushes(result, push) {
+  if (result?.created && result.notice) await sendPushes(result.delivered, result.notice, 'initial', push)
+}
+
+/** Publica, uma unica vez, cards de lives futuras que ja existiam antes da integracao. */
+export async function reconcileScheduledLiveNotices({ query = q, transact = transaction, push } = {}) {
+  const batches = await transact(async () => {
+    const lock = await query(`select pg_try_advisory_xact_lock(hashtext('live_notice_reconciliation')) locked`)
+    if (!lock.rows[0]?.locked) return []
+    const lives = (await query(`select l.*,coalesce(l.created_by,(
+        select ur.user_id from user_roles ur where ur.tenant_id=l.tenant_id and ur.role_id='admin' order by ur.user_id limit 1
+      )) created_by
+      from lives l where l.status='agendada' and l.starts_at>now()
+        and not exists(select 1 from community_notices n where n.live_id=l.id)
+      order by l.starts_at for update of l`)).rows
+    const out = []
+    for (const live of lives) {
+      const result = await syncLiveNotice(live, { query })
+      if (result.notice) out.push(result)
+    }
+    return out
+  })
+  for (const result of batches) await sendLiveNoticePushes(result, push)
+  return batches.length
+}
+
+export function startLiveNoticeReconciliation(push) {
+  const run = () => reconcileScheduledLiveNotices({ push }).catch(error => console.error('[live-notice] reconciliation', error.message))
+  const timer = setTimeout(run, 10000)
+  timer.unref()
+  return timer
+}
+
 function parsedNotice(body) {
   const title = txt(body.title, 140), notificationBody = txt(body.notification_body, 240)
   const destinationUrl = normalizeHttpsUrl(body.destination_url)

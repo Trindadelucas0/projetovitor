@@ -1,0 +1,79 @@
+name: Publicar na VPS
+
+# Roda sozinho depois que o workflow "Verificacoes" (testes + build) passa num push na main.
+# Tambem pode ser rodado a mao em Actions > Publicar na VPS > Run workflow.
+# Ele entra na VPS por SSH e executa app/scripts/deploy-vps.sh:
+#   backup do banco -> git pull -> npm ci -> build do frontend -> npm run migrate -> pm2 restart -> conferencia.
+#
+# Segredos necessarios (Settings > Secrets and variables > Actions):
+#   VPS_HOST             endereco da VPS
+#   VPS_USER             usuario do SSH (o mesmo que roda o PM2 do projetovitor)
+#   VPS_SSH_KEY          chave privada SSH desse usuario
+#   VPS_SSH_KNOWN_HOSTS  (opcional, recomendado) saida de: ssh-keyscan -H <host>
+#   VPS_PORT             (opcional) porta do SSH, padrao 22
+
+on:
+  workflow_run:
+    workflows: [Verificacoes]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Obter codigo
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Preparar SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$VPS_HOST" ] || [ -z "$VPS_SSH_KEY" ]; then
+            echo "::error::Faltam os segredos VPS_HOST / VPS_USER / VPS_SSH_KEY no repositorio."
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$VPS_SSH_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$VPS_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::VPS_SSH_KNOWN_HOSTS nao configurado; usando ssh-keyscan."
+            ssh-keyscan -p "${VPS_PORT:-22}" -H "$VPS_HOST" > ~/.ssh/known_hosts
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Publicar (backup, pull, build, migrate, restart)
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          echo "Publicando $TARGET_SHA"
+          tr -d '\r' < app/scripts/deploy-vps.sh | ssh -i ~/.ssh/deploy_key -p "${VPS_PORT:-22}" \
+            -o BatchMode=yes -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 \
+            "$VPS_USER@$VPS_HOST" "bash -ls -- '$TARGET_SHA'"
+
+      - name: Limpar chave
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

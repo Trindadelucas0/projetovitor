@@ -6,6 +6,7 @@ import { q, transaction } from './db/pool.js'
 import { requireAuth, audit } from './auth.js'
 import { getSettings } from './pro.js'
 import { studentPlanOf, rulesFor, closeFriendsEnd, STUDENT_PLAN_IDS, WHATSAPP_GROUPS, GROUP_LABEL } from './plan-rules.js'
+import { sendLiveNoticePushes, syncLiveNotice } from './community-notices.js'
 
 const isUuid = s => /^[0-9a-f-]{36}$/i.test(String(s || ''))
 const txt = (s, n = 2000) => String(s ?? '').trim().slice(0, n)
@@ -61,7 +62,8 @@ export async function rosterLists(tid) {
   return { add, remove, active, labels: CHANNEL_LABEL }
 }
 
-export function comunidadeRoutes({ json, readBody }) {
+export function comunidadeRoutes({ json, readBody }, deps = {}) {
+  const transact = deps.transaction || transaction, push = deps.push
   const admin = async (req, res) => {
     const u = await requireAuth(req, res, json); if (!u) return null
     if (!u.roles.includes('admin')) { json(res, 403, { error: 'Você não tem permissão para esta ação.', code: 'PERMISSION_DENIED' }); return null }
@@ -151,17 +153,33 @@ export function comunidadeRoutes({ json, readBody }) {
       const b = await readBody(req)
       const title = txt(b.title, 120), yt = txt(b.youtube_url, 300), at = new Date(b.starts_at)
       if (title.length < 3) return json(res, 400, { error: 'Dê um título à live', code: 'INVALID_INPUT' })
-      if (isNaN(at)) return json(res, 400, { error: 'Informe data e hora', code: 'INVALID_INPUT' })
+      if (Number.isNaN(at.getTime())) return json(res, 400, { error: 'Informe data e hora', code: 'INVALID_INPUT' })
       if (yt && !/^https:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\/[^\s]+$/i.test(yt)) return json(res, 400, { error: 'Cole o link do YouTube (https://youtube.com/...).', code: 'INVALID_INPUT' })
       const status = ['agendada', 'encerrada', 'cancelada'].includes(b.status) ? b.status : 'agendada'
-      let id = b.id
-      if (id) {
-        if (!isUuid(id)) return json(res, 400, { error: 'Live inválida', code: 'INVALID_INPUT' })
-        const r = await q('update lives set title=$3, youtube_url=$4, starts_at=$5, status=$6, updated_at=now() where id=$1 and tenant_id=$2', [id, u.tenant_id, title, yt || null, at, status])
-        if (!r.rowCount) return json(res, 404, { error: 'Live não encontrada', code: 'NOT_FOUND' })
-      } else id = (await q('insert into lives(tenant_id,title,youtube_url,starts_at,status,created_by) values($1,$2,$3,$4,$5,$6) returning id', [u.tenant_id, title, yt || null, at, status, u.id])).rows[0].id
-      await audit(u.tenant_id, u.id, 'live.salva', 'live', id, { status })
-      json(res, b.id ? 200 : 201, { id })
+      if (status === 'agendada' && at <= new Date()) return json(res, 400, { error: 'Escolha uma data e hora futura para a live agendada.', code: 'INVALID_INPUT' })
+      if (b.id && !isUuid(b.id)) return json(res, 400, { error: 'Live inválida', code: 'INVALID_INPUT' })
+
+      let live, noticeResult
+      await transact(async () => {
+        if (b.id) {
+          live = (await q(`update lives set title=$3,youtube_url=$4,starts_at=$5,status=$6,updated_at=now()
+            where id=$1 and tenant_id=$2 returning *`, [b.id, u.tenant_id, title, yt || null, at, status])).rows[0]
+          if (!live) { const error = new Error('Live não encontrada'); error.code = 'NOT_FOUND'; throw error }
+        } else live = (await q(`insert into lives(tenant_id,title,youtube_url,starts_at,status,created_by)
+          values($1,$2,$3,$4,$5,$6) returning *`, [u.tenant_id, title, yt || null, at, status, u.id])).rows[0]
+        noticeResult = await syncLiveNotice(live)
+        await audit(u.tenant_id, u.id, 'live.salva', 'live', live.id, { status, notice_id: noticeResult.notice?.id || null })
+      }).catch(error => {
+        if (error.code === 'NOT_FOUND') return null
+        throw error
+      })
+      if (!live) return json(res, 404, { error: 'Live não encontrada', code: 'NOT_FOUND' })
+      await sendLiveNoticePushes(noticeResult, push)
+      json(res, b.id ? 200 : 201, {
+        id: live.id, notice_id: noticeResult.notice?.id || null,
+        notice_status: noticeResult.notice?.status || null,
+        notifications_sent: noticeResult.delivered.length
+      })
     },
     'POST /api/adm/lives/pergunta-status': async (req, res) => {
       const u = await admin(req, res); if (!u) return
