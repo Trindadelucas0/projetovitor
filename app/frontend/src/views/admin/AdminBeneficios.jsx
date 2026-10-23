@@ -188,11 +188,18 @@ export function LivesAdmin() {
   const [sel, setSel] = useState(null)
   const [d, err, reload] = useLoad(() => B.admLives(sel), [sel])
   const [f, setF] = useState(null)
+  const [busy, setBusy] = useState(false)
   if (err) return <Fail err={err} retry={reload} />
   if (!d) return <Loading />
   const toLocal = iso => { const x = new Date(new Date(iso).getTime() - 3 * 36e5); return x.toISOString().slice(0, 16) }   // Brasília (UTC-3)
   const save = async () => {
-    try { const r = await B.saveLive({ ...f, starts_at: new Date(f.when + ':00-03:00').toISOString() }); notify('Live salva.'); setF(null); setSel(r.id); reload() } catch (e) { notifyError(e) }
+    if (busy) return
+    setBusy(true)
+    try {
+      const r = await B.saveLive({ ...f, starts_at: new Date(f.when + ':00-03:00').toISOString() })
+      notify(r.notice_status === 'ativo' ? 'Live salva e aviso publicado.' : 'Live salva e aviso encerrado.')
+      setF(null); setSel(r.id); reload()
+    } catch (e) { notifyError(e) } finally { setBusy(false) }
   }
   const status = async (q, s) => { try { await B.perguntaStatus({ id: q.id, status: s }); reload() } catch (e) { notifyError(e) } }
   const live = d.lives.find(l => l.id === d.live_id)
@@ -204,7 +211,7 @@ export function LivesAdmin() {
       <Field l="Data e hora (Brasília)"><input className="adm-in" type="datetime-local" value={f.when} onChange={e => setF({ ...f, when: e.target.value })} data-testid="live-when" /></Field>
       <Field l="Link do YouTube"><input className="adm-in" value={f.youtube_url} onChange={e => setF({ ...f, youtube_url: e.target.value })} placeholder="https://youtube.com/live/..." /></Field>
       <Field l="Situação"><select className="adm-in" value={f.status} onChange={e => setF({ ...f, status: e.target.value })}><option value="agendada">Agendada (recebe perguntas)</option><option value="encerrada">Encerrada</option><option value="cancelada">Cancelada</option></select></Field>
-      <div className="adm-tools"><button className="adm-btn" onClick={save} disabled={!f.when} data-testid="live-salvar">Salvar</button><button className="adm-btn ghost" onClick={() => setF(null)}>Cancelar</button></div></div>}
+      <div className="adm-tools"><button className="adm-btn" onClick={save} disabled={!f.when || busy} aria-busy={busy} data-testid="live-salvar">{busy ? 'Salvando…' : 'Salvar'}</button><button className="adm-btn ghost" onClick={() => setF(null)} disabled={busy}>Cancelar</button></div></div>}
     {!d.lives.length && !f && <p className="g-mut">Nenhuma live ainda. Marque a primeira para os alunos mandarem perguntas.</p>}
     {live && <><h2 className="adm-sec-title">Perguntas — alunos Completo aparecem primeiro</h2>
       {d.questions.length ? <div className="adm-tbl-wrap"><table className="adm-tbl"><thead><tr><th>Pergunta</th><th>Aluno</th><th>Situação</th><th></th></tr></thead>

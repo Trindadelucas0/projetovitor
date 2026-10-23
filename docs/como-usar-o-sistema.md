@@ -34,6 +34,8 @@ Em **Comunidade → Avisos**, o aluno encontra lives, vídeos, promoções e com
 
 Para publicar, o personal ativo ou administrador abre **Comunidade → Avisos → Novo aviso**, informa título, link e mensagem, escolhe a miniatura automática do YouTube, uma imagem PNG/JPEG/WebP de até 2,5 MB ou o banner padrão e, se necessário, marca **Notificar novamente** com data e hora futuras. **Publicar aviso** envia a primeira notificação imediatamente. O personal alcança somente alunos com vínculo ativo; o administrador alcança todos os alunos ativos do ambiente. Em um aviso ativo, **Editar** altera o card e o lembrete ainda não enviado; **Encerrar aviso** interrompe o lembrete pendente.
 
+Para a **Live semanal**, o administrador não precisa repetir esse cadastro. Em **Admin → Comunidade → Live semanal**, informe título e data/hora futura; o link do YouTube é opcional e pode ser acrescentado depois. Ao salvar como **Agendada**, o sistema publica um único card em Avisos, notifica os alunos na hora e agenda outro lembrete para o horário da live. Sem link, o card fica visível sem o botão de acesso; ao editar a live e informar o link, o mesmo card recebe o botão e a miniatura, sem nova notificação inicial. Encerrar ou cancelar a live também encerra o card e o lembrete pendente.
+
 ## Personal principal: atender
 
 1. Entre com a conta do personal no contexto **Área profissional**; o painel abre em `/pro`. Mesmo que essa conta também tenha acesso administrativo, use o contexto **Administração** apenas para abrir `/admin/painel`. Em **Alunos**, use **Adicionar aluno** para cadastrar uma conta nova ou enviar convite para uma conta existente.
