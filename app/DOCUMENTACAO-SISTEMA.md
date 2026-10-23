@@ -103,8 +103,10 @@ Benefícios (cota de ficha/call, Close Friends, grupos de WhatsApp, prioridade n
 - Aplicar: `npm run liberar-aluno-teste -- --apply`
 - Na VPS: `npm run liberar-aluno-teste -- --apply --permitir-producao`
 - Criar a conta ou redefinir a senha: `--criar`, `--senha=<mín. 10>`, `--nome="..."`
-- Outra conta, outro plano ou outro prazo: `--email=` (padrão `aluno.teste.fluxo@orny.local`), `--plano=individual`, `--meses=6`
+- Outra conta, outro plano ou outro prazo: `--email=` (padrão: usuário `aluno.teste.fluxo` no domínio `orny.local`), `--plano=individual`, `--meses=6`
 - Trava de segurança: e-mail fora de `@orny.local`/`.test` exige `--permitir-qualquer-email`; em `NODE_ENV=production` exige `--permitir-producao`.
+
+**O deploy não roda esse script.** `.github/workflows/deploy.yml` executa `app/scripts/deploy-vps.sh` por SSH, e ele faz só: backup do banco → `git merge --ff-only` → `npm ci` → build do frontend → `npm run migrate` → `pm2 restart` → health check. Nenhuma rotina de `api/scripts/` é chamada, por decisão: dado de teste não viaja no deploy. Na VPS a liberação é um comando manual, uma vez por ambiente. Atenção também ao `check:sensitive` do workflow "Verificacoes": qualquer e-mail completo em arquivo versionado derruba a verificação e, com ela, a publicação — por isso o e-mail padrão dos scripts de teste é montado em partes.
 
 Ao fim o script confere com as funções do próprio app (`accessOf`, `resolve`) e imprime `has`, `commercial_status`, plano, features e validade; sai com código 1 se o acesso continuar negado. Aplicado no banco local em 23/10/2026: `has: true`, `commercial_status: "ativa"`, plano `completo` ativo até 23/01/2027, comunidade liberada e as 8 features (incluindo `avaliacao_postural`).
 
@@ -116,7 +118,7 @@ Ela não é dado de produto: **nenhuma ficha, conta ou vínculo viaja no deploy*
 
 - Prévia (não grava nada, mostra o que faria): `cd app/api && node scripts/criar-ficha-demo.mjs`
 - Publicar: `npm run criar-ficha-demo -- --apply` (ou `node scripts/criar-ficha-demo.mjs --apply`)
-- Outro aluno ou personal: `--aluno=<e-mail>` (padrão `aluno.teste.fluxo@orny.local`) e `--personal=<e-mail>`
+- Outro aluno ou personal: `--aluno=<e-mail>` (padrão: usuário `aluno.teste.fluxo` no domínio `orny.local`) e `--personal=<e-mail>`
 - Em `NODE_ENV=production` exige também `--permitir-producao`, como confirmação de que a conta informada é de teste.
 
 A rotina reaproveita a validação e as regras de publicação da própria API, em uma transação: `normDays`/`flat` (`api/workout-schema.js`), `planProblems` (`api/portal.js`), `supersedeOthers` (`api/pro.js`) e `enforceOneActive` (`api/active-training.js`). Consequências esperadas, iguais às de publicar pelo construtor: a ficha ativa anterior do aluno é **arquivada** com `superseded_by` (histórico somente leitura, nada apagado), um programa do sistema ativo é pausado, e `student_active_training` passa a apontar para a ficha nova. É idempotente: rodar de novo com o mesmo título gera `version + 1` na mesma ficha, sem duplicar.

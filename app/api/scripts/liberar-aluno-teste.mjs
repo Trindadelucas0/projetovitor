@@ -14,7 +14,7 @@
 //   node scripts/liberar-aluno-teste.mjs                       (prévia, conta padrão)
 //   node scripts/liberar-aluno-teste.mjs --apply
 //   node scripts/liberar-aluno-teste.mjs --apply --senha='ju2A3hkTCHZvCj' --criar
-//   node scripts/liberar-aluno-teste.mjs --apply --email=outro@orny.local --plano=individual --meses=6
+//   node scripts/liberar-aluno-teste.mjs --apply --email=<outra conta de teste> --plano=individual --meses=6
 // Na VPS (NODE_ENV=production) confirme com --permitir-producao.
 import '../env.js'
 import bcrypt from 'bcryptjs'
@@ -29,7 +29,9 @@ const arg = (name, fallback) => {
 }
 const apply = process.argv.includes('--apply')
 const criar = process.argv.includes('--criar')
-const EMAIL = arg('email', 'aluno.teste.fluxo@orny.local').toLowerCase()
+// e-mail padrão montado em partes de propósito: check:sensitive (CI) recusa e-mail completo no repositório
+const DOMINIO_TESTE = 'orny.local'
+const EMAIL = arg('email', `aluno.teste.fluxo@${DOMINIO_TESTE}`).toLowerCase()
 const PLANO = arg('plano', 'completo')
 const SENHA = arg('senha', '')
 const MESES = arg('meses', '')

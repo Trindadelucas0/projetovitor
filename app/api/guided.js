@@ -1,5 +1,4 @@
 // AVAGYM — Treino guiado: onboarding, recomendação determinística, programa ativo, sessões e progresso.
-import { checkGoals } from './challenge-score.js'
 import { summarize } from './timing.js'
 import { linkSessionRevision, authorizeOrigin, ORIGIN_MSG, applyEvents, addEvent, parseCorrection, recordCorrection, CLOCK_SKEW_MS } from './sessions-v4.js'
 import { countsInMetrics } from './metrics.js'
@@ -389,7 +388,6 @@ export function guidedRoutes({ json, readBody }) {
         await q('update sessions set time_corrected_at=now() where id=$1', [sid])
       }
       json(res, 200, { id: sid, volume, timing, state: newState, counts_in_metrics: !correction && !integrity.clock_invalid, groups: finished ? await sessionMuscleGroups(sid, u) : [] })
-      if (finished && !correction) checkGoals(u.id)   // V5: aviso "meta atingida" nos desafios (assíncrono)
     },
     'GET /api/guided/sessions/muscles': async (req, res) => {
       const u = await requireTrainee(req, res, json); if (!u) return
