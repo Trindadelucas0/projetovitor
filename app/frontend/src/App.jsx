@@ -83,6 +83,7 @@ function usePrefetch(on) {
 }
 import PlanErrorHost from './views/v3/PlanErrorHost.jsx'
 import { AccessHost } from './views/billing/Access.jsx'   // Monetizacao F8
+import { usePremium, usePremiumStore } from './views/billing/Premium.jsx'
 import WelcomeHost from './views/billing/Welcome.jsx'   // lote 7: boas-vindas pos-assinatura
 import PosturalWizard from './views/postural/Wizard.jsx'
 import PendingAssessmentNotice from './views/postural/PendingAssessmentNotice.jsx'
@@ -105,6 +106,9 @@ function Shell() {
   const loc = useLocation()
   const { S, user, ready } = useStore()
   const isGuest = useStore(s => s.isGuest())
+  // Em "/": quem esta logado mas ainda sem pagamento confirmado continua vendo a landing (planos e explicacao),
+  // em vez de cair direto no app travado. O acesso real continua sendo decidido pelo servidor.
+  const premium = usePremium()
   const langV = useLang()   // re-renders the whole shell when the language (pack) changes
   useEffect(() => { setNav(navigate) }, [navigate])
   useEffect(() => { applyPrefs() }, [])
@@ -114,6 +118,8 @@ function Shell() {
     if (!user) return
     applyPalette(user.palette)   // rosa/roxo/azul/laranja (PC 16:36); applyPalette trata aliases e valor desconhecido = verde
   }, [user?.id, user?.palette])
+  // a landing em "/" depende do acesso premium: carrega assim que ha sessao, sem esperar o AccessHost
+  useEffect(() => { if (user?.id) usePremiumStore.getState().load() }, [user?.id])
   useEffect(() => { setLang(S.lang || 'pt') }, [S.lang])
   useEffect(() => { document.documentElement.lang = (S.lang || 'pt') === 'pt' ? 'pt-BR' : S.lang }, [langV, S.lang])
   // every tab/route change starts at the top of the page
@@ -136,7 +142,12 @@ function Shell() {
   const legacySignup = loc.pathname === '/' && new URLSearchParams(loc.search).get('cadastro') === '1'
   // A landing e a pagina de marketing: nao faz sentido no app nativo (Capacitor), que abre
   // direto no treino, nem para quem ja esta logado em "/".
-  const wantsLanding = (loc.pathname === '/' && !legacySignup && !authed) || loc.pathname === '/conheca'
+  const homeMarketing = loc.pathname === '/' && !legacySignup
+  // pagamento pendente = o servidor nega o acesso premium (usePremium.locked). Enquanto a resposta nao chega,
+  // segura a tela no loading para nao piscar o app travado antes da landing; se a conferencia falhar, segue para o app.
+  const payPending = !!user && premium.locked
+  if (homeMarketing && !MOBILE && authed && !premium.ready && !premium.error) return <div id="app"><BrandLoading /></div>
+  const wantsLanding = (homeMarketing && (!authed || payPending)) || loc.pathname === '/conheca'
   if (wantsLanding && !MOBILE) return <Suspense fallback={<div id="app"><BrandLoading /></div>}><Landing /></Suspense>
 
   return (

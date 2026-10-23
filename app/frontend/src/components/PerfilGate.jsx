@@ -25,7 +25,7 @@ export default function PerfilGate() {
       <div className="profile-gate-shade" />
       <form className="lg-card profile-gate-card" onSubmit={e => { e.preventDefault(); saveProfile() }}>
         <div className="lg-brand"><Brand /></div><p className="profile-kicker">Seu app, do seu jeito</p>
-        <h1>Escolha seu perfil</h1><p className="lg-sub">Essa escolha personaliza as cores. O atendimento será definido separadamente pela equipe.</p>
+        <h1>Escolha seu perfil</h1>
         <ProfileChoice value={choice} onChange={pick} error={msg} testId="perfil-gate-choice" />
         <Button type="primary" htmlType="submit" size="large" block loading={busy} data-testid="perfil-gate-confirm">Confirmar e continuar</Button>
       </form>

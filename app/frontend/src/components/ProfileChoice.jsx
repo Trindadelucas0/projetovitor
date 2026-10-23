@@ -30,7 +30,6 @@ export default function ProfileChoice({ value = emptyProfileChoice, onChange, er
         onChange={e => onChange({ ...value, prefers_female_coach: e.target.checked })}>
         Prefiro ser atendida por uma personal mulher
       </Checkbox>}
-      <p className="profile-choice-note">A preferência orienta a equipe. O administrador escolhe o personal depois do cadastro.</p>
       {error && <p className="profile-choice-error" role="alert">{error}</p>}
     </div>
 }

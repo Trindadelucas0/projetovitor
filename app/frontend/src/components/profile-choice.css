@@ -10,7 +10,7 @@
 .profile-palettes button.on{border-color:var(--ag-acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--ag-acc) 30%,transparent)}
 .profile-palettes i{width:16px;height:16px;border-radius:50%;background:var(--swatch)}
 .profile-palettes [data-color="roxo"]{--swatch:#a855f7}.profile-palettes [data-color="azul"]{--swatch:#38bdf8}.profile-palettes [data-color="laranja"]{--swatch:#fb923c}
-.profile-choice .ant-checkbox-wrapper{color:var(--pc-txt);min-height:40px;align-items:center;line-height:1.45}.profile-choice-note{font-size:12px;line-height:1.45;color:var(--pc-mut);margin:0}.profile-choice-error{margin:0;color:#ff8585;font-size:13px}
+.profile-choice .ant-checkbox-wrapper{color:var(--pc-txt);min-height:40px;align-items:center;line-height:1.45}.profile-choice-error{margin:0;color:#ff8585;font-size:13px}
 @media(max-width:560px){.profile-choice .ant-radio-group{grid-template-columns:1fr}.profile-choice .ant-radio-wrapper{min-height:64px}}
 .profile-choice .ant-radio-wrapper:has(:focus-visible),.profile-palettes button:focus-visible{outline:2.5px solid var(--ag-acc);outline-offset:2px}
 .profile-choice .ant-radio-wrapper{box-shadow:var(--pz-shadow,none)}.profile-choice .ant-radio-wrapper .ant-radio{margin-top:2px}
