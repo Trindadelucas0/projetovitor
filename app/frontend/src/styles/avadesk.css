@@ -115,3 +115,25 @@ body{background:var(--ag-bg)}
 #app input,#app select,#app textarea{border-radius:12px}
 #app .chart path[stroke],#app .chart polyline{stroke:var(--ag-acc)}
 @media (min-width: 900px){ #app:not(:has(.ag)):not(:has(.adm)){max-width:760px} }
+
+/* Admin: cabeçalho de página (trilha + título + descrição), menu agrupado e página Início */
+.adm-ph{margin:0 0 18px;padding-bottom:14px;border-bottom:1px solid var(--ag-line)}
+.adm-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:2px;font-size:12px;color:var(--ag-dim);margin-bottom:6px}
+.adm-crumb-sep{margin:0 6px}
+.adm-crumb-link{background:none;border:0;padding:0;color:var(--ag-mut);font:inherit;cursor:pointer;text-decoration:underline}
+.adm-ph-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.adm-ph-row h1{flex:1;margin:0}
+.adm-ph-actions{display:flex;gap:8px;flex-wrap:wrap}
+.adm-ph-desc{color:var(--ag-mut);margin:6px 0 0;max-width:760px;line-height:1.5}
+.adm-ph-meta{font-size:12px;color:var(--ag-dim);margin-top:6px}
+.adm-side .adm-grp{margin-bottom:4px}
+.adm-side .adm-grp h6{display:flex;align-items:center;gap:6px}
+.adm-side button[aria-current="page"]{font-weight:800}
+.adm-home-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:18px}
+.adm-task{display:flex;flex-direction:column;gap:6px;text-align:left;padding:14px;border:1px solid var(--ag-line);border-radius:14px;background:#ffffff05;color:var(--ag-txt);cursor:pointer;font:inherit}
+.adm-task:hover{border-color:var(--ag-acc)}
+.adm-task b{font-size:15px}
+.adm-task .n{font-size:26px;font-weight:800;color:var(--ag-acc)}
+.adm-task.zero .n{color:var(--ag-dim)}
+.adm-task small{color:var(--ag-mut)}
+.adm-sec-title{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ag-dim);margin:18px 0 8px}

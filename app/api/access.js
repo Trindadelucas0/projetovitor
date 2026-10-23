@@ -16,6 +16,8 @@ const db = c => c || { query: (t, p) => q(t, p) }
 export const ALWAYS_ALLOWED = [
   /^[A-Z]+ \/api\/auth\//, /^POST \/api\/logout(\/all)?$/, /^[A-Z]+ \/api\/me$/,
   /^[A-Z]+ \/api\/me\/(avatar|contact|context|delete-request|delete-request\/cancel|export-request|theme|tours|tours\/reset|subscriptions|capacities|social|onboarding\/skip|invites|coaches|unlock-request|requests)$/,
+  // benefícios dos planos: a própria rota confere o plano e responde com mensagem clara (ex-aluno ainda vê grupo geral/avisos)
+  /^[A-Z]+ \/api\/me\/(beneficios|calls|calls\/reservar|calls\/cancelar|comunidade-externa)$/, /^[A-Z]+ \/api\/lives(\/perguntas)?$/,
   /^[A-Z]+ \/api\/billing\//, /^GET \/api\/plans?$/, /^GET \/api\/public\//, /^[A-Z]+ \/api\/terms(\/accept)?$/, /^[A-Z]+ \/api\/legal\//,
   /^[A-Z]+ \/api\/(config|health|cep|activity)$/, /^GET \/api\/media(\/pub|\/private)?$/, /^[A-Z]+ \/api\/notification-prefs$/, /^[A-Z]+ \/api\/notifications(\/read)?$/,
   /^[A-Z]+ \/api\/push\/(public-key|subscribe|unsubscribe)$/, /^[A-Z]+ \/api\/social\/(profile|handle-check)$/,

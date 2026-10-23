@@ -10,6 +10,7 @@ import { SIM_CARDS } from './providers/simulado.js'
 import * as core from './core.js'
 import * as cp from './coupons.js'
 import { pageNum } from '../sqlsafe.js'
+import { STUDENT_PLAN_IDS } from '../plan-rules.js'
 import { clearMonetizationCache } from '../access.js'
 import { trialIpSignal } from '../monetization-admin.js'   // Monetizacao F9
 
@@ -39,7 +40,8 @@ const pubPlan = p => ({ id: p.id, audience: p.audience, product: p.product, name
   benefits: (p.benefits || []).filter(x => x.state !== 'indisponivel'), limits: p.limits || {}, features: p.features || {}, is_free: p.is_free })
 // Catalogo do aluno: Básico (mensal) e Completo (pagamento único, 3 meses).
 // aluno_free continua listado porque é o FREE_PLAN de entitlements.js; inativo, não aparece nas consultas públicas.
-export const CATALOG = ['aluno_free', 'individual', 'completo']
+// planos vendidos ao aluno: ids centralizados em plan-rules.js (Básico=individual, Completo=completo)
+export const CATALOG = ['aluno_free', ...STUDENT_PLAN_IDS]
 const CATALOG_SQL = CATALOG.map(x => "'" + x + "'").join(',')
 const PLANS_SQL = `select p.*, v.limits, v.features, v.version from plans p left join lateral (select limits, features, version from plan_versions where plan_id=p.id order by version desc limit 1) v on true`
 

@@ -38,6 +38,8 @@ const PERSONAL = new Set(['post_likes', 'follows', 'notifications', 'password_re
   'social_profiles', 'user_avatar', 'social_follows', 'comment_likes',
   // V5: contato e endereco
   'user_contact',
+  // perguntas da live (só tem user_id; community_roster/call_bookings ficam porque têm colunas de quem atendeu)
+  'live_questions',
   ])
 // V5-AP: 'posture_captures' NAO entra em PERSONAL de proposito. O laco abaixo apaga por QUALQUER coluna com
 // FK para users(id), e nessa tabela a unica coluna assim e reviewed_by — excluir a conta de um PROFISSIONAL
@@ -94,6 +96,8 @@ export async function anonymizeUser(uid) {
   if (_legacyErase) _legacyErase(uid)
   await q('update social_handles set user_id=null where user_id=$1', [uid]).catch(() => {})   // V5: @ continua reservado, sem vínculo com a pessoa
   await q(`update posts set status='removido', image_url=null where author_id=$1`, [uid]).catch(() => {})
+  await q('update user_profiles set instagram_handle=null where user_id=$1', [uid]).catch(() => {})   // @ do Close Friends
+  await q(`update call_bookings set status='cancelada_aluno', canceled_at=now(), cancel_reason='conta excluída' where student_id=$1 and status='reservada'`, [uid]).catch(() => {})
   await q(`update coach_students set status='encerrado', ended_at=now(), end_reason='conta excluída' where (student_id=$1 or coach_id=$1) and status='ativo'`, [uid]).catch(() => {})
   // V5-AP: as capturas corporais do titular saem pela avaliação (é lá que mora student_id). Os arquivos já
   // foram apagados em purgeMedia; aqui vão as linhas. A avaliação e os eventos ficam, vinculados à conta

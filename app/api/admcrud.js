@@ -7,6 +7,7 @@ import { linkFailures, notify, isManagedPersonal } from './pro.js'
 import { anonymizeUser } from './lgpd.js'
 import { normDays, planProblems, flat } from './portal.js'
 import { likeTerm, likeEsc, pageNum } from './sqlsafe.js'
+import { fichaQuotaWarning } from './plan-rules.js'
 
 const isUuid = s => /^[0-9a-f-]{36}$/i.test(String(s || ''))
 const txt = (s, n = 2000) => String(s ?? '').trim().slice(0, n)
@@ -206,7 +207,7 @@ export function adminCrudRoutes({ json, readBody }) {
       if (status === 'ativo') await supersedeOthers(b.student_id, r.rows[0].id, u.id, title)   // V4.2
       await audit(u.tenant_id, u.id, 'treino.criado_admin', 'pro_plan', r.rows[0].id, { student: b.student_id, owner, status })
       if (status === 'ativo') await notify(b.student_id, 'treino', 'Novo treino disponível', title, '/treinos').catch(() => {})
-      json(res, 201, { id: r.rows[0].id })
+      json(res, 201, { id: r.rows[0].id, quota_warning: status === 'ativo' ? await fichaQuotaWarning(b.student_id) : null })   // cota só avisa
     },
     'GET /api/adm/plan': async (req, res) => {
       const u = await admin(req, res, json); if (!u) return

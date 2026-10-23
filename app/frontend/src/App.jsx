@@ -50,6 +50,7 @@ import Acompanhamento, { Conversa } from './views/app/Acompanhamento.jsx'
 import Avisos from './views/app/Avisos.jsx'
 import AdminApp from './views/admin/AdminApp.jsx'
 import ProPortal from './views/pro/Portal.jsx'
+import Beneficios from './views/beneficios/Beneficios.jsx'   // calls, grupos, Close Friends e live do plano
 import { LegalGate, LegalPage } from './views/app/Legal.jsx'
 /* Plano unico: o portal do profissional (views/pro/Portal.jsx, views/pro/MyPrograms.jsx)
    e a assinatura PRO (views/billing/ProSubscription.jsx) saem das rotas. Os arquivos
@@ -158,6 +159,7 @@ function Shell() {
               <Route path="/treinos" element={<Gate title="Treinos"><Treinos /></Gate>} />
               <Route path="/comunidade" element={<Gate title="Comunidade" allow="comunidade"><Comunidade /></Gate>} />
               <Route path="/acompanhamento" element={<Gate title="Acompanhamento"><Acompanhamento /></Gate>} />
+              <Route path="/beneficios" element={<Beneficios />} />{/* a própria tela explica o que depende do plano */}
               <Route path="/conversa/:id" element={<Gate title="Conversa"><Conversa /></Gate>} />
               <Route path="/avisos" element={<Avisos />} />
               <Route path="/grupo/:id" element={<Navigate to="/comunidade" replace />} />

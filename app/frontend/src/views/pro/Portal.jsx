@@ -12,6 +12,7 @@ import { C, P, GOALS, REQ_ST, CAT_PT, OCC_ST, dt } from '../../lib/care.js'
 import { mediaOf } from '../../lib/guided.js'
 import { Av, Empty, Load, Err, useLoad, Sheet, Field, Tabs } from '../app/kit.jsx'
 import { Atendimentos, ProProfile } from '../app/Pro.jsx'
+import AgendaPersonal from '../beneficios/AgendaPersonal.jsx'   // agenda de calls (Zoom)
 import FilaAvaliacoes from '../postural/FilaAvaliacoes.jsx'
 import '../guided/guided.css'
 import Verification from '../v3/Verification.jsx'
@@ -224,6 +225,7 @@ function Templates({ go }) {
 function More({ go }) {
   return <div className="g-card g-list org-list" data-testid="pro-more">
     <Li icon="users" t="Comunidade" to="/comunidade" />
+    <Li icon="clock" t="Agenda de calls" s="Horários, link do Zoom e calls marcadas" onClick={() => go('agenda')} testid="pro-agenda" />
     <Li icon="person" t="Perfil profissional" onClick={() => go('perfil')} />
     <Li icon="shield" t="Verificação profissional" onClick={() => go('verificacao')} />
     <Li icon="sparkles" t="Meu plano e vagas" onClick={() => go('capacidade')} />
@@ -235,10 +237,10 @@ export default function ProPortal() {
   const tab = sp.get('tab') || 'painel', section = sp.get('secao') === 'modelos' ? 'fichas' : sp.get('secao') || 'fichas'
   const go = (t, extra) => t === 'novo' ? nav('/pro/treino?' + new URLSearchParams(extra || {})) : setSp({ tab: t, ...(t === 'alunos' ? { filter: sp.get('filter') || 'todos', q: sp.get('q') || '' } : {}), ...(extra || {}) })
   const [dash, err, reloadDash] = useLoad(() => tab === 'atendimentos' || tab === 'perfil' ? C.dash(tab === 'atendimentos') : Promise.resolve(null), [tab])
-  const TITLES = { painel: 'Painel', alunos: 'Meus alunos', treinos: 'Treinos', avaliacao: 'Avaliações posturais', atendimentos: 'Atendimentos', capacidade: 'Meu plano e vagas', perfil: 'Perfil profissional', verificacao: 'Verificação profissional', convites: 'Convites pendentes', cadastrar: 'Cadastrar conta do aluno', adicionar: 'Adicionar aluno', mais: 'Mais' }
+  const TITLES = { painel: 'Painel', alunos: 'Meus alunos', treinos: 'Treinos', avaliacao: 'Avaliações posturais', atendimentos: 'Atendimentos', agenda: 'Agenda de calls', capacidade: 'Meu plano e vagas', perfil: 'Perfil profissional', verificacao: 'Verificação profissional', convites: 'Convites pendentes', cadastrar: 'Cadastrar conta do aluno', adicionar: 'Adicionar aluno', mais: 'Mais' }
   return <div className="ag" data-testid="pro">
     <div className="g-row"><div><span className="g-eyebrow">ORNY</span><h1>{TITLES[tab] || 'Painel'}</h1></div><span className="g-sp" /><Bell /></div>
-    {['perfil', 'verificacao', 'capacidade'].includes(tab) && <button className="g-link org-back" onClick={() => go('mais')}>← Mais</button>}
+    {['perfil', 'verificacao', 'capacidade', 'agenda'].includes(tab) && <button className="g-link org-back" onClick={() => go('mais')}>← Mais</button>}
     {['adicionar','convites','cadastrar'].includes(tab) && <button className="g-link org-back" onClick={() => go('alunos')}>← Alunos</button>}
     <div className="org-section">
       {tab === 'painel' && <Painel go={go} />}
@@ -251,6 +253,7 @@ export default function ProPortal() {
         {section === 'fichas' && <><div className="org-toolbar">{can('construtor') && <button className="g-btn" onClick={() => go('novo')}>Criar ficha</button>}</div><MeusTreinos go={go} /></>}
         {section === 'publicos' && <div className="g-card g-list"><Li icon="clipboard" t="Meus programas públicos" s="Programas sujeitos à avaliação editorial" to="/pro/programas" /></div>}
       </>}
+      {tab === 'agenda' && <AgendaPersonal />}
       {tab === 'capacidade' && <Capacidade />}
       {tab === 'avaliacao' && <FilaAvaliacoes />}
       {['atendimentos','perfil'].includes(tab) && (err ? <Err msg={err} retry={reloadDash} /> : !dash ? <Load /> : tab === 'atendimentos' ? <Atendimentos d={{ ...dash, me: dash.profile?.id }} reload={reloadDash} /> : <ProProfile d={dash} reload={reloadDash} />)}

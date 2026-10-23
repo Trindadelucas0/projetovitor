@@ -3,30 +3,35 @@
 // Usado em #/precos, #/assinatura, cadastro (etapa 3) e Perfil > Meu plano.
 import Icon from '../../components/Icon.jsx'
 import './plans.css'
+import { STUDENT_PLAN_IDS } from '../../lib/plans.js'
 
-export const SELLABLE = ['individual', 'completo']
+export const SELLABLE = STUDENT_PLAN_IDS   // Básico (individual) e Completo
 const AUD_OF = { individual: 'aluno', completo: 'aluno' }
-const TAG = { individual: 'Para quem treina', completo: 'Avaliação incluída' }
+const TAG = { individual: 'Mensal', completo: 'Acompanhamento de 3 meses' }
 const PITCH = {
-  individual: 'Ficha, treino, progresso e comunidade. Sem avaliação postural.',
-  completo: 'Tudo do Básico e a avaliação postural, por 3 meses.'
+  individual: 'Seu personal, uma ficha nova e uma call por mês, e a comunidade.',
+  completo: 'Tudo do Básico, com avaliação postural e ficha e call a cada 15 dias.'
 }
+// Benefícios do aluno: espelham as regras de app/api/plan-rules.js (migração 079).
+// Dieta é futura e não aparece aqui. Sorteios só quando houver regulamento.
 const BEN = {
   individual: [
-    ['clipboard', 'Fichas montadas pelo seu personal', 'receber_ficha_profissional'],
-    ['dumbbell', 'Programas guiados para o seu objetivo', 'programas_guiados'],
-    ['timer', 'Execução guiada com cronômetro de descanso', 'execucao'],
-    ['chart', 'Progresso, histórico e recordes pessoais', 'progresso'],
-    ['users', 'Comunidade com publicações', null],
-    ['heart', 'Treino adaptado a dores e restrições', null]
+    ['clipboard', '1 ficha de treino nova por mês, montada pelo seu personal', 'receber_ficha_profissional'],
+    ['clock', '1 call de 15 min por mês no Zoom', null],
+    ['users', 'Comunidade no WhatsApp: grupo geral e avisos', null],
+    ['star', '7 dias de Close Friends no Instagram por mês', null],
+    ['timer', 'Treino guiado com cronômetro de descanso', 'execucao'],
+    ['chart', 'Progresso, histórico e recordes pessoais', 'progresso']
   ],
   completo: [
-    ['clipboard', 'Fichas montadas pelo seu personal', 'receber_ficha_profissional'],
-    ['dumbbell', 'Programas guiados para o seu objetivo', 'programas_guiados'],
-    ['timer', 'Execução guiada com cronômetro de descanso', 'execucao'],
-    ['chart', 'Progresso, histórico e recordes pessoais', 'progresso'],
-    ['users', 'Comunidade com publicações', null],
-    ['clipboard', 'Avaliação postural', 'avaliacao_postural']
+    ['checkCircle', 'Tudo do Básico, e mais:', null],
+    ['figureStrength', 'Avaliação postural', 'avaliacao_postural'],
+    ['clipboard', 'Ficha de treino nova a cada 15 dias', 'receber_ficha_profissional'],
+    ['clock', 'Call de 15 min no Zoom a cada 15 dias', null],
+    ['star', 'Close Friends no Instagram durante os 3 meses', null],
+    ['users', 'Grupo exclusivo no WhatsApp', null],
+    ['play', 'Live semanal com prioridade nas suas perguntas', null],
+    ['trophy', 'Participação nos sorteios', null]
   ]
 }
 const money = c => (c / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -41,6 +46,7 @@ export function Price({ p }) {
   return <div className="pl-price" data-testid={'price-' + p.id}>
     <span className="pl-cur">R$</span><b>{int}</b><span className="pl-dec">,{dec}</span>
     <span className="pl-per">{unico ? 'pagamento único · 3 meses' : '/mês'}</span>
+    {unico && <small className="pl-inst" data-testid={'installments-' + p.id}>ou em até 4x no cartão</small>}
   </div>
 }
 export function TrialSeal({ compact }) {
@@ -73,8 +79,10 @@ export function PlanGrid({ plans, cta, current = {}, lockAud }) {
 }
 const FAQ = [
   ['Quando o acesso é liberado?', 'Depois que o pagamento do plano for confirmado pelo provedor. Até lá, sua conta e a tela de assinatura continuam disponíveis.'],
-  ['Qual a diferença entre Básico e Completo?', 'O Básico (R$ 49,90/mês) inclui ficha, treino, progresso e comunidade. O Completo (R$ 499 uma vez) inclui o mesmo e a avaliação postural, por 3 meses.'],
-  ['O que acontece depois dos 3 meses do Completo?', 'A comunidade continua aberta. Treino, progresso e avaliação nova ficam bloqueados até você contratar o Básico ou o Completo de novo.'],
+  ['Qual a diferença entre Básico e Completo?', 'O Básico (R$ 49,90/mês) inclui, a cada mês, 1 ficha nova, 1 call de 15 min no Zoom, os grupos do WhatsApp e 7 dias de Close Friends. O Completo (R$ 499 por 3 meses, em até 4x) inclui tudo isso e mais: avaliação postural, ficha e call a cada 15 dias, Close Friends nos 3 meses, grupo exclusivo, prioridade na live semanal e participação nos sorteios.'],
+  ['Quem vai me atender?', 'Homens são atendidos por um personal e mulheres por uma personal. Você informa o seu perfil no cadastro.'],
+  ['Call não usada acumula?', 'Não. Cada período tem a sua call; se não for usada, não passa para o próximo.'],
+  ['O que acontece depois dos 3 meses do Completo?', 'Você sai do grupo exclusivo e do Close Friends. Treino, progresso e avaliação nova ficam bloqueados até você contratar o Básico ou o Completo de novo.'],
   ['Cupom libera o acesso?', 'Não. Cupons podem conceder desconto na contratação, mas somente o pagamento confirmado libera o sistema.'],
   ['Posso cancelar o Básico quando quiser?', 'Sim. O cancelamento é feito no app e o acesso continua até o fim do período já pago. O Completo não renova: o acesso acaba na data indicada.'],
   ['O que acontece com meus dados se eu não assinar?', 'Nada se perde: treinos, histórico e progresso ficam guardados e voltam quando você assinar.']

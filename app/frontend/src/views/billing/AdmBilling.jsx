@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../lib/api.js'
 import { FEAT, brl } from './Billing.jsx'
+import { isStudentPlan } from '../../lib/plans.js'
 
 const post = (p, b) => api(p, { method: 'POST', body: JSON.stringify(b || {}) })
 const dBR = d => d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—'
@@ -98,7 +99,7 @@ export function Planos() {
   const [d, e, load] = useGet('/api/adm/billing/plans')
   if (e) return <p className="bl-err">{e}</p>; if (!d) return <p>Carregando…</p>
   return <div className="ag"><p className="adm-sub">Básico (mensal) e Completo (pagamento único, 3 meses). Mudanças de recursos criam uma nova versão: quem já assina continua na versão contratada. Para vender, defina preço maior que zero e marque "À venda".</p>
-    {d.plans.filter(p => ['individual', 'completo'].includes(p.id)).map(p => <PlanRow key={p.id + p.version + (p.updated_at || '')} p={p} onSaved={load} />)}</div>
+    {d.plans.filter(p => isStudentPlan(p.id)).map(p => <PlanRow key={p.id + p.version + (p.updated_at || '')} p={p} onSaved={load} />)}</div>
 }
 
 export function Cupons() {

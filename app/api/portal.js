@@ -8,6 +8,7 @@ import { requireAuth, audit } from './auth.js'
 import { notify, notifyAdmins, isLinked } from './pro.js'
 import { professionalOccupancy, summarizeCapacity } from './management.js'
 import { capacitySummary } from './entitlements.js'
+import { fichaQuotaWarning } from './plan-rules.js'
 
 const isUuid = s => /^[0-9a-f-]{36}$/i.test(String(s || ''))
 const txt = (s, n = 2000) => String(s ?? '').trim().slice(0, n)
@@ -208,7 +209,7 @@ export function portalRoutes({ json, readBody }) {
       await supersedeOthers(p.student_id, p.id, u.id, p.title)   // V4.2
       await notify(p.student_id, 'plano', 'Novo treino do seu profissional', p.title, '/treinos')
       await audit(u.tenant_id, u.id, 'prescricao.publicada', 'pro_plan', p.id, { student: p.student_id, version: r.rows[0].version })
-      json(res, 200, { ok: true, id: p.id, version: r.rows[0].version, delivered_to: p.student_id })
+      json(res, 200, { ok: true, id: p.id, version: r.rows[0].version, delivered_to: p.student_id, quota_warning: await fichaQuotaWarning(p.student_id) })   // cota só avisa
     },
     'POST /api/pro/prescriptions/archive': async (req, res) => {
       const u = await proOnly(req, res, json); if (!u) return

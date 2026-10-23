@@ -1,6 +1,9 @@
 // AVAGYM — chamadas de acompanhamento, profissional e administração.
 import { api } from './api.js'
+import { notify } from './dialog.js'
 const post = (p, b) => api(p, { method: 'POST', body: JSON.stringify(b || {}) })
+// Cota de fichas do plano só avisa: a ficha é entregue e o personal vê o aviso.
+const warnQuota = r => { if (r?.quota_warning?.message) notify(r.quota_warning.message, 'error', 8000); return r }
 export const C = {
   care: () => api('/api/care'), plan: id => api('/api/plan?id=' + id), schedulePlan: (plan_id, days) => post('/api/plan/schedule', { plan_id, days }), blocks: () => api('/api/blocks'),
   occurrence: b => post('/api/occurrences', b), newThread: b => post('/api/threads', b), thread: id => api('/api/thread?id=' + id), send: (thread_id, body) => post('/api/messages', { thread_id, body }),
@@ -9,7 +12,7 @@ export const C = {
   searchEx: t => api('/api/exercises/search?q=' + encodeURIComponent(t)),
   // profissional
   dash: (history = false) => api('/api/pro/dashboard' + (history ? '?include_history=1' : '')), saveProfile: b => post('/api/pro/profile', b), addQual: b => post('/api/pro/qualifications', b),
-  student: id => api('/api/pro/student?id=' + id), savePlan: b => post('/api/pro/plans', b), archivePlan: (id, reason) => post('/api/pro/plans/archive', { id, reason }),
+  student: id => api('/api/pro/student?id=' + id), savePlan: b => post('/api/pro/plans', b).then(warnQuota), archivePlan: (id, reason) => post('/api/pro/plans/archive', { id, reason }),
   assess: b => post('/api/pro/assess', b), closeOcc: (id, reason) => post('/api/pro/close-occurrence', { id, reason }), closeThread: id => post('/api/pro/close-thread', { id }),
   propose: b => post('/api/pro/proposals', b), decide: b => post('/api/pro/proposals/decide', b),
   // admin
@@ -21,7 +24,7 @@ export const C = {
   delUser: b => post('/api/adm/users/delete', b), proProfile: b => post('/api/adm/professionals/profile', b),
   quals: id => api('/api/adm/qualifications?user_id=' + id), saveQual: b => post('/api/adm/qualifications/save', b), delQual: b => post('/api/adm/qualifications/delete', b),
   record: id => api('/api/adm/student/record?id=' + id), saveRecord: b => post('/api/adm/student/record', b), saveRestr: b => post('/api/adm/restrictions/save', b), delRestr: b => post('/api/adm/restrictions/delete', b),
-  training: id => api('/api/adm/student/training?id=' + id), admSavePlan: b => post('/api/adm/plans/save', b), admDelPlan: b => post('/api/adm/plans/delete', b),
+  training: id => api('/api/adm/student/training?id=' + id), admSavePlan: b => post('/api/adm/plans/save', b).then(warnQuota), admDelPlan: b => post('/api/adm/plans/delete', b),
   endProgram: b => post('/api/adm/user-programs/end', b), voidSession: b => post('/api/adm/sessions/void', b), transfer: b => post('/api/adm/links/transfer', b),
   corrigirPerfil: student_id => post('/api/pro/students/corrigir-perfil', { student_id, confirm: true }),
   admPosts: (st, q) => api(`/api/adm/posts?status=${st || ''}&q=${encodeURIComponent(q || '')}`), updPost: b => post('/api/adm/posts/update', b), delPost: b => post('/api/adm/posts/delete', b),
@@ -45,6 +48,22 @@ export const C = {
   resetLink: id => post('/api/adm/users/reset-link', { id }),
   audit: () => api('/api/adm/audit'), settings: () => api('/api/adm/settings'), saveSettings: b => post('/api/adm/settings', b),
   tapago: () => api('/api/adm/tapago'), saveTapago: b => post('/api/adm/tapago/config', b), decideTapago: (id, decision, reason) => post('/api/adm/tapago/decide', { id, decision, reason }), applyTapago: id => post('/api/adm/tapago/apply', { id }), revokeTapago: (id, reason) => post('/api/adm/tapago/revoke', { id, reason })
+}
+// Benefícios dos planos: personais por público, cotas, agenda de calls, comunidade externa e live.
+export const B = {
+  personais: () => api('/api/adm/personais'), savePersonal: b => post('/api/adm/personais/save', b),
+  planRules: () => api('/api/adm/planos/regras'), savePlanRules: b => post('/api/adm/planos/regras', b),
+  cota: studentId => api('/api/pro/students/cota?student_id=' + encodeURIComponent(studentId)),
+  inicio: () => api('/api/adm/inicio'),
+  me: () => api('/api/me/beneficios'),
+  meCalls: () => api('/api/me/calls'), reservar: b => post('/api/me/calls/reservar', b), cancelar: b => post('/api/me/calls/cancelar', b),
+  agenda: pid => api('/api/pro/agenda' + (pid ? '?personal_id=' + encodeURIComponent(pid) : '')), saveAgenda: b => post('/api/pro/agenda/disponibilidade', b),
+  marcar: b => post('/api/pro/calls/marcar', b), callStatus: b => post('/api/pro/calls/status', b),
+  admCalls: (from, to) => api('/api/adm/calls?' + new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })),
+  meComunidade: () => api('/api/me/comunidade-externa'), saveInstagram: h => post('/api/me/comunidade-externa', { instagram_handle: h }),
+  admComunidade: () => api('/api/adm/comunidade'), saveLinks: b => post('/api/adm/comunidade/links', b), marcarRoster: b => post('/api/adm/comunidade/marcar', b),
+  lives: () => api('/api/lives'), perguntar: b => post('/api/lives/perguntas', b),
+  admLives: id => api('/api/adm/lives' + (id ? '?live_id=' + encodeURIComponent(id) : '')), saveLive: b => post('/api/adm/lives/save', b), perguntaStatus: b => post('/api/adm/lives/pergunta-status', b)
 }
 export const CAT_PT = { dor: 'Dor', desconforto: 'Desconforto', dificuldade: 'Dificuldade para realizar', duvida: 'Dúvida sobre a execução', outro: 'Outro motivo' }
 export const OCC_ST = { aberta: 'Aguardando avaliação', orientada: 'Orientação registrada', encerrada: 'Encerrada' }
@@ -77,7 +96,7 @@ export const P = {
   home: () => api('/api/pro/home'), students: (filter, q) => api('/api/pro/students?' + new URLSearchParams({ filter: filter || 'todos', q: q || '' })),
   student: id => api('/api/pro/student/full?id=' + id), library: f => api('/api/pro/library?' + new URLSearchParams(f || {})), templates: () => api('/api/pro/templates'),
   list: f => api('/api/pro/prescriptions?' + new URLSearchParams(f || {})), get: id => api('/api/pro/prescription?id=' + id),
-  save: b => post('/api/pro/prescriptions', b), publish: id => post('/api/pro/prescriptions/publish', { id }), archive: (id, reason) => post('/api/pro/prescriptions/archive', { id, reason }),
+  save: b => post('/api/pro/prescriptions', b), publish: id => post('/api/pro/prescriptions/publish', { id }).then(warnQuota), archive: (id, reason) => post('/api/pro/prescriptions/archive', { id, reason }),
   capacity: () => api('/api/pro/capacity'), request: b => post('/api/pro/requests', b), cancel: id => post('/api/pro/requests/cancel', { id }), reply: (id, note) => post('/api/pro/requests/reply', { id, note }),
   myCode: () => api('/api/me/code'), myCoaches: () => api('/api/me/coaches'),
   // admin

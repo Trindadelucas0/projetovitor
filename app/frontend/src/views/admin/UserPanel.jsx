@@ -11,6 +11,7 @@ import { applyPalette } from '../../lib/theme.js'
 import { useStore } from '../../store/useStore.js'
 import AdmUser360 from '../v3/AdmUser360.jsx'
 import { UserEdit, ProEdit, StudentRecord, StudentTraining } from './AdminCrud.jsx'
+import { STUDENT_PLANS } from '../../lib/plans.js'
 
 /** Aplica a cor na tela agora e, se for a própria conta, atualiza a sessão. */
 async function applyCorNow(userId, perfil) {
@@ -38,8 +39,8 @@ export const mensalidadePT = u => {
   const paid = (u.subs || []).find(s => !/free/i.test(s.plan || '') && ['ativa', 'trial', 'inadimplente', 'carencia'].includes(s.status))
   if (paid) {
     const name = String(paid.plan_name || paid.plan || '').toLowerCase()
-    if (name.includes('completo') || paid.plan === 'completo') return { t: 'Completo', s: 'Acesso conforme o plano', c: 'ok' }
-    if (name.includes('básico') || name.includes('basico') || paid.plan === 'individual') return { t: 'Básico', s: 'Acesso conforme o plano', c: 'ok' }
+    if (name.includes('completo') || paid.plan === STUDENT_PLANS.premium) return { t: 'Completo', s: 'Acesso conforme o plano', c: 'ok' }
+    if (name.includes('básico') || name.includes('basico') || paid.plan === STUDENT_PLANS.basico) return { t: 'Básico', s: 'Acesso conforme o plano', c: 'ok' }
     return { t: paid.plan_name || 'Em dia', s: 'Acesso conforme o plano', c: 'ok' }
   }
   return { t: 'Sem plano pago', s: 'Pode contratar Básico ou Completo na tela de assinatura', c: '' }

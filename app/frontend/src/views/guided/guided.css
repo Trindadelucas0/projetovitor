@@ -279,3 +279,7 @@ body:has(.ag),html:has(.ag){background:var(--ag-bg)!important}
   background: linear-gradient(to top, var(--ag-bg) 70%, transparent);
 }
 .ap-wizard-footer .g-btn { width: 100%; }
+
+/* Benefícios (agenda de calls, Meus benefícios): botões no tamanho do texto, lado a lado */
+[data-testid="agenda-personal"] .g-btn, [data-testid="ben-calls"] .g-btn, [data-testid="adm-calls"] .g-btn { width: auto; flex: 0 0 auto; min-height: 44px; padding: 0 16px; font-size: 15px }
+[data-testid="agenda-personal"] .g-row, [data-testid="ben-calls"] .g-row { flex-wrap: wrap }

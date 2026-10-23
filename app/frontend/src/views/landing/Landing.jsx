@@ -39,17 +39,18 @@ const AUDIENCE = {
   },
 }
 
-const NAV = [['beneficios', 'Para quem é'], ['recursos', 'O que faz'], ['como-funciona', 'Como funciona'], ['planos', 'Plano'], ['duvidas', 'Dúvidas']]
+const NAV = [['beneficios', 'Para quem é'], ['recursos', 'O que faz'], ['como-funciona', 'Como funciona'], ['planos', 'Planos'], ['duvidas', 'Dúvidas']]
 
 const STEPS = [
   ['01', 'Crie a sua conta', 'Seus dados de acesso, data de nascimento e contato.'],
-  ['02', 'Contrate a assinatura', 'Um plano só, com o valor na tela e a revisão antes de confirmar.'],
-  ['03', 'Confirme o pagamento e comece', 'O acesso é liberado assim que o pagamento é confirmado. Cancele quando quiser.'],
+  ['02', 'Escolha o seu plano', 'Básico mensal ou Completo por 3 meses, com o valor na tela e a revisão antes de confirmar.'],
+  ['03', 'Confirme o pagamento e comece', 'O acesso é liberado assim que o pagamento é confirmado. Seu personal recebe você e monta a sua ficha.'],
 ]
 
 const FAQ_LANDING = [
   ['Preciso instalar alguma coisa?', 'Não. A ORNY funciona no navegador do celular ou do computador. Adicionar à tela inicial é opcional e pode ser feito depois do cadastro.'],
-  ['Quem monta o meu treino?', 'O seu personal. Ele monta a ficha com os exercícios, as séries, as cargas, os dias da semana e os vídeos de execução, e ela aparece no seu app.'],
+  ['Quem monta o meu treino?', 'O seu personal. Homens são atendidos por um personal e mulheres por uma personal. A ficha vem com os exercícios, as séries, as cargas, os dias da semana e os vídeos de execução, e aparece no seu app.'],
+  ['Como funciona a call com o personal?', 'Você escolhe no app um horário livre do seu personal, com pelo menos 12 horas de antecedência, e recebe o link do Zoom. A call dura 15 minutos: 1 por mês no Básico e 1 a cada 15 dias no Completo.'],
   ['Como funcionam as notificações?', 'Você escolhe se quer ativar. A ORNY explica antes de pedir a permissão do aparelho, e isso nunca bloqueia o seu acesso.'],
 ]
 
@@ -134,10 +135,10 @@ export default function Landing() {
         </ul>
         <div className="lp-actions" data-hero>
           <a href={href()} className="lp-btn lp-btn-primary lp-btn-lg" data-testid="landing-cta-primary">Criar minha conta<Icon name="chevronRight" /></a>
-          <button type="button" className="lp-btn lp-btn-ghost lp-btn-lg" onClick={() => goTo('planos')}>Ver o plano</button>
+          <button type="button" className="lp-btn lp-btn-ghost lp-btn-lg" onClick={() => goTo('planos')}>Ver os planos</button>
         </div>
         <p className="lp-trust" data-hero>
-          <span>Funciona no navegador</span><span>Instalação opcional</span><span>Acesso liberado após a confirmação do pagamento</span><span>Cancele quando quiser</span>
+          <span>Funciona no navegador</span><span>Instalação opcional</span><span>Personal homem para homens, personal mulher para mulheres</span><span>Acesso liberado após a confirmação do pagamento</span>
         </p>
       </div>
     </section>
@@ -204,8 +205,8 @@ export default function Landing() {
       <div className="lp-shell">
         <div data-reveal className="lp-head">
           <span className="lp-kicker">Planos</span>
-          <h2>Preço direto, sem pegadinha</h2>
-          <p className="lp-copy">Os valores vêm do catálogo atual da ORNY. O acesso começa depois que o pagamento é confirmado.</p>
+          <h2>Básico ou Completo</h2>
+          <p className="lp-copy">Nos dois planos você treina com acompanhamento de um personal: homens com um personal, mulheres com uma personal. Os valores vêm do catálogo atual da ORNY e o acesso começa depois que o pagamento é confirmado.</p>
         </div>
         {plans?.test_mode && <p className="lp-status" role="status">Ambiente de teste: os pagamentos desta versão não geram cobrança real.</p>}
         {error ? <p className="lp-error" role="alert">{error}</p>
@@ -217,7 +218,7 @@ export default function Landing() {
                 ? <span className="pl-btn" aria-disabled="true" data-testid={'cta-' + p.id}>Em breve</span>
                 : <a className="pl-btn" href={href(p.id)} data-testid={'cta-' + p.id}>{user ? 'Assinar o ' + p.name : 'Começar com o ' + p.name}<Icon name="bolt" /></a>} />
               <TrialSeal />
-              <p className="lp-note">Cobrança mensal por cartão de crédito. Cancele quando quiser: o acesso continua até o fim do período pago e seus dados ficam salvos.</p>
+              <p className="lp-note">Básico: cobrança mensal no cartão de crédito; cancele quando quiser e o acesso continua até o fim do período pago. Completo: pagamento único por 3 meses, em até 4x no cartão, sem renovação automática. Seus dados ficam salvos.</p>
             </div>}
       </div>
     </section>

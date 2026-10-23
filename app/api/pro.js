@@ -10,6 +10,7 @@ import bcrypt from 'bcryptjs'
 import crypto from 'node:crypto'
 import { likeTerm, likeEsc, pageNum } from './sqlsafe.js'
 import { applyWeekdaySchedule } from './workout-schema.js'
+import { fichaQuotaWarning } from './plan-rules.js'
 import { isInternalPersonal } from './internal-personal.js'
 import { queuePasswordLink } from './password-email.js'
 const genPassword = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; let p; do { p = Array.from({ length: 14 }, () => A[crypto.randomInt(A.length)]).join('') } while (!/\d/.test(p) || !/[a-z]/.test(p) || !/[A-Z]/.test(p)); return p }
@@ -20,7 +21,11 @@ const has = (u, r) => u.roles.includes(r)
 const txt = (s, n = 2000) => String(s ?? '').trim().slice(0, n)
 const CATS = ['dor', 'desconforto', 'dificuldade', 'duvida', 'outro']
 const PRO_STATES = ['ativo', 'suspenso', 'encerrado']
-export const DEFAULT_SETTINGS = { prazo_ocorrencia_horas: 24, prazo_mensagem_horas: 48, comentarios_alunos: false, ranking_percentual_sessao: 80, fuso_horario: 'America/Sao_Paulo', limite_publicacoes_dia: 5, liberacao_prazo_texto: '', auditoria_retencao_dias: 180 }
+export const DEFAULT_SETTINGS = { prazo_ocorrencia_horas: 24, prazo_mensagem_horas: 48, comentarios_alunos: false, ranking_percentual_sessao: 80, fuso_horario: 'America/Sao_Paulo', limite_publicacoes_dia: 5, liberacao_prazo_texto: '', auditoria_retencao_dias: 180,
+  // agenda de calls (Zoom): reservar com 12h de antecedência e cancelar até 6h antes
+  calls_antecedencia_horas: 12, calls_cancelamento_horas: 6,
+  // fim do plano pago: o aluno sai do grupo exclusivo e do Close Friends; geral e avisos ficam (configurável)
+  comunidade_manter_geral: true, comunidade_manter_avisos: true }
 
 export async function getSettings(tid) {
   const r = await q('select key,value from app_settings where tenant_id=$1', [tid])
@@ -475,7 +480,7 @@ export function proRoutes({ json, readBody }) {
       await supersedeOthers(b.student_id, r.rows[0].id, u.id, title)   // V4.2: ficha nova substitui a anterior
       await audit(u.tenant_id, u.id, 'plano.criado', 'pro_plan', r.rows[0].id, { student: b.student_id })
       await notify(b.student_id, 'plano', 'Novo plano do seu profissional', title, '/treinos')
-      json(res, 201, { id: r.rows[0].id })
+      json(res, 201, { id: r.rows[0].id, quota_warning: await fichaQuotaWarning(b.student_id) })   // cota de fichas só avisa
     },
     'POST /api/pro/plans/archive': async (req, res) => {
       const u = await guard('profissional')(req, res, json); if (!u) return
@@ -629,6 +634,10 @@ export function proRoutes({ json, readBody }) {
       const b = await readBody(req), errors = {}
       const name = txt(b.name, 120), email = String(b.email || '').trim().toLowerCase()
       const type = b.type === 'profissional' ? 'profissional' : 'aluno'
+      // Homem/Mulher: o aluno vai para o personal principal desse público e o sexo fica gravado.
+      // Sem perfil (chamada antiga), mantém o comportamento anterior e o PerfilGate pergunta no 1º acesso.
+      const perfil = ['masculino', 'feminino'].includes(b.perfil) ? b.perfil : null
+      const audience = ['masculino', 'feminino'].includes(b.audience_sex) ? b.audience_sex : null
       let password = String(b.password || ''), generated = false
       if (name.length < 2) errors.name = 'Informe o nome'
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 200) errors.email = 'E-mail inválido'
@@ -647,24 +656,26 @@ export function proRoutes({ json, readBody }) {
           await c.query('insert into user_access_plans(user_id,plan_id,assigned_by) values($1,$2,$3)', [id, plan.id, u.id])
           await c.query('insert into access_plan_history(plan_id,user_id,action,actor_id) values($1,$2,$3,$4)', [plan.id, id, 'atribuido', u.id])
         }
-        if (type === 'aluno') await linkNewStudentToPrincipal(u.tenant_id, id, u.id, c)
-        if (type === 'profissional') await c.query(`insert into professional_profiles(user_id,tenant_id,display_name,state,can_publish,internal_managed) values($1,$2,$3,'ativo',true,true)`, [id, u.tenant_id, name])
+        if (type === 'aluno') {
+          await linkNewStudentToPrincipal(u.tenant_id, id, u.id, c, perfil || 'masculino')
+          if (perfil) await c.query(`insert into user_profiles(user_id,tenant_id,sex) values($1,$2,$3) on conflict (user_id) do update set sex=excluded.sex`, [id, u.tenant_id, perfil])
+        }
+        if (type === 'profissional') await c.query(`insert into professional_profiles(user_id,tenant_id,display_name,state,can_publish,internal_managed,audience_sex) values($1,$2,$3,'ativo',true,true,$4)`, [id, u.tenant_id, name, audience])
         await c.query('commit')
-      } catch (e) { await c.query('rollback'); c.release(); if (e.code === '23505') return json(res, 409, { error: 'Este e-mail já tem conta. Peça para a pessoa entrar e informar o código dela.', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } }); if (e.code === 'PRINCIPAL_UNAVAILABLE') return json(res, 503, { error: e.message, code: e.code }); throw e }
+      } catch (e) { await c.query('rollback'); c.release(); if (e.code === '23505') return json(res, 409, { error: 'Este e-mail já tem conta. Peça para a pessoa entrar e informar o código dela.', code: 'EMAIL_EXISTS', errors: { email: 'Este e-mail já tem conta' } }); if (e.code === 'PRINCIPAL_UNAVAILABLE' || e.code === 'PERSONAL_FEMININO_UNAVAILABLE') return json(res, 503, { error: e.message, code: e.code }); throw e }
       c.release()
-      await audit(u.tenant_id, u.id, 'usuario.criado_admin', 'user', id, { type, plan: plan?.id || null })
+      await audit(u.tenant_id, u.id, 'usuario.criado_admin', 'user', id, { type, plan: plan?.id || null, perfil, audience_sex: audience })
       let link = null, password_link = null
-      if (type === 'aluno') {
-        link = { ok: true }
-        password_link = await queuePasswordLink(id, u.id, true)
-      }
+      if (type === 'aluno') link = { ok: true }
+      // aluno e personal recebem o link de 24 h para definir a senha (o personal criado pelo painel também)
+      password_link = await queuePasswordLink(id, u.id, true)
       // Aluno: o personal copia o link de 24 h; a senha aleatória existe só no hash.
       // Personal interno (POST direto): ainda pode devolver senha provisória.
       json(res, 201, {
         id, email, type, link,
         ...(type === 'aluno'
           ? { password_link, email_queued: !!password_link?.email_queued }
-          : { temp_password: generated ? password : undefined })
+          : { password_link, email_queued: !!password_link?.email_queued, audience_sex: audience, temp_password: generated ? password : undefined })
       })
     },
     'POST /api/adm/users/same-person': async (req, res) => {
@@ -865,7 +876,9 @@ export function proRoutes({ json, readBody }) {
       const u = await guard('admin')(req, res, json); if (!u) return
       const b = await readBody(req)
       const allowed = { prazo_ocorrencia_horas: v => Math.max(1, Math.min(720, +v | 0)), prazo_mensagem_horas: v => Math.max(1, Math.min(720, +v | 0)), comentarios_alunos: v => !!v,
-        ranking_percentual_sessao: v => Math.max(50, Math.min(100, +v | 0)), fuso_horario: v => txt(v, 60) || 'America/Sao_Paulo', limite_publicacoes_dia: v => Math.max(1, Math.min(50, +v | 0)), liberacao_prazo_texto: v => txt(v, 160), auditoria_retencao_dias: v => Math.max(7, Math.min(3650, +v | 0)) }
+        ranking_percentual_sessao: v => Math.max(50, Math.min(100, +v | 0)), fuso_horario: v => txt(v, 60) || 'America/Sao_Paulo', limite_publicacoes_dia: v => Math.max(1, Math.min(50, +v | 0)), liberacao_prazo_texto: v => txt(v, 160), auditoria_retencao_dias: v => Math.max(7, Math.min(3650, +v | 0)),
+        calls_antecedencia_horas: v => Math.max(0, Math.min(168, +v | 0)), calls_cancelamento_horas: v => Math.max(0, Math.min(168, +v | 0)),
+        comunidade_manter_geral: v => !!v, comunidade_manter_avisos: v => !!v }
       for (const [k, f] of Object.entries(allowed)) if (b[k] !== undefined) {
         await q(`insert into app_settings(tenant_id,key,value,updated_by) values($1,$2,$3,$4) on conflict (tenant_id,key) do update set value=excluded.value, updated_by=excluded.updated_by, updated_at=now()`, [u.tenant_id, k, JSON.stringify(f(b[k])), u.id])
         await audit(u.tenant_id, u.id, 'configuracao', 'setting', k, { value: f(b[k]) })

@@ -34,6 +34,7 @@ export default function Profile() {
         <Li icon="person" t="Perfil social" s="Foto, nome, @identificador e privacidade" to="/perfil/social" testid="profile-social" />
         <Li icon="gear" t="Preferências" s="Aparência, idioma e treino" to="/perfil?secao=preferencias" testid="profile-preferences" />
         {user && !user.admin && (user.roles || []).includes('aluno') && <Li icon="sparkles" t="Meu plano" s="Básico ou Completo" to="/planos" testid="my-plan" />}
+        {user && !user.admin && (user.roles || []).includes('aluno') && <Li icon="users" t="Meus benefícios" s="Calls com o personal, grupos, Close Friends e live" to="/beneficios" testid="my-benefits" />}
         {user && <Li icon="lock" t="Privacidade e segurança" s="Senha, aparelhos e seus dados" to="/perfil?secao=privacidade" testid="profile-security" />}
         <Li icon="bell" t="Notificações" to="/avisos" />
         <Li icon="chat" t="Ajuda e suporte" s="Orientações e contato por e-mail" to="/perfil?secao=ajuda" />

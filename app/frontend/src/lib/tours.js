@@ -43,10 +43,13 @@ export const TOURS = {
     perfil: common.perfil
   },
   admin: {
-    welcome: [S(null, 'Painel do personal', 'O dia a dia fica em cima: alunos, dúvidas, exercícios e fila. Em Administração ficam assinaturas, protocolos, campanha e privacidade.'),
-      M('adm-dashboard', 'Visão geral', 'Indicadores, crescimento e pendências da gestão.'),
+    welcome: [S(null, 'Painel do admin', 'O menu é separado por tarefa: Alunos, Personais, Planos e cobrança, Agenda de calls, Comunidade, Treinos e Configurações. Toda tela tem uma explicação embaixo do título.'),
+      M('adm-inicio', 'Início', 'O que precisa de atenção hoje: Close Friends, calls do dia e perguntas da live.'),
+      M('adm-personais', 'Personais', 'Quem atende homens e quem atende mulheres.'),
+      M('adm-calls', 'Agenda de calls', 'Horários, link do Zoom e calls marcadas.'),
+      M('adm-comunidade-externa', 'WhatsApp e Close Friends', 'Listas de quem adicionar e remover.'),
       M('adm-usuarios', 'Alunos', 'Todas as contas. Nas abas: Contas, Pendências e Suspensões de acesso.'),
-      M('adm-cobranca', 'Assinaturas dos alunos', 'Preços de Básico e Completo, cupons e quem está pagando.'),
+      M('adm-cobranca', 'Assinaturas e cobrança', 'Preços de Básico e Completo, cupons e quem está pagando.'),
       M('adm-lgpd', 'Privacidade e termos', 'Pedidos de cópia e exclusão de dados e versões dos termos.')],
     usuarios: [S('dt-search', 'Buscar', 'Digite nome, e-mail ou código para achar a pessoa.'),
       S('usr-status', 'Filtrar', 'Mostre só contas pendentes, ativas ou bloqueadas.'),

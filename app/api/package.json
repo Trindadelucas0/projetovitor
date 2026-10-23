@@ -15,6 +15,8 @@
     "verificar:plano-unico": "node scripts/verificar-plano-unico.mjs",
     "test:plano-unico": "node --test test/ficha-dias-video.test.mjs",
     "test:plano-unico:integration": "node test/plano-unico.integration.mjs",
+    "test:beneficios": "node --test test/beneficios-regras.test.mjs",
+    "test:beneficios:integration": "node test/beneficios.integration.mjs",
     "dev": "node server.js",
     "create-admin": "node scripts/create-admin.mjs",
     "zerar-dados": "node scripts/zerar-dados.mjs",

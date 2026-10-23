@@ -7,10 +7,10 @@ import AxeBuilder from '@axe-core/playwright'
 const PLANS = {
   test_mode: true,
   plans: [
-    { id: 'individual', audience: 'aluno', name: 'Individual', description: 'Para quem treina', price_cents: 2990, is_free: false, purchasable: true, benefits: [], limits: {}, features: { programas_guiados: true, execucao: true, progresso: true } },
+    { id: 'individual', audience: 'aluno', name: 'Básico', description: 'Mensal', price_cents: 4990, renews: true, billing_interval: 'mensal', is_free: false, purchasable: true, benefits: [], limits: {}, features: { receber_ficha_profissional: true, execucao: true, progresso: true } },
+    { id: 'completo', audience: 'aluno', name: 'Completo', description: '3 meses', price_cents: 49900, renews: false, billing_interval: 'unico', is_free: false, purchasable: true, benefits: [], limits: {}, features: { receber_ficha_profissional: true, avaliacao_postural: true, execucao: true, progresso: true } },
+    // planos fora do catálogo do aluno nunca aparecem na landing
     { id: 'pro', audience: 'profissional', name: 'PRO', description: 'Para personal trainers', price_cents: 8990, is_free: false, purchasable: true, benefits: [], limits: { alunos_ativos: 30 }, features: { construtor_treino: true, prescrever: true } },
-    // sem preco definido: tem que dizer "Em breve", nunca "R$ 0,00"
-    { id: 'pro_ilimitado', audience: 'profissional', name: 'PRO Ilimitado', description: 'Sem limite', price_cents: null, is_free: false, purchasable: false, benefits: [], limits: {}, features: {} },
     { id: 'aluno_free', audience: 'aluno', name: 'Gratis', description: '', price_cents: 0, is_free: true, purchasable: false, benefits: [], limits: {}, features: {} },
   ],
 }
@@ -32,11 +32,12 @@ test('abre a landing e mostra a chamada do anuncio', async ({ page }) => {
   await expect(page.getByTestId('landing-cta-primary')).toBeVisible()
 })
 
-test('?perfil=profissional abre a pagina do personal', async ({ page }) => {
+// plano único de público: a landing fala só com o aluno, mesmo vindo de um link antigo de personal
+test('?perfil=profissional continua na pagina do aluno', async ({ page }) => {
   await visitor(page)
   await page.goto('/?perfil=profissional')
-  await expect(page.getByTestId('landing-hero')).toContainText(/da ficha ao acompanhamento/i)
-  await expect(page.getByTestId('landing-cta-primary')).toHaveAttribute('href', /perfil=profissional/)
+  await expect(page.getByTestId('landing-hero')).toContainText(/pare de treinar/i)
+  await expect(page.getByTestId('landing-cta-primary')).toHaveAttribute('href', /perfil=aluno/)
 })
 
 test('a atribuicao do anuncio chega inteira no cadastro', async ({ page }) => {
@@ -56,16 +57,28 @@ test('o menu rola a pagina e nao cai no login', async ({ page }) => {
   await expect(page).toHaveURL(/\/$|\/\?/)
 })
 
-test('planos: preco do catalogo, "Em breve" sem preco e nenhuma promessa de gratis', async ({ page }) => {
+test('planos: Basico e Completo com precos, beneficios atuais e nenhuma promessa de gratis ou dieta', async ({ page }) => {
   await visitor(page)
-  await page.goto('/?perfil=profissional')
+  await page.goto('/')
   const planos = page.getByTestId('landing-plans')
-  await expect(planos.getByTestId('price-pro')).toContainText('89')
-  await expect(planos.getByTestId('price-pro_ilimitado')).toContainText('Em breve')
+  await expect(planos.locator('[data-testid^="plan-card-"]')).toHaveCount(2)
+  await expect(planos.getByTestId('price-individual')).toContainText('49')
+  await expect(planos.getByTestId('price-individual')).toContainText('/mês')
+  await expect(planos.getByTestId('price-completo')).toContainText('499')
+  await expect(planos.getByTestId('price-completo')).toContainText('3 meses')
+  await expect(planos.getByTestId('installments-completo')).toHaveText('ou em até 4x no cartão')
+  const basico = planos.getByTestId('plan-card-individual')
+  for (const t of ['1 ficha de treino nova por mês', '1 call de 15 min por mês no Zoom', 'Comunidade no WhatsApp', '7 dias de Close Friends no Instagram por mês']) await expect(basico).toContainText(t)
+  const completo = planos.getByTestId('plan-card-completo')
+  for (const t of ['Tudo do Básico', 'Avaliação postural', 'Ficha de treino nova a cada 15 dias', 'Call de 15 min no Zoom a cada 15 dias',
+    'Close Friends no Instagram durante os 3 meses', 'Grupo exclusivo no WhatsApp', 'Live semanal com prioridade', 'Participação nos sorteios']) await expect(completo).toContainText(t)
+  await expect(planos).toContainText(/homens com um personal, mulheres com uma personal/i)
+  await expect(planos.getByTestId('plan-card-pro')).toHaveCount(0)
   await expect(planos).not.toContainText('R$ 0,00')
-  await expect(planos.getByTestId('cta-pro')).toHaveAttribute('href', /perfil=profissional&plano=pro/)
-  // o cadastro exige plano pago: a landing nao pode prometer gratis em lugar nenhum
+  await expect(planos.getByTestId('cta-completo')).toHaveAttribute('href', /perfil=aluno&plano=completo/)
+  // o cadastro exige plano pago e dieta ainda nao existe: nada disso pode ser prometido
   await expect(page.getByTestId('landing')).not.toContainText(/gr[áa]tis/i)
+  await expect(page.getByTestId('landing')).not.toContainText(/dieta/i)
 })
 
 test('a landing fica escura mesmo com o sistema no tema claro', async ({ browser }) => {
@@ -95,7 +108,7 @@ for (const width of [375, 800, 1280]) {   // 800 = largura onde "ACOMPANHAMENTO"
   })
 
   // a mascara da animacao do titulo tem overflow:hidden: palavra que nao cabe some
-  for (const perfil of ['aluno', 'profissional']) {
+  for (const perfil of ['aluno']) {
     test(`titulo do ${perfil} nao e cortado em ${width}px`, async ({ page }) => {
       await visitor(page)
       await page.setViewportSize({ width, height: 900 })

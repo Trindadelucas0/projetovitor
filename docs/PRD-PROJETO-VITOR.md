@@ -14,7 +14,7 @@ O Projeto Vitor é um aplicativo web instalável (PWA, com empacotamento Android
 
 O produto pretendido é o aplicativo de um personal e seus alunos, sem marketplace nem catálogo de programas prontos. A implementação está em evolução nesta cópia; consulte a seção de estado de entrega antes de interpretar um requisito como concluído. Regras aprovadas:
 
-- **Dois planos à venda (aluno):** `individual` — **Básico**, **R$ 49,90/mês** (ficha, treino, progresso, comunidade; sem avaliação postural); `completo` — **Completo**, **R$ 499** pagamento único, **3 meses** (o mesmo do Básico + avaliação postural). Depois dos 3 meses a comunidade permanece; treino e avaliação nova bloqueiam.
+- **Dois planos à venda (aluno):** `individual` — **Básico**, **R$ 49,90/mês** recorrente (por mês: 1 ficha nova, 1 call de 15 min pelo Zoom, 7 dias de Close Friends e grupos geral/avisos do WhatsApp; sem avaliação postural); `completo` — **Completo**, **R$ 499** pagamento único, **90 dias (3 meses)**, parcelável em até 4x no checkout InfinitePay (o mesmo do Básico + avaliação postural, 1 ficha e 1 call a cada 15 dias, Close Friends pelos 90 dias, grupo exclusivo e prioridade nas perguntas da live). **Não existe plano desafio.** Depois do período a comunidade do app permanece; treino, avaliação nova, grupo exclusivo e Close Friends saem (grupos geral/avisos configuráveis). Ver §6.11.
 - **Um personal responsável por ambiente** (o administrador), com possibilidade de **personais internos** criados por ele. O personal **não** contrata plano.
 - **Sem programas prontos, recomendação automática, grupos, desafios, ranking, troféus ou premiações na experiência alvo.** A existência de código ou dados legados deve ser verificada separadamente antes de qualquer remoção técnica.
 - **Bloqueio comercial real:** somente assinatura paga e confirmada libera treino e progresso; a comunidade pode permanecer via grant após o Completo.
@@ -150,7 +150,7 @@ flowchart TD
 
 ## 4. Modelo de dados (entidades centrais)
 
-São 76 migrations versionadas e ~190 tabelas antes da aplicação da 077. As entidades que sustentam o produto atual:
+São 76 migrations versionadas e ~190 tabelas antes da aplicação da 077. Depois vêm as aditivas 077 (avisos da Comunidade, `community_notices`) e 078–081 (benefícios dos planos: personais por público, regras dos planos, agenda de calls, comunidade externa e lives), cada uma com `down`. As entidades que sustentam o produto atual:
 
 | Domínio | Tabelas principais |
 |---|---|
@@ -161,6 +161,7 @@ São 76 migrations versionadas e ~190 tabelas antes da aplicação da 077. As en
 | Progresso | `body_weights`, `body_goals`, `usage_counters` |
 | Monetização | `plans`, `plan_versions`, `subscriptions`, `subscription_events`, `billing_charges`, `billing_customers`, `payment_methods`, `billing_webhook_events`, `entitlement_grants`, `trial_grants`, `access_plans`, `user_access_plans`, `campaigns`, `promotion_codes`, `promotion_redemptions`, `coupon_changes`, `partners`, `partner_commissions`, `referral_*`, `fraud_signals`, `unlock_requests` |
 | Comunidade | `posts`, `post_comments`, `post_likes`, `comment_likes`, `feed_categories`, `follows`, `social_follows`, `social_profiles`, `social_handles`, `content_reports` |
+| Benefícios dos planos (078–081) | `plan_benefit_rules`, `personal_availability`, `call_bookings`, `community_links`, `community_roster`, `lives`, `live_questions`; colunas `professional_profiles.audience_sex`, `professional_profiles.zoom_url`, `user_profiles.instagram_handle` |
 | #TáPago | `tapago_campaigns`, `tapago_submissions`, `tapago_events`, `tapago_preferences`, `tapago_rewards`, `tapago_reward_identities` |
 | Atendimento | `threads`, `messages`, `occurrences`, `occurrence_assessments`, `change_proposals` |
 | Avaliação postural | `posture_protocols`, `posture_protocol_versions`, `posture_steps`, `posture_assessments`, `posture_captures`, `posture_events`, `posture_recurrences` |
@@ -186,7 +187,7 @@ São 76 migrations versionadas e ~190 tabelas antes da aplicação da 077. As en
 | Plano | Audiência | Preço | Situação |
 |---|---|---|---|
 | `individual` — **Básico** | aluno | R$ 49,90/mês | **À venda** · sem `avaliacao_postural` |
-| `completo` — **Completo** | aluno | R$ 499 uma vez · 3 meses | **À venda** · com `avaliacao_postural`; `renews=false` |
+| `completo` — **Completo** | aluno | R$ 499 uma vez · 90 dias (3 meses, `access_months=3`) · até 4x | **À venda** · com `avaliacao_postural`; `renews=false`. Parcelamento: configurar o máximo de 4 parcelas no painel InfinitePay (pendente; o fluxo de pagamento não foi alterado) |
 | `aluno_free` | aluno | — | Inativo, nunca vendável. É o estado interno de "conta sem plano ainda" (`FREE_PLAN`); **não remover**, o cadastro depende dele |
 | `pro` (Personal 15), `pro_ilimitado` (Personal Ilimitado), `profissional_free` | profissional | — | `active=false, sellable=false`. Nada apagado: versões, assinaturas e cobranças anteriores seguem consultáveis |
 
@@ -382,15 +383,23 @@ Nova área em que o personal solicita, o aluno registra fotos e vídeos guiados 
 
 ### 6.9 Painel do personal / administração
 
-Dois grupos no menu de `/admin/painel`:
+Menu de `/admin/painel` agrupado **por tarefa** (mapa em `frontend/src/views/admin/adminNav.js`). Toda tela abre com trilha (Admin › grupo › tela), título e 1–2 frases do que dá para fazer ali (componente `PageHeader`). A tela inicial é **Início**.
 
-| Grupo | Telas |
+| Grupo | Telas (chave `?tab=`) |
 |---|---|
-| Dia a dia | Visão geral; Alunos (Contas, Pendências, Suspensões); Convites; Dúvidas e atendimentos; Exercícios e vídeos; Fila e análise; Publicações e moderação |
-| Administração | Assinaturas dos alunos (preços Básico/Completo, cupons, quem paga); Protocolos e indicadores; Campanha #TáPago; Meu perfil de personal; Dados da empresa; Privacidade e termos; Logs e auditoria; Configurações |
+| Início | Início (`inicio`: pendências do dia e atalhos); Números e gráficos (`dashboard`) |
+| Alunos | Alunos (`usuarios`: Todas as contas, Pendências, Suspensões); Vínculos e convites (`vinculos`); Dúvidas dos alunos (`filas`) |
+| Personais | Personais (`personais`: público homens/mulheres, principal, alunos, agenda); Meu perfil de personal (`perfil`) |
+| Planos e cobrança | Assinaturas e cobrança (`cobranca`); Cotas dos planos (`planos-regras`) |
+| Agenda de calls | Agenda de calls (`calls`) |
+| Comunidade | WhatsApp e Close Friends (`comunidade-externa`); Live semanal (`lives`); Publicações e moderação (`publicacoes`); Campanha #TáPago (`tapago`) |
+| Treinos e avaliações | Exercícios e vídeos (`exercicios`); Avaliações posturais (`avaliacao`); Protocolos de avaliação (`avaliacao-adm`) |
+| Configurações | Configurações gerais (`config`); Dados da empresa (`empresa`); Privacidade e termos (`lgpd`); Logs e auditoria (`auditoria`) |
+
+- RF-9.0 Chaves antigas continuam valendo (`OLD_TABS`): `assinaturas`/`monetizacao` → `cobranca`, `visao` → `dashboard`, `agenda` → `calls`, `comunidade`/`close` → `comunidade-externa`, `live` → `lives`, `cotas` → `planos-regras`, além das anteriores.
 
 - RF-9.1 **Meu perfil de personal** edita nome de exibição, foto, apresentação, especialidades, modalidades e registro profissional (`GET /api/pro/dashboard`, `POST /api/pro/profile`).
-- RF-9.2 **Novo aluno** cria apenas conta de aluno (`POST /api/adm/users/create` com `type: aluno`) e devolve o link de primeiro acesso gerado por `queuePasswordLink` (24 h, uso único); a senha aleatória existe só no hash e **não** volta no JSON.
+- RF-9.2 **Novo aluno** pede **Homem/Mulher** (`perfil`), grava o sexo e vincula ao personal principal desse público; **Cadastrar personal** (tela Personais) usa `type: profissional` + `audience_sex`. Ambos via `POST /api/adm/users/create` (`type: aluno`) e devolve o link de primeiro acesso gerado por `queuePasswordLink` (24 h, uso único); a senha aleatória existe só no hash e **não** volta no JSON.
 - RF-9.3 No celular, as tabelas mostram três campos por registro, com **Ver mais campos**; ordenação em seletor, busca, paginação e CSV preservados; detalhes também abrem por teclado. O nome da aba aparece uma vez (no `h1`), sem repetir na barra ☰.
 - RN-9.1 Saíram do menu marketplace (Profissionais, Solicitações de vagas), Programas de catálogo, Monetização e a segunda Assinaturas. Os componentes permanecem no repositório. Abas antigas redirecionam: `programas` → Exercícios; `assinaturas` / `monetizacao` → Assinaturas dos alunos; `profissionais` / `solicitacoes` → Alunos.
 - RN-9.2 Ocultar recurso no menu é **apresentação**: autorização, vínculo, limites e bloqueios continuam sendo conferidos na API.
@@ -411,6 +420,27 @@ Dois grupos no menu de `/admin/painel`:
 - RN-10.2 Logs não gravam corpo da requisição nem `detail` do Postgres (podem conter e-mail e valores).
 
 ---
+
+### 6.11 Benefícios dos planos: cotas, calls, comunidade externa e live
+
+Regras por plano em `plan_benefit_rules` (migração 079; editáveis em Admin › Cotas dos planos). Ids centralizados em `api/plan-rules.js` e `frontend/src/lib/plans.js` (`STUDENT_PLANS = { basico: 'individual', premium: 'completo' }`).
+
+| Regra | Básico (`individual`) | Completo (`completo`) |
+|---|---|---|
+| Ficha nova | 1 por mês (ciclo pago) | 1 a cada 15 dias |
+| Call de 15 min (Zoom) | 1 por mês | 1 a cada 15 dias |
+| Close Friends | 7 dias a cada mês | os 90 dias |
+| Grupos WhatsApp | geral, avisos | geral, avisos, exclusivo |
+| Live | pergunta | pergunta com prioridade |
+| Sorteios | — | planejado (futuro; migração 071 mantida) |
+
+- RN-11.1 **Fichas:** só contam ficha nova publicada/criada (`pro_plan_history` `publicado`/`criado`, ou `criado_admin` já ativo). Editar não conta. Passar da cota **só avisa** o personal (`quota_warning`, código `FICHA_QUOTA_EXCEEDED`); a ficha é entregue.
+- RN-11.2 **Calls:** o personal (ou o admin por ele) cadastra faixas semanais e um link fixo do Zoom (migração 080). O aluno reserva blocos de 15 min com antecedência mínima de **12 h** e cancela até **6 h** antes (`calls_antecedencia_horas`, `calls_cancelamento_horas` em Configurações). Cota por janela; call não usada **não acumula**; o mesmo horário não aceita duas reservas (índice único + lock). Acima da cota o **aluno é bloqueado** (`CALL_QUOTA_EXCEEDED`); personal/admin marcam manualmente com aviso. A confirmação é um botão `wa.me` com data/hora de Brasília e o link do Zoom. Remarcar = cancelar e reservar de novo.
+- RN-11.3 **Fim do plano:** o aluno sai do grupo exclusivo e do Close Friends e entra na lista "Remover" do admin; grupos geral/avisos continuam por padrão (`comunidade_manter_geral`, `comunidade_manter_avisos`). O admin marca "Já adicionei"/"Já removi" (migração 080, `community_roster`); listas exportam CSV.
+- RN-11.4 **Live semanal:** admin marca título, data e link do YouTube; aluno com plano manda até 3 perguntas por live; Completo aparece primeiro na fila.
+- RN-11.5 Assinaturas antigas: as regras valem pelo `plan_id`, então quem já comprou recebe os benefícios novos sem mudar preço ou duração.
+- Telas: aluno em **Perfil › Meus benefícios** (`/beneficios`); personal em **/pro?tab=agenda**; admin em Início, Personais, Cotas dos planos, Agenda de calls, WhatsApp e Close Friends, Live semanal.
+- **Futuro:** plano de dieta; sorteios; remarcação em um passo; integração com a API do Zoom/Instagram (hoje links e listas são manuais).
 
 ## 7. App Flow
 
@@ -744,7 +774,7 @@ Para o R2: bucket **privado**, sem domínio personalizado e sem URL pública de 
 ### 10.3 Migrations e rollback
 
 - `npm run migrate` (`api/db/migrate.js`) é idempotente — rodar duas vezes não duplica registro.
-- Toda migration tem `down` correspondente em `api/db/down/`; Avisos usa `077_avisos_comunidade.sql` e `077_down.sql`.
+- Toda migration tem `down` correspondente em `api/db/down/`; Avisos usa `077_avisos_comunidade.sql` e `077_down.sql`. Benefícios dos planos usam `078_personais_publico.sql`, `079_beneficios_planos.sql`, `080_agenda_calls.sql` e `081_comunidade_externa_lives.sql` (downs `078_down.sql` a `081_down.sql`).
 - `071_remover_grupos_desafios_ranking.sql` é **destrutiva**: apaga dados de grupos/desafios/ranking e suas concessões. **Já aplicada no banco local**, após backup validado e com a prévia da rotina de mídias acusando zero arquivos. Também foi aplicada na VPS sobre um banco recém-criado, sem dados anteriores. Em qualquer base já utilizada, aplicar só com backup confirmado e rodando antes `api/scripts/remover-midias-desafios.mjs`, que lista em modo seguro e só remove arquivos com confirmação explícita.
 - Rollback do módulo postural: `072_down.sql` devolve `threads` e `legal_acceptances` aos CHECK anteriores e remove as sete tabelas. `pg_dump` validado antes, como em qualquer migration.
 - `068_down.sql` religa Individual a R$ 12,90 e os planos de personal; `069_down.sql` remove `personal_user_id`. Campanhas reescritas pela 068 **não** voltam ao plano antigo automaticamente — conferir cupons depois de uma volta.

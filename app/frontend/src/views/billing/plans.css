@@ -56,6 +56,8 @@ button.pl-card:active .pl-select{transform:scale(.99)}
 .pl-faq summary svg{flex:none;transition:transform .2s;color:var(--acc,#20f51b)}
 .pl-faq details[open] summary svg{transform:rotate(45deg)}
 .pl-faq p{margin:0 0 16px;opacity:.78;line-height:1.5}
+.pl-price{flex-wrap:wrap}
+.pl-inst{flex-basis:100%;font-size:13px;opacity:.75;margin-top:4px}
 .pl-note{text-align:center;font-size:13px;opacity:.65;margin:18px auto 0;max-width:620px}
 .pl-note a{color:inherit}
 [data-theme="light"] .pl-card,[data-theme="light"] .pl-faq details{background:#fff;border-color:#0000001a}

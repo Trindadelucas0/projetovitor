@@ -9,7 +9,7 @@ const localValue = v => v ? new Date(v).toISOString().slice(0, 16) : ''
 export default function TapagoAdmin() {
   const [data, setData] = useState(null), [err, setErr] = useState(''), [busy, setBusy] = useState(false), [selected, setSelected] = useState(null), [filter, setFilter] = useState(''), [form, setForm] = useState(EMPTY), [reason, setReason] = useState('')
   const load = () => C.tapago().then(d => { setData(d); setErr(''); const c = d.campaign; if (c) setForm({ ...EMPTY, ...c, starts_at: localValue(c.starts_at), ends_at: localValue(c.ends_at) }) }).catch(e => setErr(e.message))
-  useEffect(load, [])
+  useEffect(() => { load() }, [])   // load é async: o efeito não pode devolver a Promise
   const run = async fn => { setBusy(true); try { await fn(); setSelected(null); setReason(''); await load() } catch (e) { notifyError(e) } finally { setBusy(false) } }
   const save = e => { e.preventDefault(); run(() => C.saveTapago({ ...form, starts_at: form.starts_at || null, ends_at: form.ends_at || null })) }
   const list = (data?.submissions || []).filter(x => !filter || x.status === filter)

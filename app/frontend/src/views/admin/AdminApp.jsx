@@ -24,6 +24,8 @@ import TapagoAdmin from './TapagoAdmin.jsx'
 import FilaAvaliacoes from '../postural/FilaAvaliacoes.jsx'   // V5-AP: operação
 import ProtocolEditor from '../postural/ProtocolEditor.jsx'   // V5-AP: governança
 import IndicadoresAvaliacao from '../postural/IndicadoresAvaliacao.jsx'
+import PageHeader from './PageHeader.jsx'   // título + descrição em toda tela
+import { AdminInicio, Personais, PlanosRegras, AgendaCalls, ComunidadeAdmin, LivesAdmin } from './AdminBeneficios.jsx'
 
 // ---------- utilitários ----------
 const csvEsc = v => { const s = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s }
@@ -80,13 +82,15 @@ function Usuarios({ pendingOnly = false }) {
 // O personal cadastra o aluno. A conta nasce ativa e vinculada a ele.
 // O aluno escolhe Básico ou Completo; criar a conta pelo painel não libera os treinos.
 function NovoUsuario({ onClose, onDone }) {
-  const [f, setF] = useState({ name: '', email: '' })
+  const [f, setF] = useState({ name: '', email: '', perfil: '' })
   const [errs, setErrs] = useState({}), [msg, setMsg] = useState(''), [busy, setBusy] = useState(false), [res, setRes] = useState(null)
   const set = k => e => setF(x => ({ ...x, [k]: e.target.value }))
   const err = k => errs[k] && <span className="g-warn g-xs" role="alert">{errs[k]}</span>
   const submit = async e => {
-    e.preventDefault(); setBusy(true); setErrs({}); setMsg('')
-    try { const r = await C.createUser({ type: 'aluno', name: f.name, email: f.email }); setRes(r); onDone && onDone() }
+    e.preventDefault(); setErrs({}); setMsg('')
+    if (!f.perfil) return setErrs({ perfil: 'Escolha Homem ou Mulher: define qual personal recebe o aluno.' })
+    setBusy(true)
+    try { const r = await C.createUser({ type: 'aluno', name: f.name, email: f.email, perfil: f.perfil }); setRes(r); onDone && onDone() }
     catch (x) { setErrs(x.errors || {}); setMsg(x.message) } finally { setBusy(false) }
   }
   if (res) {
@@ -99,10 +103,10 @@ function NovoUsuario({ onClose, onDone }) {
             <p className="adm-card" style={{ fontFamily: 'monospace', fontSize: 14, userSelect: 'all', wordBreak: 'break-all' }} data-testid="nu-pass-link">{link}</p>
             {res.email_queued && <p className="g-mut g-xs">O e-mail também entra na fila de envio.</p>}</>
           : <p className="g-warn">A conta foi criada, mas o link de senha não. Gere depois em Alunos → abrir a conta → Gerar link de nova senha.</p>}
-        {res.link?.ok ? <p>O aluno já está vinculado a você e aparece na lista.</p>
+        {res.link?.ok ? <p>O aluno já está vinculado ao personal e aparece na lista.</p>
           : <p className="g-warn">A conta foi criada, mas o vínculo não: {res.link?.error || 'o personal do ambiente não está configurado'}. Crie o vínculo em Convites.</p>}
         <p className="g-mut g-xs">No primeiro acesso o aluno aceita os termos e escolhe Básico ou Completo. Os treinos só liberam depois do pagamento confirmado.</p>
-        <div className="adm-tools"><button className="adm-btn" onClick={() => { setRes(null); setF({ name: '', email: '' }) }}>Cadastrar outro</button><button className="adm-btn ghost" onClick={onClose}>Fechar</button></div>
+        <div className="adm-tools"><button className="adm-btn" onClick={() => { setRes(null); setF({ name: '', email: '', perfil: '' }) }}>Cadastrar outro</button><button className="adm-btn ghost" onClick={onClose}>Fechar</button></div>
       </div>
     </Drawer>
   }
@@ -111,9 +115,10 @@ function NovoUsuario({ onClose, onDone }) {
     <form onSubmit={submit} data-testid="nu-form" noValidate>
       {L('Nome', <input className="adm-in" value={f.name} onChange={set('name')} required data-testid="nu-name" />, 'name')}
       {L('E-mail', <input className="adm-in" type="email" value={f.email} onChange={set('email')} required data-testid="nu-email" />, 'email')}
+      {L('Perfil do aluno', <select className="adm-in" value={f.perfil} onChange={set('perfil')} data-testid="nu-perfil"><option value="">Escolha…</option><option value="masculino">Homem (vai para o personal dos homens)</option><option value="feminino">Mulher (vai para a personal das mulheres)</option></select>, 'perfil')}
       {msg && <p className="g-warn" role="alert">{msg}</p>}
       <div className="adm-tools"><button className="adm-btn" disabled={busy} data-testid="nu-submit">{busy ? 'Cadastrando…' : 'Cadastrar aluno'}</button><button type="button" className="adm-btn ghost" onClick={onClose}>Cancelar</button></div>
-      <p className="g-mut g-xs">O aluno entra vinculado a você e recebe um link para definir a senha.</p>
+      <p className="g-mut g-xs">O aluno entra vinculado ao personal principal do perfil escolhido e recebe um link para definir a senha. Para cadastrar um personal, use Personais.</p>
     </form>
   </Drawer>
 }
@@ -234,33 +239,12 @@ function AuditoriaT() {
 }
 function Wrap({ children }) { return <div className="ag">{children}</div> }
 
-// Painel do personal: Dia a dia em cima, Administração embaixo. Marketplace (vagas,
-// vários personais, Programas de catálogo, Monetização) sai do menu; OLD_TABS redireciona.
-const NAV = [
- ['Dia a dia', [
-   ['dashboard','Visão geral','chart'],
-   ['usuarios','Alunos','person'],
-   ['vinculos','Convites','users'],
-   ['filas','Dúvidas e atendimentos','bell'],
-   ['exercicios','Exercícios e vídeos','dumbbell'],
-   ['avaliacao','Fila e análise','clipboard'],
-   ['publicacoes','Publicações e moderação','chat']]],
- ['Administração', [
-   ['cobranca','Assinaturas dos alunos','sparkles'],
-   ['avaliacao-adm','Protocolos e indicadores','list'],
-   ['tapago','Campanha #TáPago','sparkles'],
-   ['perfil','Meu perfil de personal','person'],
-   ['empresa','Dados da empresa','list'],
-   ['lgpd','Privacidade e termos','lock'],
-   ['auditoria','Logs e auditoria','list'],
-   ['config','Configurações','gear']]]]
-const TITLE=Object.fromEntries(NAV.flatMap(([,items])=>items.map(([k,l])=>[k,l])))
-const OLD_TABS={alunos:['usuarios','contas'],liberacoes:['usuarios','liberacoes'],verificacoes:['usuarios','contas'],profissionais:['usuarios','contas'],planos:['usuarios','contas'],solicitacoes:['usuarios','contas'],modelos:['usuarios','contas'],programas:['exercicios',''],assinaturas:['cobranca',''],monetizacao:['cobranca',''],moderacao:['publicacoes','moderacao'],desafios:['publicacoes','publicacoes'],grupos:['publicacoes','publicacoes'],ranking:['publicacoes','publicacoes'],termos:['lgpd','termos'],visao:['dashboard','']}
+import { NAV, PAGES, TITLE, SUBS, OLD_TABS } from './adminNav.js'   // menu agrupado por tarefa + descrições das telas
 function SubTabs({items,current,onChange}) { return <div className="mg-subtabs" role="tablist">{items.map(([k,l])=><button key={k} role="tab" aria-selected={current===k} className={'adm-btn '+(current===k?'':'ghost')} onClick={()=>onChange(k)}>{l}</button>)}</div> }
 function ExtraSection({name}) { const Component=EXTRA[name]; return Component?<Wrap><Component/></Wrap>:<p>Indisponível.</p> }
 function AdminInvites() {
  const [d,err,reload]=useLoad(()=>P.managementInvites())
- return <><p className="adm-sub">Você convida e o aluno aceita. Consulta dos últimos 200 convites.</p>{err?<><p role="alert">{err}</p><button className="adm-btn" onClick={reload}>Tentar novamente</button></>:!d?<p>Carregando…</p>:<DataTable name="convites" rows={d.invites} cols={[{k:'professional',l:'Personal'},{k:'student',l:'Aluno'},{k:'status',l:'Situação'},{k:'created_at',l:'Criado em',r:r=>dt(r.created_at)},{k:'expires_at',l:'Validade',r:r=>dt(r.expires_at)}]}/>}</>
+ return <>{err?<><p role="alert">{err}</p><button className="adm-btn" onClick={reload}>Tentar novamente</button></>:!d?<p>Carregando…</p>:<DataTable name="convites" rows={d.invites} cols={[{k:'professional',l:'Personal'},{k:'student',l:'Aluno'},{k:'status',l:'Situação'},{k:'created_at',l:'Criado em',r:r=>dt(r.created_at)},{k:'expires_at',l:'Validade',r:r=>dt(r.expires_at)}]}/>}</>
 }
 
 // Plano único: o personal é o administrador, então o perfil que os alunos veem na
@@ -291,7 +275,6 @@ function MeuPerfilPersonal() {
     catch (e) { notifyError(e) }
   }
   return <>
-    <p className="adm-sub">Este é o perfil que aparece para os seus alunos na comunidade e nas fichas que você envia.</p>
     <div className="adm-card" data-testid="perfil-personal">
       {L('Nome de exibição', <input className="adm-in" value={f.display_name} onChange={set('display_name')} maxLength={80} data-testid="perfil-nome" />, 'É o nome que os alunos veem nas suas publicações.')}
       {L('Foto (endereço https da imagem)', <input className="adm-in" value={f.photo_url} onChange={set('photo_url')} maxLength={300} placeholder="https://…" data-testid="perfil-foto" />)}
@@ -316,38 +299,49 @@ function MeuPerfilPersonal() {
 export default function AdminApp() {
   const [sp, setSp] = useSearchParams(), nav = useNavigate(), [open, setOpen] = useState(false)
   const old=Object.hasOwn(OLD_TABS,sp.get('tab')) ? OLD_TABS[sp.get('tab')] : null
-  const tab=old?.[0] || (Object.hasOwn(TITLE,sp.get('tab')) ? sp.get('tab') : 'dashboard')
+  const tab=old?.[0] || (Object.hasOwn(TITLE,sp.get('tab')) ? sp.get('tab') : 'inicio')
   const defaults={usuarios:'contas',vinculos:'vinculos',publicacoes:'publicacoes',lgpd:'lgpd','avaliacao-adm':'protocolos'}
   const sub=old?.[1] || sp.get('secao') || defaults[tab]
-  const go=value=>{const [t,section]=value.split(':');setSp({tab:t,...(section?{secao:section}:{})});setOpen(false)}
+  // go('calls') · go('usuarios:pendencias') · go('calls', personalId)
+  const go=(value, personal)=>{const [t,section]=value.split(':');setSp({tab:t,...(section?{secao:section}:{}),...(personal?{personal}:{})});setOpen(false);window.scrollTo?.(0,0)}
   const setSub=section=>go(tab+':'+section)
   useEffect(() => { if (old) setSp({tab:old[0],...(old[1]?{secao:old[1]}:{})},{replace:true}) }, [sp.get('tab')])
   const X = EXTRA[tab]
+  const page = PAGES[tab], subs = SUBS[tab], subInfo = subs?.find(x => x[0] === sub)
+  const crumbs = [{ label: 'Admin', to: 'inicio' }, ...(page.group !== page.label && tab !== 'inicio' ? [{ label: page.group }] : []), { label: page.label, to: tab }, ...(subInfo && subs[0][0] !== sub ? [{ label: subInfo[1] }] : [])]
+  const subTabs = subs ? <SubTabs items={subs} current={sub} onChange={setSub} /> : null
   return <div className="adm" data-testid="admin-panel">
     <aside className={'adm-side' + (open ? ' open' : '')} aria-label="Menu administrativo" id="admin-navigation">
-      <div className="adm-brand"><Brand /> <b>Personal</b></div>
-      {NAV.map(([g, items]) => <div key={g}><h6>{g}</h6>{items.map(([k, l, ic]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => go(k)} data-testid={'adm-' + k}><Icon name={ic} />{l}</button>)}</div>)}
-      <h6>Conta</h6><button onClick={() => nav('/comunidade')} data-testid="adm-comunidade-app"><Icon name="chevronLeft" />Ver comunidade</button><button onClick={() => nav('/perfil')}><Icon name="chevronLeft" />Minha conta</button><button onClick={() => useStore.getState().signOut()} data-testid="adm-sair"><Icon name="chevronLeft" />Sair</button>
+      <div className="adm-brand"><Brand /> <b>Admin</b></div>
+      <nav>{NAV.map(([g, , items]) => <div key={g} className="adm-grp">{(items.length > 1 || items[0][1] !== g) && <h6>{g}</h6>}{items.map(([k, l, ic]) => <button key={k} className={tab === k ? 'on' : ''} aria-current={tab === k ? 'page' : undefined} onClick={() => go(k)} data-testid={'adm-' + k}><Icon name={ic} />{l}</button>)}</div>)}</nav>
+      <h6>Conta</h6><button onClick={() => nav('/comunidade')} data-testid="adm-comunidade-app"><Icon name="chevronLeft" />Ver o app como aluno</button><button onClick={() => nav('/perfil')}><Icon name="chevronLeft" />Minha conta</button><button onClick={() => useStore.getState().signOut()} data-testid="adm-sair"><Icon name="chevronLeft" />Sair</button>
     </aside>
     <main className="adm-main">
-      <div className="adm-mtop"><button className="adm-btn ghost" style={{ minWidth: 44, minHeight: 44, fontSize: 18 }} onClick={() => setOpen(!open)} aria-label="Menu" aria-expanded={open} aria-controls="admin-navigation" data-testid="adm-menu">☰</button><Brand compact /></div>
-      <h1 data-testid="adm-title">{TITLE[tab]}</h1><p className="adm-sub">ORNY · painel do personal · <button className="g-link" style={{ minHeight: 32, padding: '4px 8px' }} data-testid="tour-restart" onClick={() => dispatchEvent(new Event('avagym:tour-restart'))}>Rever orientações</button></p>
+      <div className="adm-mtop"><button className="adm-btn ghost" style={{ minWidth: 44, minHeight: 44, fontSize: 18 }} onClick={() => setOpen(!open)} aria-label="Menu" aria-expanded={open} aria-controls="admin-navigation" data-testid="adm-menu">☰</button><Brand compact /><span className="g-sm" style={{ marginLeft: 8 }}>{page.label}</span></div>
+      <PageHeader crumbs={crumbs} onCrumb={go} title={page.label} description={subInfo && subs[0][0] !== sub ? subInfo[2] : page.desc}
+        actions={<button className="g-link" style={{ minHeight: 32, padding: '4px 8px' }} data-testid="tour-restart" onClick={() => dispatchEvent(new Event('avagym:tour-restart'))}>Ajuda desta tela</button>} />
+      {tab === 'inicio' && <AdminInicio go={go} />}
+      {tab === 'personais' && <Personais go={go} />}
+      {tab === 'planos-regras' && <PlanosRegras go={go} />}
+      {tab === 'calls' && <AgendaCalls personalId={sp.get('personal')} setPersonal={id => go('calls', id)} />}
+      {tab === 'comunidade-externa' && <ComunidadeAdmin />}
+      {tab === 'lives' && <LivesAdmin />}
       {tab === 'dashboard' && <ManagementDashboard go={go} />}
-      {tab === 'usuarios' && <><SubTabs items={[['contas','Contas'],['pendencias','Pendências'],['liberacoes','Suspensões de acesso']]} current={sub} onChange={setSub}/>{sub==='liberacoes'?<AdmLiberacoes/>:<Usuarios key={sub} pendingOnly={sub==='pendencias'}/>}</>}
+      {tab === 'usuarios' && <>{subTabs}{sub==='liberacoes'?<AdmLiberacoes/>:<Usuarios key={sub} pendingOnly={sub==='pendencias'}/>}</>}
       {tab === 'cobranca' && <AdmBilling />}
       {tab === 'tapago' && <TapagoAdmin />}
       {/* Operação postural usa /api/pro/*; governança usa /api/adm/*. */}
       {tab === 'avaliacao' && <FilaAvaliacoes />}
-      {tab === 'avaliacao-adm' && <><SubTabs items={[['protocolos','Protocolos e versões'],['indicadores','Indicadores, termo e retenção']]} current={sub} onChange={setSub}/>{sub==='indicadores'?<IndicadoresAvaliacao/>:<ProtocolEditor/>}</>}
-      {tab === 'publicacoes' && <><SubTabs items={[['publicacoes','Publicações e comentários'],['oficial','Conteúdo oficial'],['moderacao','Moderação']]} current={sub} onChange={setSub}/>{sub==='moderacao'?<ExtraSection name="moderacao"/>:sub==='oficial'?<ConteudoOficial DataTable={DataTable} Drawer={Drawer}/>:<Publicacoes DataTable={DataTable} Drawer={Drawer}/>}</>}
-      {tab === 'vinculos' && <><SubTabs items={[['vinculos','Alunos vinculados'],['convites','Convites enviados']]} current={sub} onChange={setSub}/>{sub==='convites'?<AdminInvites/>:<Wrap><Vinculos/></Wrap>}</>}
-      {tab === 'filas' && <><p className="adm-sub">Dúvidas e relatos dos seus alunos, com prazo de resposta. Dor e desconforto deixam o exercício pausado até a sua orientação; dúvida não pausa o treino.</p><Wrap><Filas /></Wrap></>}
+      {tab === 'avaliacao-adm' && <>{subTabs}{sub==='indicadores'?<IndicadoresAvaliacao/>:<ProtocolEditor/>}</>}
+      {tab === 'publicacoes' && <>{subTabs}{sub==='moderacao'?<ExtraSection name="moderacao"/>:sub==='oficial'?<ConteudoOficial DataTable={DataTable} Drawer={Drawer}/>:<Publicacoes DataTable={DataTable} Drawer={Drawer}/>}</>}
+      {tab === 'vinculos' && <>{subTabs}{sub==='convites'?<AdminInvites/>:<Wrap><Vinculos/></Wrap>}</>}
+      {tab === 'filas' && <Wrap><Filas /></Wrap>}
       {tab === 'perfil' && <MeuPerfilPersonal />}
       {tab === 'modelos' && <Modelos />}
       {tab === 'exercicios' && <Exercicios />}
       {tab === 'moderacao' && (X ? <Wrap><X /></Wrap> : <p className="g-mut">Indisponível.</p>)}
       {tab === 'auditoria' && <AdminLogs />}
-      {tab === 'lgpd' && <><SubTabs items={[["lgpd","Privacidade e pedidos"],["termos","Termos de uso"]]} current={sub} onChange={setSub}/>{sub==='termos'?<Termos/>:<Lgpd/>}</>}
+      {tab === 'lgpd' && <>{subTabs}{sub==='termos'?<Termos/>:<Lgpd/>}</>}
       {tab === 'config' && <Wrap><Config /></Wrap>}
       {tab === 'empresa' && <AdmEmpresa />}
     </main>

@@ -40,6 +40,10 @@ import { saasRoutes } from './saas.js';
 import { billingRoutes } from './billing/routes.js';
 import { assertBillingConfig } from './billing/providers/index.js';
 import { contactRoutes } from './contact.js';   // V5: contato e endereco (cadastro/perfil)
+import { personaisRoutes } from './personais.js';   // personais por público (Homem/Mulher)
+import { callsRoutes } from './calls.js';   // agenda de calls (Zoom)
+import { comunidadeRoutes } from './comunidade-externa.js';   // WhatsApp, Close Friends e live semanal
+import { beneficiosRoutes } from './beneficios.js';   // cotas dos planos e início do admin
 import { setPush as setBillingPush, startBillingJob } from './billing/core.js';
 import { appStateRoutes, readStatePg, eraseStatePg } from './appstate.js';
 import { requireAuth } from './auth.js';
@@ -434,6 +438,10 @@ Object.assign(routes, saasRoutes({ json }));
 Object.assign(routes, managementRoutes({ json }));
 Object.assign(routes, billingRoutes({ json, readBody }));
 Object.assign(routes, contactRoutes({ json, readBody }));  // V5: monetizacao (planos, cupons, cobranca, parceiros, webhooks)
+Object.assign(routes, personaisRoutes({ json, readBody }));
+Object.assign(routes, callsRoutes({ json, readBody }));
+Object.assign(routes, comunidadeRoutes({ json, readBody }));
+Object.assign(routes, beneficiosRoutes({ json, readBody }));
 Object.assign(routes, appStateRoutes({ json, readBody, readSession, dataDir: DATA }));  // V3 F7: estado do usuário no Postgres  // V3 F5: código público do aluno + visão 360° do admin
 
 /* ---------- segurança: headers + rate limit (auditoria 2026-10) ---------- */
@@ -452,6 +460,7 @@ const SEC_HEADERS = {
 // Janela fixa em memória. Rotas sensíveis (login, cadastro, recuperação) por IP; RATE_LIMIT=off desliga (testes locais).
 const RL_RULES = {
   'POST /api/auth/login': [20, 15 * 60e3],
+  'POST /api/me/calls/reservar': [20, 60 * 60e3], 'POST /api/lives/perguntas': [20, 60 * 60e3],
   'POST /api/auth/register': [10, 60 * 60e3], 'GET /api/cep': [+process.env.CEP_IP_LIMIT || 10, 60e3], 'GET /api/convite': [60, 10 * 60e3],
   'POST /api/auth/forgot': [5, 15 * 60e3],
   'POST /api/auth/reset': [10, 15 * 60e3],
