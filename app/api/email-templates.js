@@ -1,9 +1,18 @@
 // Templates transacionais: somente texto escapado e links construídos pelo servidor.
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const DEFAULT_PUBLIC_URL = 'https://academia.avadesk.com.br'
+const localHost = hostname => ['localhost', '127.0.0.1', '::1'].includes(String(hostname || '').toLowerCase())
+export function publicAppOrigin() {
+  const configured = String(process.env.PUBLIC_URL || '').trim()
+  if (!configured) return DEFAULT_PUBLIC_URL
+  const origin = new URL(configured)
+  // Link compartilhável nunca aponta para a máquina do administrador.
+  if (localHost(origin.hostname)) return DEFAULT_PUBLIC_URL
+  if (origin.protocol !== 'https:') throw new Error('PUBLIC_URL deve usar HTTPS')
+  return origin.origin
+}
 export function appLink(path = '/perfil') {
-  const origin = new URL(process.env.PUBLIC_URL || process.env.ORIGIN || 'http://localhost:5551')
-  if (!['http:', 'https:'].includes(origin.protocol)) throw new Error('PUBLIC_URL/ORIGIN inválida')
-  return origin.origin + '/#' + (String(path).startsWith('/') ? path : '/perfil')
+  return publicAppOrigin() + '/#' + (String(path).startsWith('/') ? path : '/perfil')
 }
 export function renderEmail({ subject, body, actionUrl, actionLabel = 'Abrir ORNY', preview = false }) {
   const safeUrl = actionUrl && /^https?:\/\//.test(actionUrl) ? actionUrl : null

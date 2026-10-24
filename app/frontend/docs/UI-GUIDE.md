@@ -64,4 +64,4 @@ botão "Pagar" sempre visível no celular e os ids `checkout-*`.
 ## Polimento das telas estáticas (sem antd)
 - `src/styles/polish.css` (import estático, último em `main.jsx`): escala de espaçamento `--pz-s1..6`, raios `--pz-r-sm/--pz-r/--pz-r-lg` (12/16/20, iguais ao tema antd), sombra `--pz-shadow`, títulos Montserrat, alvos ≥ 40px, anel de foco também em Login/Cadastro/vitrine.
 - Carregamento: use `<span className="g-skel g-skel-card|g-skel-line|g-skel-h1|g-skel-btn">` dentro de `aria-busy` + texto `sr-only` "Carregando…". A animação some com `prefers-reduced-motion`.
-- Só cores existentes (`--ag-*`). Não alterar markup de PlanGrid/PlanCard.
+- Só cores existentes (`--ag-*`). Não alterar markup de PlanGrid/PlanCard — as únicas extensões são as props opcionais `badge` e `equiv` (só a landing passa; sem elas o markup é o de antes).

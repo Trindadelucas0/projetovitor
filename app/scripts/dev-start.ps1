@@ -5,6 +5,7 @@ $app = Split-Path $PSScriptRoot -Parent
 New-Item -ItemType Directory -Force "$Root\runtime\data","$Root\logs" | Out-Null
 $env:PORT = '8787'; $env:DATA_DIR = "$Root\runtime\data"
 $env:RP_NAME = 'AVAGYM'; $env:RP_ID = 'localhost'; $env:ORIGIN = 'http://localhost:5551'
+$env:PUBLIC_URL = 'https://academia.avadesk.com.br'
 $env:CSRF_ALLOWED_ORIGINS = 'http://127.0.0.1:5551'
 # Mídia de exercícios local (baixada em runtime\media) servida pelo Vite em /img e /gif
 $env:OPENGYM_MEDIA_DIR = "$Root\runtime\media"; $env:VITE_IMG_BASE = '/img/'; $env:VITE_GIF_BASE = '/gif/'
