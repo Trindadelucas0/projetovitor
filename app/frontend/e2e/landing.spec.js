@@ -177,7 +177,7 @@ test('os pilares levam para o bloco da tela correspondente', async ({ page }) =>
   await page.goto('/')
   await expect(page.getByTestId('landing-pillars').locator('.lp-pillar')).toHaveCount(4)
   await page.getByTestId('landing-pillars').getByRole('button', { name: 'Ver a tela' }).nth(1).click()
-  await page.waitForTimeout(1200)   // scrollIntoView com behavior: 'smooth'
+  await page.waitForTimeout(2000)   // scroll suave + a correcao do goTo apos o refresh do ScrollTrigger
   await expect(page.getByTestId('deep-execucao')).toBeInViewport({ ratio: .2 })
   await expect(page.locator('.lg-wrap')).toHaveCount(0)   // ancora interna nao troca a rota
 })

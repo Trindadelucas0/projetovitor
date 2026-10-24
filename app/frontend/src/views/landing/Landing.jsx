@@ -149,7 +149,16 @@ const FAQ_LANDING = [
 const HERO_VIDEO = false
 
 // Âncora interna: o app usa HashRouter, então <a href="#secao"> troca a rota e desmonta a landing.
-const goTo = id => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+// A correção depois de 650ms não é enfeite: o ScrollTrigger.refresh() que roda quando os planos
+// e os números chegam da API reposiciona o scroll e cancela o scroll suave do navegador no meio
+// do caminho — quem clica no menu no primeiro segundo parava antes da seção.
+const goTo = id => {
+  const el = document.getElementById(id)
+  if (!el) return
+  const go = () => el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  go()
+  setTimeout(() => { if (Math.abs(el.getBoundingClientRect().top) > 40) go() }, 650)
+}
 const toTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 const money = c => (c / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -175,8 +184,9 @@ export default function Landing() {
 
   // Números da faixa: só o que é verdade e verificável. Os dois primeiros vêm do banco.
   const facts = useMemo(() => [
-    stats?.exercises > 0 && [stats.exercises, '+', 'exercícios no catálogo'],
-    stats?.programs > 0 && [stats.programs, '+', 'programas guiados'],
+    // sem "+": a contagem e exata, e "63+" seria falso
+    stats?.exercises > 0 && [stats.exercises, '', 'exercícios no catálogo'],
+    stats?.programs > 0 && [stats.programs, '', 'programas guiados'],
     [15, ' min', 'de call no Zoom com o seu personal'],
     [2, '', 'planos: Básico mensal ou Completo de 3 meses'],
   ].filter(Boolean), [stats])

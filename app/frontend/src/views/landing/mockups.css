@@ -14,9 +14,10 @@
   background: linear-gradient(160deg, #2a2a2a, #0a0a0a 60%);
   border: 1px solid var(--lp-line-2);
   box-shadow: 0 40px 80px -30px #000, 0 0 0 1px #0006 inset, 0 0 60px -20px color-mix(in srgb, var(--lp-green) 30%, transparent);
-  /* mockups fora da primeira tela não custam layout em aparelho fraco */
-  content-visibility: auto;
-  contain-intrinsic-size: 330px 672px;
+  /* Sem content-visibility aqui: a altura estimada difere da real e a página mudava de
+     tamanho enquanto o scroll suave do menu/pilar estava em curso, parando antes da seção.
+     Os mockups são CSS puro e baratos; o que isolamos é só a pintura. */
+  contain: paint;
 }
 
 .mk-screen {
