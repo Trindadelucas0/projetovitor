@@ -92,6 +92,26 @@ function MiniBars({ data, k }) {
   const max = Math.max(1, ...data.map(x => x[k]))
   return <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 90, marginTop: 8 }}>{data.map((x, i) => <div key={i} title={`${x.wk}: ${x[k]}`} style={{ flex: 1, background: 'var(--ag-acc)', opacity: .35 + .65 * x[k] / max, height: Math.max(4, 86 * x[k] / max), borderRadius: 6 }} />)}</div>
 }
+function SessionWarmups({ session }) {
+  const [open, setOpen] = useState(false), [data, setData] = useState(null), [error, setError] = useState(''), [busy, setBusy] = useState(false)
+  const toggle = async () => {
+    if (open) return setOpen(false)
+    setOpen(true)
+    if (data || busy) return
+    setBusy(true); setError('')
+    try { setData(await P.sessionWarmups(session.id)) } catch (e) { setError(e.message || 'Não foi possível carregar os aquecimentos.') } finally { setBusy(false) }
+  }
+  return <div className="pp-session">
+    <div className="gk-row"><span className="gk-row-t"><b>{session.workout_name || 'Treino'}</b>
+      <span className="gk-row-s">{dt(session.started_at)} · {session.sets_count || 0} séries válidas · {Math.round((session.duration_sec || 0) / 60)} min{session.prescribed_count ? ` · ${session.exercises_count}/${session.prescribed_count} exercícios` : ''}</span>
+      {session.timing && <TimingSummary t={session.timing} compact />}</span>
+      <Btn variant="tertiary" size="sm" onClick={toggle} aria-expanded={open}>{open ? 'Fechar' : 'Aquecimentos'}</Btn></div>
+    {open && <div className="pp-warmup-history" data-testid="session-warmups">
+      {busy ? <span className="g-mut g-xs">Carregando aquecimentos…</span> : error ? <Note>{error}</Note> : !data?.warmups?.length ? <span className="g-mut g-xs">Nenhum aquecimento registrado nesta sessão.</span>
+        : data.warmups.map((x, i) => <div className="pp-warmup-item" key={`${x.scope}-${x.item_id}-${i}`}><span><b>{x.scope === 'exercise' ? `Antes de ${x.exercise_name || 'exercício'}` : 'Antes do treino'}</b><small>{x.title}</small></span><Pill tone={x.status === 'concluido' ? 'ok' : x.status === 'pulado' ? 'warn' : undefined}>{x.status}</Pill><span className="g-mut g-xs">{x.elapsed_sec || 0} s</span></div>)}
+    </div>}
+  </div>
+}
 function StudentDetail({ id, go, sub }) {
   const nav = useNavigate()
   const tab = sub || 'resumo'
@@ -127,9 +147,7 @@ function StudentDetail({ id, go, sub }) {
     {tab === 'treinos' && (d.plans.length ? <Rows>{d.plans.map(p => <Row key={p.id} icon="clipboard" title={p.title} chevron={p.mine}
       sub={`v${p.version} · ${p.mine ? 'seu' : 'de outro profissional (leitura)'} · ${dt(p.updated_at)}`} extra={<Pill tone={PILL(p.status)}>{p.status}</Pill>}
       onClick={p.mine ? () => go('novo', { id: p.id }) : undefined} />)}</Rows> : <Empty icon="clipboard">Nenhum treino. Crie o primeiro.</Empty>)}
-    {group === 'evolucao' && (d.sessions.length ? <Rows>{d.sessions.map(x => <div key={x.id} className="gk-row"><span className="gk-row-t"><b>{x.workout_name || 'Treino'}</b>
-      <span className="gk-row-s">{dt(x.started_at)} · {x.sets_count || 0} séries · {Math.round((x.duration_sec || 0) / 60)} min{x.prescribed_count ? ` · ${x.exercises_count}/${x.prescribed_count} exercícios` : ''}</span>
-      {x.timing && <TimingSummary t={x.timing} compact />}</span></div>)}</Rows> : <Empty icon="chart">Sem sessões registradas.</Empty>)}
+    {group === 'evolucao' && (d.sessions.length ? <Rows>{d.sessions.map(x => <SessionWarmups key={x.id} session={x} />)}</Rows> : <Empty icon="chart">Sem sessões registradas.</Empty>)}
     {group === 'evolucao' && <Card className="gk-card" title="Sessões por semana (12 semanas)">{d.evolution.length ? <MiniBars data={d.evolution} k="sessions" /> : <Empty icon="chart">Sem dados ainda.</Empty>}
       {d.evolution.some(x => x.volume) && <><b className="g-sm" style={{ display: 'block', marginTop: 14 }}>Volume (kg) por semana</b><MiniBars data={d.evolution} k="volume" /></>}</Card>}
     {group === 'atendimento' && <section><h3 className="gk-h">Conversas</h3>{d.threads.length ? <Rows>{d.threads.map(t => <Row key={t.id} icon="chat" title={t.exercise_name || 'Conversa'} sub={t.last_body?.slice(0, 70)}

@@ -2,6 +2,7 @@
 import { api } from './api.js'
 import { EXIDX, imgSrc, gifSrc } from './exercises.js'
 import * as OB from './outbox.js'
+import { runtimeGeneralWarmups, runtimeExerciseWarmups } from './warmup.js'
 
 export const G = {
   state: () => api('/api/guided/state'),
@@ -72,12 +73,13 @@ export function newSession(today) {
     client_id: (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)),
     user_program_id: today.active.id, program_workout_id: w.id, workout_name: w.name, program_title: today.active.title,
     started_at: new Date().toISOString(), exIdx: 0, rest: null, cur_start: null, last_end: null, pending_target: null, paused_sec: 0, paused_at: null,
+    warmup_items: runtimeGeneralWarmups(w.warmup_items || []), warmup_rest: null,
     exercises: w.exercises.map(e => ({
       exercise_id: e.exercise_id, name: e.name, media: e.media, sets: e.sets || 3, reps_min: e.reps_min, reps_max: e.reps_max,
       duration_sec: e.duration_sec, rest_sec: e.rest_sec || 60, instructions: e.instructions, cautions: e.cautions || [],
       video_url: e.video_url || null,   // vídeo do personal neste exercício (fica na sessão, inclusive offline)
       timed: !e.reps_min && !e.reps_max, weight: e.suggestion?.weight ?? null, reps: e.suggestion?.reps ?? (e.reps_min || e.reps_max || e.duration_sec || 10),
-      note: e.suggestion?.note || null, last: e.last, done: []
+      note: e.suggestion?.note || null, last: e.last, done: [], warmup_sets: runtimeExerciseWarmups(e.warmup_sets || [], e.suggestion?.weight ?? e.load_kg)
     }))
   }
 }

@@ -12,6 +12,7 @@ import ExercisePlayer from '../../components/ExercisePlayer.jsx'
 import { parseVideo } from '../../lib/video.js'
 import './guided.css'
 import { ask, notify } from '../../lib/dialog.js'
+import { pendingWarmup, runtimeGeneralWarmups, runtimeExerciseWarmups, warmupTitle } from '../../lib/warmup.js'
 
 // V4.1: fim do descanso NÃO inicia a série sozinho — o aluno toca "Iniciar série" e o cronômetro grande aparece
 const endRest = x => { x.rest = null }
@@ -47,6 +48,8 @@ export default function Train() {
     if (starting.current) return   // StrictMode/efeito repetido: um único início por montagem
     starting.current = true
     setBeginBusy(true)
+    n.warmup_items = runtimeGeneralWarmups(n.warmup_items || [])
+    n.exercises = n.exercises.map(e => ({ ...e, warmup_sets: runtimeExerciseWarmups(e.warmup_sets || [], e.weight) }))
     n.started_at = new Date().toISOString()
     const r = await startRemote(n)
     setBeginBusy(false)
@@ -64,8 +67,8 @@ export default function Train() {
     // plano prescrito por um profissional (Treinos → plano do profissional)
     if (sp.get('plan')) { C.plan(sp.get('plan')).then(({ plan }) => {
       const day = +(sp.get('day') || 0), exs = planExercises(plan, day), dd = plan.days?.[Math.min(day, (plan.days?.length || 1) - 1)]
-      const n = newSession({ active: { id: null, title: plan.title + ' · ' + plan.owner_name }, workout: { id: null, name: plan.title + (dd?.name && plan.days.length > 1 ? ' · ' + dd.name : ''), exercises: exs.map(e => ({ ...e, suggestion: { weight: e.weight, reps: e.reps } })) } })
-      n.exercises = n.exercises.map((e, i) => { const o = exs[i]; return { ...e, timed: o.timed, rest_sec: o.rest_sec ?? 60, group: o.group ?? null, per_set: o.per_set || [], tempo: o.tempo || '', rpe: o.rpe ?? null, rir: o.rir ?? null, side: o.side || 'bilateral', technique: o.technique || 'normal', notes: o.notes || '', reps_label: o.reps || '', load_kg: o.load_kg ?? null, video_url: o.video_url || null } })
+      const n = newSession({ active: { id: null, title: plan.title + ' · ' + plan.owner_name }, workout: { id: null, name: plan.title + (dd?.name && plan.days.length > 1 ? ' · ' + dd.name : ''), warmup_items: dd?.warmup_items || [], exercises: exs.map(e => ({ ...e, suggestion: { weight: e.weight, reps: e.reps } })) } })
+      n.exercises = n.exercises.map((e, i) => { const o = exs[i]; return { ...e, timed: o.timed, rest_sec: o.rest_sec ?? 60, group: o.group ?? null, per_set: o.per_set || [], warmup_sets: o.warmup_sets || [], tempo: o.tempo || '', rpe: o.rpe ?? null, rir: o.rir ?? null, side: o.side || 'bilateral', technique: o.technique || 'normal', notes: o.notes || '', reps_label: o.reps || '', load_kg: o.load_kg ?? null, video_url: o.video_url || null } })
       n.plan_desc = plan.description || plan.notes || ''; n.day_desc = dd?.description || ''
       n.next_time_guidance = dd?.next_time_guidance || ''
       n.plan_id = plan.id; setDraft(n) }).catch(e => setErr(e.message || 'Plano indisponível')); return }
@@ -88,6 +91,7 @@ export default function Train() {
   // fim do descanso -> aviso sonoro e segue
   useEffect(() => {
     if (s?.rest && !s.paused_at && Date.now() >= s.rest.until) { beep(); update(x => endRest(x)) }
+    if (s?.warmup_rest && !s.paused_at && Date.now() >= s.warmup_rest.until) { beep(); update(x => { x.warmup_rest = null }) }
   })
 
   // ---------- V4: treino ainda em aberto / ajustar tempo ----------
@@ -185,9 +189,50 @@ export default function Train() {
   if (s.finishing) return <Spin />
   const pause = () => { logEvent(s, 'pause'); update(x => { x.paused_at = new Date().toISOString() }) }
   const resume = () => { logEvent(s, 'resume'); update(x => { const d = Date.now() - new Date(x.paused_at).getTime(); x.paused_sec = (x.paused_sec || 0) + d / 1000; x.paused_at = null
-    if (x.cur_start) x.cur_start += d; if (x.last_end) x.last_end += d; if (x.rest) x.rest.until += d }) }
+    if (x.cur_start) x.cur_start += d; if (x.last_end) x.last_end += d; if (x.rest) x.rest.until += d; if (x.warmup_rest) x.warmup_rest.until += d
+    for (const w of [...(x.warmup_items || []), ...x.exercises.flatMap(e => e.warmup_sets || [])]) if (w.status === 'active' && w.started_at) w.started_at = new Date(new Date(w.started_at).getTime() + d).toISOString() }) }
   const startSet = () => { logEvent(s, 'set_start', { exercise_id: ex.exercise_id, set_index: ex.done.length }); update(x => { x.rest = null; x.cur_start = Date.now() }) }
   const quit = async () => { if (await ask('Encerrar o treino agora?', { text: 'As séries feitas serão salvas.', ok: 'Encerrar treino', cancel: 'Continuar treinando', danger: true })) update(x => { x.finishing = true }) }
+
+  const generalWarmup = pendingWarmup(s.warmup_items)
+  const exerciseWarmup = generalWarmup ? null : pendingWarmup(ex.warmup_sets)
+  const warmup = generalWarmup || exerciseWarmup
+  const warmupScope = generalWarmup ? 'workout' : 'exercise'
+  const warmupIndex = warmupScope === 'workout' ? (s.warmup_items || []).indexOf(warmup) : (ex.warmup_sets || []).indexOf(warmup)
+  const warmupPayload = (item, elapsed_sec = 0) => ({ scope: warmupScope, item_id: item.id, title: warmupScope === 'workout' ? warmupTitle(item) : `Série de aquecimento ${warmupIndex + 1}`, exercise_id: warmupScope === 'exercise' ? ex.exercise_id : null, exercise_name: warmupScope === 'exercise' ? ex.name : null, set_index: warmupScope === 'exercise' ? warmupIndex : null, elapsed_sec })
+  const mutateWarmup = (x, fn) => {
+    const list = warmupScope === 'workout' ? x.warmup_items : x.exercises[x.exIdx].warmup_sets
+    const item = list.find(w => w.id === warmup.id); if (item) fn(item, x)
+  }
+  const startWarmup = () => {
+    logEvent(s, 'warmup_start', warmupPayload(warmup))
+    update(x => mutateWarmup(x, item => { item.status = 'active'; item.started_at = new Date().toISOString() }))
+  }
+  const closeWarmup = status => {
+    const elapsedSec = warmup.started_at ? Math.max(0, Math.round((Date.now() - new Date(warmup.started_at).getTime()) / 1000)) : 0
+    logEvent(s, status === 'completed' ? 'warmup_complete' : 'warmup_skip', warmupPayload(warmup, elapsedSec))
+    update(x => mutateWarmup(x, (item, session) => { item.status = status; item.elapsed_sec = elapsedSec
+      if (status === 'completed' && +item.rest_sec > 0) session.warmup_rest = { until: Date.now() + (+item.rest_sec * 1000), total: +item.rest_sec }
+    }))
+  }
+  const adjWarmup = (key, delta) => update(x => mutateWarmup(x, item => { item[key] = Math.max(0, Math.round(((+item[key] || 0) + delta) * 2) / 2) }))
+  if (warmup || s.warmup_rest) {
+    const activeSec = warmup?.started_at ? Math.max(0, (Date.now() - new Date(warmup.started_at).getTime()) / 1000) : 0
+    const timed = warmupScope === 'workout' || (!!warmup?.duration_sec && !warmup?.reps)
+    const targetSec = +warmup?.duration_sec || 0
+    const warmupRestLeft = s.warmup_rest ? (s.warmup_rest.until - Date.now()) / 1000 : 0
+    return <div className="ag g-full g-run g-warmup-run" data-testid="warmup-screen">
+      <div className="g-runtop"><button className="g-icbtn" onClick={pause} aria-label="Pausar treino"><Icon name="pause" /></button><div style={{ flex: 1 }}><div className="g-row g-xs g-mut"><span>Aquecimento</span><span className="g-sp" /><span><Icon name="g-clock" /> <b>{clock(elapsed)}</b></span></div></div><button className="g-icbtn" onClick={quit} aria-label="Encerrar treino"><Icon name="flag" /></button></div>
+      {warmup && <><span className="g-eyebrow">{warmupScope === 'workout' ? 'Antes do treino' : `Antes de ${ex.name}`}</span><h1>{warmupScope === 'workout' ? warmupTitle(warmup) : `Série de aquecimento ${warmupIndex + 1}`}</h1>
+        {warmup.instructions && <p className="g-mut">{warmup.instructions}</p>}
+        {warmup.status === 'active' && <div className="g-setclock"><TimerRing seconds={timed ? Math.max(0, targetSec - activeSec) : activeSec} total={targetSec} countDown={timed} label={timed ? 'Restam' : 'Decorrido'} testid="warmup-timer" /></div>}
+        {warmupScope === 'exercise' && <div className="g-steppers"><div className="g-stp"><div className="g-lb">Carga de aquecimento</div><div className="g-val">{warmup.actual_load || 0}<small>kg</small></div><div className="g-pm"><button onClick={() => adjWarmup('actual_load', -.5)} aria-label="Diminuir carga de aquecimento">−</button><button onClick={() => adjWarmup('actual_load', .5)} aria-label="Aumentar carga de aquecimento">+</button></div></div>{!timed && <div className="g-stp"><div className="g-lb">Repetições</div><div className="g-val">{warmup.actual_reps || 0}</div><div className="g-pm"><button onClick={() => adjWarmup('actual_reps', -1)} aria-label="Diminuir repetições de aquecimento">−</button><button onClick={() => adjWarmup('actual_reps', 1)} aria-label="Aumentar repetições de aquecimento">+</button></div></div>}</div>}
+        {warmup.status !== 'active' ? <button className="g-btn g-xl" onClick={startWarmup} data-testid="start-warmup"><Icon name="play" /> INICIAR AQUECIMENTO</button> : <button className="g-btn g-xl" onClick={() => closeWarmup('completed')} data-testid="complete-warmup"><Icon name="check" /> CONCLUIR AQUECIMENTO</button>}
+        <button className="g-btn g-ghost" onClick={() => closeWarmup('skipped')} data-testid="skip-warmup">Pular aquecimento</button></>}
+      {s.warmup_rest && <div className="g-rest" data-testid="warmup-rest"><span className="g-eyebrow">Descanso do aquecimento</span><TimerRing seconds={Math.max(0, warmupRestLeft)} total={s.warmup_rest.total} label="Restam" testid="warmup-rest-clock" /><button className="g-btn" style={{ maxWidth: 360 }} onClick={() => update(x => { x.warmup_rest = null })}>Continuar agora</button></div>}
+      {s.paused_at && <div className="g-rest" data-testid="paused"><span className="g-eyebrow">Treino pausado</span><div className="g-clock">{clock(elapsed)}</div><button className="g-btn" style={{ maxWidth: 360 }} onClick={resume}>Retomar treino</button></div>}
+    </div>
+  }
 
   return <div className={"ag g-full g-run" + (setRunning != null && !s.rest ? " g-run-live" : "")} data-testid="train">
     <div className="g-runtop">

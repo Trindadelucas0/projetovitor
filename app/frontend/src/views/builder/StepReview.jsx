@@ -59,6 +59,7 @@ export default function StepReview({ st, students, problemas, onIr, onEditarDia 
                 <button type="button" className="g-link" onClick={() => onEditarDia(i)}>Editar</button>
               </div>
               {d.description && <p className="g-mut g-xs wb-previa-desc">{d.description}</p>}
+              {(d.warmup_items || []).length > 0 && <div className="wb-previa-warmup"><b>Aquecimento antes do treino</b>{d.warmup_items.map((x, k) => <span key={x.id || k}>{x.title || ({ bicicleta: 'Bicicleta', esteira: 'Esteira', eliptico: 'Elíptico', mobilidade: 'Mobilidade' }[x.activity] || 'Atividade')} · {Math.round((+x.duration_sec || 0) / 60)} min</span>)}</div>}
               {d.next_time_guidance && <p className="g-mut g-xs wb-previa-desc"><b>Para a próxima vez:</b> {d.next_time_guidance}</p>}
               {d.exercises.length
                 ? <ol className="wb-previa-exs">
@@ -66,6 +67,7 @@ export default function StepReview({ st, students, problemas, onIr, onEditarDia 
                       <li key={j}>
                         <span className="wb-previa-nome">{e.name}</span>
                         <span className="g-mut g-xs">{exSummary(e)}</span>
+                        {(e.warmup_sets || []).length > 0 && <span className="wb-tag-warmup">{e.warmup_sets.length} aquecimento(s) antes</span>}
                         {gs[j] && gs[j].pos === 0 && <span className="wb-tag-grp">{gs[j].kind}</span>}
                       </li>
                     ))}

@@ -36,6 +36,18 @@ export function parseReps(r) {
 
 export const SIDES = ['bilateral', 'unilateral', 'alternado']
 export const TECHNIQUES = ['normal', 'drop_set', 'rest_pause', 'cluster', 'piramide', 'isometria', 'negativa']
+export const WARMUP_ACTIVITIES = ['bicicleta', 'esteira', 'eliptico', 'mobilidade', 'personalizado']
+export const WARMUP_LOAD_MODES = ['percent', 'kg', 'none']
+const normWarmupItem = (x, i) => ({ id: txt(x?.id, 80) || `warmup-${i + 1}`,
+  activity: WARMUP_ACTIVITIES.includes(x?.activity) ? x.activity : 'personalizado', title: x?.title ? txt(x.title, 120) : null,
+  duration_sec: num(x?.duration_sec), instructions: x?.instructions ? txt(x.instructions, 1000) : null })
+const normWarmupSet = (x, i) => {
+  const rp = parseReps(x?.reps), loadMode = WARMUP_LOAD_MODES.includes(x?.load_mode) ? x.load_mode : 'none'
+  return { id: txt(x?.id, 80) || `warmup-set-${i + 1}`, reps: rp.reps, reps_min: rp.reps_min ?? null, reps_max: rp.reps_max ?? null,
+    reps_invalid: !!rp.invalid, duration_sec: num(x?.duration_sec), load_mode: loadMode,
+    load_value: loadMode === 'none' ? null : num(x?.load_value, 0, loadMode === 'percent' ? 100 : 1000, loadMode === 'kg' ? 0.5 : null),
+    rest_sec: x?.rest_sec === '' || x?.rest_sec == null ? 45 : +x.rest_sec, instructions: x?.instructions ? txt(x.instructions, 1000) : null }
+}
 
 export function normExercise(e) {
   const legacy = !e.reps && (e.reps_min || e.reps_max)
@@ -55,6 +67,7 @@ export function normExercise(e) {
     instructions: e.instructions ? txt(e.instructions, 1000) : null, notes: e.notes ? txt(e.notes, 400) : null,
     video_url: e.video_url ? txt(e.video_url, 500) : null,
     group: e.group == null || e.group === '' ? null : Math.max(1, Math.min(99, +e.group | 0)),
+    warmup_sets: (Array.isArray(e.warmup_sets) ? e.warmup_sets : []).slice(0, 10).map(normWarmupSet),
   }
 }
 
@@ -64,6 +77,7 @@ export function normDays(days) {
     weekday: Number.isInteger(+d.weekday) && d.weekday !== null && d.weekday !== '' ? Math.max(0, Math.min(6, +d.weekday)) : null,
     description: d.description ? txt(d.description, 1500) : null,
     next_time_guidance: d.next_time_guidance ? txt(d.next_time_guidance, 1500) : null,
+    warmup_items: (Array.isArray(d.warmup_items) ? d.warmup_items : []).slice(0, 10).map(normWarmupItem),
     exercises: (Array.isArray(d.exercises) ? d.exercises : []).slice(0, MAX_EX_PER_DAY).map(normExercise)
   }))
 }
@@ -99,6 +113,12 @@ export function shapeProblemsAnchored(days) {
   })
 
   days.forEach((d, di) => {
+    d.warmup_items.forEach((x, i) => {
+      const n = `${d.name}: aquecimento ${i + 1}`
+      if (x.activity === 'personalizado' && !x.title) at(di, null, 'warmup_items', `${n} — informe o nome da atividade`)
+      if (!(x.duration_sec >= 30 && x.duration_sec <= 1800)) at(di, null, 'warmup_items', `${n} — duração entre 30 e 1800 s`)
+      if (Number.isNaN(x.duration_sec)) at(di, null, 'warmup_items', `${n} — duração inválida`)
+    })
     d.exercises.forEach((e, ei) => {
       const n = `${d.name}: ${e.name || e.exercise_id}`
       const add = (field, message, setIndex) => at(di, ei, field, message, setIndex)
@@ -119,6 +139,17 @@ export function shapeProblemsAnchored(days) {
       })
       if (e.video_url && !parseVideo(e.video_url)) add('video_url', `${n} — vídeo: cole o endereço de um vídeo do YouTube ou escolha um vídeo já enviado`)
       for (const k of ['load_kg', 'duration_sec', 'rpe', 'rir']) if (Number.isNaN(e[k])) add(k, `${n} — valor inválido em ${k}`)
+      e.warmup_sets.forEach((x, i) => {
+        const w = `${n}: aquecimento ${i + 1}`
+        if (x.reps_invalid) add('warmup_sets', `${w} — repetições inválidas`, i)
+        else if (x.reps_max != null && !(x.reps_min >= 1 && x.reps_max <= 100 && x.reps_min <= x.reps_max)) add('warmup_sets', `${w} — repetições inválidas`, i)
+        if ((!x.reps && !x.duration_sec) || (x.reps && x.duration_sec)) add('warmup_sets', `${w} — informe repetições ou tempo`, i)
+        if (x.duration_sec != null && !(x.duration_sec >= 1 && x.duration_sec <= 3600)) add('warmup_sets', `${w} — tempo entre 1 e 3600 s`, i)
+        if (!(x.rest_sec >= 0 && x.rest_sec <= 600)) add('warmup_sets', `${w} — descanso entre 0 e 600 s`, i)
+        if (x.load_mode === 'percent' && !(x.load_value >= 0 && x.load_value <= 100)) add('warmup_sets', `${w} — percentual entre 0 e 100`, i)
+        if (x.load_mode === 'kg' && !(x.load_value >= 0 && x.load_value <= 1000)) add('warmup_sets', `${w} — carga entre 0 e 1000 kg`, i)
+        for (const k of ['duration_sec', 'load_value']) if (Number.isNaN(x[k])) add('warmup_sets', `${w} — valor inválido em ${k}`, i)
+      })
     })
     // bi-set/tri-set: exercícios do mesmo grupo ficam juntos; 2 ou 3 por grupo
     const seen = new Map(), first = new Map()

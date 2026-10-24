@@ -16,6 +16,7 @@ import GSelect from '../../components/GSelect.jsx'
 import { NumberField, Stepper, Segmented } from '../../components/ui.jsx'
 import { Btn } from '../../ui/gkit.jsx'
 import { exSummary } from './shape.js'
+import { ExerciseWarmups } from './WarmupEditor.jsx'
 
 // Vídeo do personal no exercício. Dois caminhos: colar o link (YouTube é o que toca
 // dentro do app, com velocidade) ou escolher um vídeo já enviado em Exercícios e vídeos.
@@ -208,6 +209,9 @@ export default function ExerciseCard({
             </table>
           )}
           {erroDe('per_set') && <p className="wb-erro" role="alert">{erroDe('per_set')}</p>}
+
+          <ExerciseWarmups id={id('warmup_sets')} items={e.warmup_sets || []} onChange={warmup_sets => set({ warmup_sets })} />
+          {erroDe('warmup_sets') && <p className="wb-erro" role="alert">{erroDe('warmup_sets')}</p>}
 
           <label className="wb-campo">
             <span className="g-mut g-xs">Como o aluno deve fazer</span>

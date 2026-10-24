@@ -52,6 +52,20 @@ export const ORIGIN_MSG = {
   PROGRAM_REVOKED: 'Este programa foi revogado e não pode mais ser executado.'
 }
 
+const cleanWarmupPayload = payload => {
+  const p = payload && typeof payload === 'object' ? payload : {}
+  const scope = p.scope === 'exercise' ? 'exercise' : 'workout'
+  return {
+    scope,
+    item_id: String(p.item_id || '').slice(0, 80) || null,
+    title: String(p.title || 'Aquecimento').slice(0, 120),
+    exercise_id: scope === 'exercise' ? String(p.exercise_id || '').slice(0, 80) || null : null,
+    exercise_name: scope === 'exercise' ? String(p.exercise_name || '').slice(0, 120) || null : null,
+    set_index: scope === 'exercise' && Number.isInteger(+p.set_index) ? Math.max(0, Math.min(9, +p.set_index)) : null,
+    elapsed_sec: Math.max(0, Math.min(7200, Math.round(+p.elapsed_sec || 0))),
+  }
+}
+
 async function addEvent(c, s, uid, ev) {
   const r = await c(`insert into session_events(tenant_id,session_id,user_id,client_event_id,type,at_client,from_state,to_state,payload)
     values($1,$2,$3,$4,$5,$6,$7,$8,$9) on conflict (session_id, client_event_id) do nothing returning id`,
@@ -70,7 +84,8 @@ export async function applyEvents(u, s, events) {
     if (isNaN(at) || +at > Date.now() + CLOCK_SKEW_MS) { rejected.push({ id: ev.id, error: 'CLOCK_INVALID' }); continue }
     const r = apply(state, ev.type)
     if (!r.ok) { rejected.push({ id: ev.id, error: r.error, from: state }); continue }
-    await addEvent(q, s, u.id, { ...ev, from: state, to: r.to })
+    const payload = ev.type.startsWith('warmup_') ? cleanWarmupPayload(ev.payload) : ev.payload
+    await addEvent(q, s, u.id, { ...ev, payload, from: state, to: r.to })
     state = r.to; applied++
   }
   return { state, applied, rejected }

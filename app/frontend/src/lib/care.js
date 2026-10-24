@@ -95,6 +95,7 @@ export const P = {
   managementInvites: () => api('/api/adm/management/invites'),
   home: () => api('/api/pro/home'), students: (filter, q) => api('/api/pro/students?' + new URLSearchParams({ filter: filter || 'todos', q: q || '' })),
   student: id => api('/api/pro/student/full?id=' + id), library: f => api('/api/pro/library?' + new URLSearchParams(f || {})), templates: () => api('/api/pro/templates'),
+  sessionWarmups: id => api('/api/pro/session/warmups?id=' + encodeURIComponent(id)),
   list: f => api('/api/pro/prescriptions?' + new URLSearchParams(f || {})), get: id => api('/api/pro/prescription?id=' + id),
   save: b => post('/api/pro/prescriptions', b), publish: id => post('/api/pro/prescriptions/publish', { id }).then(warnQuota), archive: (id, reason) => post('/api/pro/prescriptions/archive', { id, reason }),
   capacity: () => api('/api/pro/capacity'), request: b => post('/api/pro/requests', b), cancel: id => post('/api/pro/requests/cancel', { id }), reply: (id, note) => post('/api/pro/requests/reply', { id, note }),

@@ -18,6 +18,7 @@ import { WEEKDAYS, WD_SHORT } from './shape.js'
 import { MAX_DAYS, MAX_EX_PER_DAY } from './useBuilderState.js'
 import ExerciseLibrary from './ExerciseLibrary.jsx'
 import ExerciseCard from './ExerciseCard.jsx'
+import { DayWarmups } from './WarmupEditor.jsx'
 
 export default function StepDays({ st, dx, day, groups, clash, errosPorEx, onAviso }) {
   const [libOpen, setLibOpen] = useState(false)
@@ -110,6 +111,7 @@ export default function StepDays({ st, dx, day, groups, clash, errosPorEx, onAvi
               onChange={e => dx({ type: 'dayField', k: 'next_time_guidance', v: e.target.value })}
               placeholder="Orientação que o aluno verá ao concluir este treino" />
           </label>
+          <DayWarmups id={`wb-f-${st.day}-d-warmup_items`} items={day.warmup_items || []} onChange={v => dx({ type: 'dayField', k: 'warmup_items', v })} />
         </div>
 
         {clash && <p className="wb-erro wb-alerta" role="alert" data-testid="wb-weekday-clash">{clash}</p>}

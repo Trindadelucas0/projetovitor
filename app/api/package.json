@@ -1,6 +1,6 @@
 {
   "name": "gym-api",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "private": true,
   "type": "module",
   "main": "server.js",
@@ -13,7 +13,7 @@
     "check:sensitive": "node scripts/check-sensitive-literals.mjs",
     "migrate": "node db/migrate.js",
     "verificar:plano-unico": "node scripts/verificar-plano-unico.mjs",
-    "test:plano-unico": "node --test test/ficha-dias-video.test.mjs",
+    "test:plano-unico": "node --test test/ficha-dias-video.test.mjs test/warmup-events.test.mjs",
     "test:plano-unico:integration": "node test/plano-unico.integration.mjs",
     "test:beneficios": "node --test test/beneficios-regras.test.mjs",
     "test:official": "node --test test/official-access.test.mjs",

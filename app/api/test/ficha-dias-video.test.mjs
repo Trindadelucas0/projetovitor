@@ -98,3 +98,21 @@ test('exercício sem vídeo continua válido: o vídeo é opcional', () => {
   assert.equal(d[0].exercises[0].video_url, null)
   assert.deepEqual(shapeProblems(d), [])
 })
+
+test('aquecimento geral e por exercício são normalizados e validados separadamente', () => {
+  const d = normDays([{ name: 'A', warmup_items: [{ id: 'bike', activity: 'bicicleta', duration_sec: 480, instructions: 'Leve' }], exercises: [ex({ warmup_sets: [{ id: 'w1', reps: '10', load_mode: 'percent', load_value: 50, rest_sec: 45 }] })] }])
+  assert.equal(d[0].warmup_items[0].duration_sec, 480)
+  assert.equal(d[0].exercises[0].warmup_sets[0].load_value, 50)
+  assert.deepEqual(shapeProblems(d), [])
+})
+
+test('aquecimentos inválidos não passam e ficha antiga continua compatível', () => {
+  const legacy = normDays([{ name: 'A', exercises: [ex()] }])
+  assert.deepEqual(legacy[0].warmup_items, [])
+  assert.deepEqual(legacy[0].exercises[0].warmup_sets, [])
+  const bad = normDays([{ name: 'A', warmup_items: [{ activity: 'personalizado', duration_sec: 10 }], exercises: [ex({ warmup_sets: [{ reps: '', duration_sec: '', load_mode: 'percent', load_value: 150, rest_sec: 700 }] })] }])
+  const p = shapeProblems(bad)
+  assert.ok(p.some(x => x.includes('nome da atividade')))
+  assert.ok(p.some(x => x.includes('duração entre 30')))
+  assert.ok(p.some(x => x.includes('percentual entre 0 e 100')))
+})

@@ -9,6 +9,7 @@ import { notify, notifyAdmins, isLinked } from './pro.js'
 import { professionalOccupancy, summarizeCapacity } from './management.js'
 import { capacitySummary } from './entitlements.js'
 import { fichaQuotaWarning } from './plan-rules.js'
+import { summarizeWarmupEvents } from './warmup-events.js'
 
 const isUuid = s => /^[0-9a-f-]{36}$/i.test(String(s || ''))
 const txt = (s, n = 2000) => String(s ?? '').trim().slice(0, n)
@@ -129,6 +130,21 @@ export function portalRoutes({ json, readBody }) {
         if (row.key === 'personal_feminino_user_id') personals.feminino = row.id
       }
       json(res, 200, { student: s.rows[0], link: link.rows[0], plans: plans.rows, sessions: sessions.rows, evolution: evo.rows, threads: th.rows, occurrences: occ.rows, proposals: props.rows, personals })
+    },
+    // Detalhe de aquecimentos da sessão. O vínculo e o tenant são verificados no mesmo SQL
+    // para impedir consulta por ID de sessão de outro aluno (IDOR).
+    'GET /api/pro/session/warmups': async (req, res) => {
+      const u = await proOnly(req, res, json); if (!u) return
+      const id = qs(req).get('id')
+      if (!isUuid(id)) return json(res, 400, { error: 'Sessão inválida' })
+      const session = (await q(`select s.id,s.user_id,s.workout_name,s.started_at
+        from sessions s join coach_students cs on cs.student_id=s.user_id and cs.coach_id=$2 and cs.tenant_id=$3 and cs.status='ativo'
+        where s.id=$1 and s.tenant_id=$3 and s.status='done'`, [id, u.id, u.tenant_id])).rows[0]
+      if (!session) return json(res, 404, { error: 'Sessão não encontrada para este vínculo' })
+      const events = (await q(`select type,coalesce(at_client,at_server) at,payload from session_events
+        where session_id=$1 and tenant_id=$2 and type in ('warmup_start','warmup_complete','warmup_skip')
+        order by coalesce(at_client,at_server),id`, [id, u.tenant_id])).rows
+      json(res, 200, { session, warmups: summarizeWarmupEvents(events) })
     },
     // biblioteca (somente leitura, com filtros) para montar a ficha sem digitar exercícios
     'GET /api/pro/library': async (req, res) => {

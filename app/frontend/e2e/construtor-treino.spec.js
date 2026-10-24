@@ -128,6 +128,28 @@ test('construtor: pendencia leva ao campo culpado', async ({ page }) => {
   await expect(page.getByTestId('wb-reps-0')).toBeFocused()
 })
 
+test('construtor: aquecimento geral e por exercício aparecem na revisão', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await setup(page)
+  await page.goto('/#/pro/treino')
+  await page.getByTestId('wb-student').click()
+  await page.locator('[data-testid="wb-student-pick-item"][data-value="a1"]').click()
+  await page.getByTestId('wb-title').fill('Treino com aquecimento')
+  await page.getByTestId('wb-goal-hypertrophy').click()
+  await page.getByTestId('wb-next-0').click()
+  await page.getByRole('button', { name: '+ Atividade' }).click()
+  await page.getByTestId('wb-open-lib').click()
+  await page.getByTestId('wb-tile').first().click()
+  await page.getByTestId('wb-add-sel').click()
+  await page.getByTestId('wb-card').first().locator('.wb-cab-txt').click()
+  await page.getByRole('button', { name: '+ Série' }).click()
+  await expect(page.getByTestId('wb-ex-warmup-0')).toBeVisible()
+  await page.getByTestId('wb-next-1').click()
+  await expect(page.getByText('Aquecimento antes do treino', { exact: true }).last()).toBeVisible()
+  await expect(page.getByText('1 aquecimento(s) antes')).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391)
+})
+
 test('construtor: celular e tema claro', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await setup(page, { theme: 'light' })

@@ -43,3 +43,22 @@ for (const width of [320, 390]) for (const timed of [false, true]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width + 1)
   })
 }
+
+test('aquecimento: aluno conclui geral, pula o exercício e começa a série válida', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  const s = session(false)
+  s.warmup_items = [{ id: 'bike', activity: 'bicicleta', title: null, duration_sec: 480, instructions: 'Ritmo leve', status: 'pending', elapsed_sec: 0, started_at: null }]
+  s.exercises[0].warmup_sets = [{ id: 'w1', reps: '10', load_mode: 'percent', load_value: 50, rest_sec: 45, status: 'pending', actual_load: 10, actual_reps: 10 }]
+  await page.addInitScript(({ user, session }) => { localStorage.setItem('gym_user', JSON.stringify(user)); localStorage.setItem('avagym_guided_session_v1', JSON.stringify(session)) }, { user, session: s })
+  await page.route('**/api/**', route => route.fulfill({ json: route.request().url().includes('/api/me') ? { user } : { applied: 1 } }))
+  await page.goto('/#/treinar')
+  await expect(page.getByTestId('warmup-screen')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Bicicleta' })).toBeVisible()
+  await page.getByTestId('start-warmup').click()
+  await expect(page.getByTestId('warmup-timer')).toHaveAttribute('role', 'timer')
+  await page.getByTestId('complete-warmup').click()
+  await expect(page.getByText('Série de aquecimento 1')).toBeVisible()
+  await page.getByTestId('skip-warmup').click()
+  await expect(page.getByTestId('train')).toBeVisible()
+  await expect(page.getByTestId('start-set')).toBeVisible()
+})

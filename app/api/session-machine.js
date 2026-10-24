@@ -26,6 +26,9 @@ export const ACTIVITY = {
   rest_skip: ['em_andamento'],
   rest_end: ['em_andamento', 'pausada'],
   exercise_change: ['em_andamento'],
+  warmup_start: ['em_andamento'],
+  warmup_complete: ['em_andamento'],
+  warmup_skip: ['em_andamento'],
   heartbeat: ['em_andamento', 'pausada']
 }
 export const EVENT_TYPES = [...Object.keys(TRANSITIONS), ...Object.keys(ACTIVITY)]
