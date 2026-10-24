@@ -30,8 +30,12 @@ export async function groupsFor(userId, tid) {
 /** Recalcula a lista de controle a partir das assinaturas pagas vigentes. Idempotente. */
 export async function syncRoster(tid) {
   const subs = (await q(`select s.id, s.user_id, s.plan_id, coalesce(s.current_period_start, s.started_at) ps, s.current_period_end pe from subscriptions s join users u on u.id=s.user_id
-      where u.tenant_id=$1 and s.audience='aluno' and s.plan_id = any($2) and s.status = any($3) and s.current_period_end > now()
-        and exists (select 1 from billing_charges ch where ch.subscription_id=s.id and ch.status='paga' and ch.amount_cents>0 and ch.paid_at is not null and ch.provider<>'simulado')`, [tid, STUDENT_PLAN_IDS, PAID])).rows
+      where u.tenant_id=$1 and u.official_verified_at is null and s.audience='aluno' and s.plan_id = any($2) and s.status = any($3) and s.current_period_end > now()
+        and exists (select 1 from billing_charges ch where ch.subscription_id=s.id and ch.status='paga' and ch.amount_cents>0 and ch.paid_at is not null and ch.provider<>'simulado')
+      union all
+      select null::uuid id,u.id user_id,'completo' plan_id,u.official_verified_at ps,u.official_verified_at + interval '100 years' pe
+        from users u join user_roles ur on ur.user_id=u.id and ur.tenant_id=u.tenant_id and ur.role_id='aluno'
+        where u.tenant_id=$1 and u.official_verified_at is not null and u.disabled_at is null`, [tid, STUDENT_PLAN_IDS, PAID])).rows
   const rules = {}; for (const id of STUDENT_PLAN_IDS) rules[id] = await rulesFor(id)
   const live = []
   for (const s of subs) {

@@ -20,7 +20,8 @@ async function sysActive(uid) {
 // mensalidade própria (usuário normal ou aluno do personal liberado); o aluno coberto pelo personal não desvincula.
 export const STUDENT_CAN_DETACH_PRO = true   // condicionado a acesso Individual proprio
 const ownPaid = async uid => !!(await q(`select 1 where
-  exists(select 1 from subscriptions s join plans p on p.id=s.plan_id where s.user_id=$1 and s.audience='aluno' and not p.is_free and s.status in ('ativa','trial','inadimplente','carencia'))
+  exists(select 1 from users u where u.id=$1 and u.official_verified_at is not null)
+  or exists(select 1 from subscriptions s join plans p on p.id=s.plan_id where s.user_id=$1 and s.audience='aluno' and not p.is_free and s.status in ('ativa','trial','inadimplente','carencia'))
   or exists(select 1 from trial_grants g where g.user_id=$1 and g.audience='aluno' and g.revoked_at is null and g.starts_at<=now() and g.ends_at>now())
   or exists(select 1 from entitlement_grants g where g.user_id=$1 and g.audience='aluno' and g.kind='feature' and g.key='acesso' and g.revoked_at is null and g.starts_at<=now() and (g.expires_at is null or g.expires_at>now()))`, [uid])).rowCount
 export async function activeTrainingOf(uid) {

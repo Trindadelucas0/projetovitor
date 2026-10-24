@@ -68,10 +68,12 @@ async function ownSources(c, userId, audience) {
 export async function accessOf(user, c) {
   c = db(c)
   const roles = user.roles || []
-  const out = { monetized: await monetizationOn(user.tenant_id), audiences: {} }
+  const official = !!user.official_verified_at
+  const out = { monetized: await monetizationOn(user.tenant_id), official, audiences: {} }
   for (const a of ['aluno', 'profissional']) {
     if (!roles.includes(a)) continue
     const sources = await ownSources(c, user.id, a)
+    if (official) sources.push({ kind: 'oficial', verified_at: user.official_verified_at })
     if (a === 'profissional' && await isInternalPersonal(user.tenant_id, user.id, c)) sources.push({ kind: 'personal_interno' })
     if (a === 'aluno') {   // D4: aluno vinculado usa o plano do personal (vaga ja contada no aceite)
       const coaches = (await c.query(`select cs.coach_id, u.name from coach_students cs join users u on u.id=cs.coach_id where cs.student_id=$1 and cs.status='ativo'`, [user.id])).rows
@@ -95,6 +97,7 @@ export async function commercialStatus(c, userId, audience, sources) {
   if (s && s.status === 'suspensa' && s.suspended_kind !== 'financeiro') return 'suspensa'
   const pend = (await c.query(`select 1 from billing_charges ch join subscriptions s on s.id=ch.subscription_id where s.user_id=$1 and s.audience=$2 and ch.status='pendente' and ch.meta ? 'activate_plan' limit 1`, [userId, audience])).rowCount
   if (pend) return 'pendente'
+  if (sources.some(x => x.kind === 'oficial')) return 'oficial'
   if (sources.some(x => x.kind === 'propria') && s && !s.is_free && s.status === 'ativa') return 'ativa'
   if (sources.some(x => x.kind === 'propria') && s && !s.is_free && ['inadimplente', 'carencia'].includes(s.status)) return 'tolerancia'
   if (sources.some(x => x.kind === 'personal')) return 'patrocinada'
@@ -108,7 +111,7 @@ const NO_ACCESS_MSG = 'O acesso ao ORNY é liberado somente após a confirmaçã
 
 // middleware global (server.js), depois da autenticacao. Admin nunca e cobrado.
 export async function monetizationGate(key, user, res, json) {
-  if (!user || (user.roles || []).includes('admin')) return true
+  if (!user || (user.roles || []).includes('admin') || user.official_verified_at) return true
   const roles = user.roles || []
   if (!roles.includes('aluno') && !roles.includes('profissional')) return true
   if (isAlwaysAllowed(key)) return true

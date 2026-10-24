@@ -77,6 +77,7 @@ Para a **Live semanal**, o administrador não precisa repetir esse cadastro. Em 
 4. A conta administrativa não é necessária para cadastrar alunos, montar fichas ou fazer o atendimento diário do personal.
 5. Em uma instalação nova, preencha os dados oficiais em **Dados da empresa** antes de liberar cadastros. Os contatos salvos nessa tela continuam editáveis e têm prioridade sobre a configuração inicial do servidor.
 6. Para enviar uma nova senha, abra **Administração → Alunos**, abra a conta e use **Gerar link de nova senha**. O link vale 24 horas, uma única vez, e deve abrir `https://academia.avadesk.com.br/#/redefinir?...`, inclusive quando o painel administrativo estiver sendo usado no ambiente local.
+7. Para reconhecer uma conta oficial, abra **Administração → Alunos**, abra a pessoa e, em **Ações → Conta oficial**, toque em **Tornar usuário oficial** e confirme. A conta recebe acesso completo e o selo **✓ Usuário oficial**, mas não vira administradora. Para desfazer, use **Remover verificação oficial**; o acesso volta a seguir o plano vigente.
 
 ## Personal interno e transferência
 

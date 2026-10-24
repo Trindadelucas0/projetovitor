@@ -134,7 +134,7 @@ export default function SocialProfile() {
       <div className="sp-cover" aria-hidden="true" />
       <div className="sp-avatar"><AvatarEditor compact avatar={d.avatar} name={name} onChange={a => setD({ ...d, avatar: a })} /></div>
       <div className="sp-name-row">
-        <h2 className="sp-name" data-testid="social-card-name">{name}{d.verified ? <span className="sp-ver" data-testid="social-verified" title="Profissional verificado"> ✓ Profissional verificado</span> : null}</h2>
+        <h2 className="sp-name" data-testid="social-card-name">{name}{d.official_verified ? <span className="sp-ver" data-testid="social-official-verified" title="Usuário oficial verificado"> ✓ Usuário oficial</span> : d.verified ? <span className="sp-ver" data-testid="social-verified" title="Profissional verificado"> ✓ Profissional verificado</span> : null}</h2>
         <span className={'sp-badge' + (p.is_private ? ' priv' : '')} data-testid="social-visibility">{p.is_private ? '🔒 Privado' : '🌐 Público'}</span>
       </div>
       <p className="sp-handle" data-testid="social-card-handle">{p.handle ? '@' + p.handle : <span className="g-mut">Sem @identificador</span>}</p>

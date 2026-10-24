@@ -591,7 +591,7 @@ export function proRoutes({ json, readBody }) {
     'GET /api/adm/users': async (req, res) => {
       const u = await guard('admin')(req, res, json); if (!u) return
       const st = qs(req).get('status'), s = likeTerm(qs(req).get('q'), 100), assignment = qs(req).get('assignment')
-      const r = await q(`select u.id,u.name,u.email,u.status,u.created_at,u.share_code,u.account_type,u.access_unlocked_at,u.access_suspended_at,u.access_suspension_reason,u.last_seen_at,(select m.name from users m where m.id=u.managed_by) managed_by_name,(select pp.verification_status from professional_profiles pp where pp.user_id=u.id) verification,
+      const r = await q(`select u.id,u.name,u.email,u.status,u.created_at,u.share_code,u.account_type,u.access_unlocked_at,u.access_suspended_at,u.access_suspension_reason,u.last_seen_at,u.official_verified_at,u.official_verification_note,(select m.name from users m where m.id=u.managed_by) managed_by_name,(select pp.verification_status from professional_profiles pp where pp.user_id=u.id) verification,
           coalesce((select pp.internal_managed from professional_profiles pp where pp.user_id=u.id),false) internal_managed,
           (select up.sex from user_profiles up where up.user_id=u.id) sex,
           (select up.profile_kind from user_profiles up where up.user_id=u.id) profile_kind,
@@ -604,6 +604,21 @@ export function proRoutes({ json, readBody }) {
           and ($4::text is null or ($4='unassigned' and exists(select 1 from user_roles ar where ar.user_id=u.id and ar.tenant_id=u.tenant_id and ar.role_id='aluno') and not exists(select 1 from coach_students acs where acs.student_id=u.id and acs.status='ativo')))
         group by u.id,uap.plan_id,ap.max_professionals order by u.created_at desc limit 200`, [u.tenant_id, st || null, s, assignment === 'unassigned' ? assignment : null])
       json(res, 200, { users: r.rows.map(x => ({ ...x, over_limit: x.plan_id ? x.links > x.max_professionals : false, perfil: x.sex || null, assignment_status: x.links > 0 ? 'atribuido' : (x.roles || []).includes('aluno') ? 'aguardando_personal' : null })) })
+    },
+    'POST /api/adm/users/official': async (req, res) => {
+      const u = await guard('admin')(req, res, json); if (!u) return
+      const b = await readBody(req)
+      if (!isUuid(b.id) || typeof b.on !== 'boolean') return json(res, 400, { error: 'Dados inválidos', code: 'INVALID_INPUT' })
+      const note = txt(b.note, 300) || null
+      const r = await q(`update users set
+          official_verified_at=case when $2 then coalesce(official_verified_at,now()) else null end,
+          official_verified_by=case when $2 then $3::uuid else null end,
+          official_verification_note=case when $2 then $4 else null end
+        where id=$1 and tenant_id=$5 and disabled_at is null returning id,name,official_verified_at`, [b.id, b.on, u.id, note, u.tenant_id])
+      if (!r.rowCount) return json(res, 404, { error: 'Usuário não encontrado', code: 'NOT_FOUND' })
+      await audit(u.tenant_id, u.id, b.on ? 'usuario.oficial_verificado' : 'usuario.oficial_removido', 'user', b.id, { note })
+      if (b.on) await notify(b.id, 'conta', 'Conta oficial verificada', 'Seu perfil recebeu o selo de usuário oficial e acesso completo aos recursos da sua conta.', '/perfil/social')
+      json(res, 200, { ok: true, official_verified_at: r.rows[0].official_verified_at })
     },
     'POST /api/adm/users/status': async (req, res) => {
       const u = await guard('admin')(req, res, json); if (!u) return

@@ -6,32 +6,17 @@ import { api } from '../../lib/api.js'
 import { V } from '../../lib/v3.js'
 import { C } from '../../lib/care.js'
 import { useLoad } from '../app/kit.jsx'
-import { askText, showValue, notifyError } from '../../lib/dialog.js'
+import { ask, askText, showValue, notifyError } from '../../lib/dialog.js'
 import AdmUser360 from '../v3/AdmUser360.jsx'
 import { UserEdit, ProEdit, StudentRecord, StudentTraining } from './AdminCrud.jsx'
-import { STUDENT_PLANS } from '../../lib/plans.js'
 import { Button, Collapse, Select, Space } from 'antd'
 import AdmDrawer from '../../ui/AdmDrawer.jsx'
 import StatusTag from '../../ui/StatusTag.jsx'
+import { accountTypePT, mensalidadePT } from './userPresentation.js'
 
 const when = d => d ? new Date(d).toLocaleDateString('pt-BR') : 'nunca'
 const post = (p, b) => api(p, { method: 'POST', body: JSON.stringify(b) })
-export const accountTypePT = u => u.account_type === 'personal_client' ? 'Aluno do personal' : u.roles?.includes('admin') ? 'Administrador' : u.internal_managed ? 'Personal interno' : u.roles?.includes('profissional') ? 'Personal' : 'Usuário normal'
-/** Rótulo do plano do aluno (Básico / Completo) ou isenção do personal/admin. */
-export const mensalidadePT = u => {
-  if (u.access_suspended_at) return { t: 'Suspensa', s: u.access_suspension_reason || 'Suspensão administrativa', c: 'warn' }
-  if (u.roles?.includes('admin')) return { t: 'Sem cobrança', s: 'Conta da administração (personal do ambiente)', c: '' }
-  if (u.internal_managed) return { t: 'Sem cobrança', s: 'Personal interno; a cobrança é do aluno', c: 'ok' }
-  if (u.roles?.includes('profissional') && !u.roles?.includes('aluno')) return { t: 'Sem cobrança', s: 'Personal não contrata plano', c: '' }
-  const paid = (u.subs || []).find(s => !/free/i.test(s.plan || '') && ['ativa', 'trial', 'inadimplente', 'carencia'].includes(s.status))
-  if (paid) {
-    const name = String(paid.plan_name || paid.plan || '').toLowerCase()
-    if (name.includes('completo') || paid.plan === STUDENT_PLANS.premium) return { t: 'Completo', s: 'Acesso conforme o plano', c: 'ok' }
-    if (name.includes('básico') || name.includes('basico') || paid.plan === STUDENT_PLANS.basico) return { t: 'Básico', s: 'Acesso conforme o plano', c: 'ok' }
-    return { t: paid.plan_name || 'Em dia', s: 'Acesso conforme o plano', c: 'ok' }
-  }
-  return { t: 'Sem plano pago', s: 'Pode contratar Básico ou Completo na tela de assinatura', c: '' }
-}
+export { accountTypePT, mensalidadePT }
 // Fase 3 · antd: seções em Card, linhas em Descriptions-like (mantém classes upn-* usadas pelo tour), gaveta AdmDrawer.
 const Sec = ({ title, help, children, id }) => <section className="upn-sec" data-testid={'upn-' + id}><h3>{title}</h3>{help && <p className="upn-help">{help}</p>}{children}</section>
 const Row = ({ k, children }) => <div className="upn-row"><span>{k}</span><b>{children}</b></div>
@@ -43,7 +28,7 @@ export default function UserPanel({ u, onClose, reload, pros, reloadPros, onDele
   const [coachId, setCoachId] = useState()
   const run = fn => async () => { setBusy(true); try { await fn(); reload(); reload360() } catch (e) { notifyError(e) } finally { setBusy(false) } }
   useEffect(() => { const t = setTimeout(() => dispatchEvent(new CustomEvent('avagym:tour-screen', { detail: 'usuario' })), 600); return () => clearTimeout(t) }, [])
-  const isPro = u.roles.includes('profissional'), m = mensalidadePT(u)
+  const isPro = u.roles.includes('profissional'), official = !!u.official_verified_at, m = mensalidadePT(u)
   const active = d?.active_pro_plan ? `Ficha "${d.active_pro_plan.title}" do personal ${d.active_pro_plan.owner_name}` : d?.active_program ? `Programa do sistema "${d.active_program.title}"` : 'Nenhum treino ativo'
   const coaches = (d?.links || []).filter(l => l.role_in_link === 'aluno' && l.status === 'ativo')
   const students = (d?.links || []).filter(l => l.role_in_link === 'profissional' && l.status === 'ativo')
@@ -56,6 +41,7 @@ export default function UserPanel({ u, onClose, reload, pros, reloadPros, onDele
       <Sec id="resumo" title="Resumo">
         <Row k="Tipo de conta">{accountTypePT(u)}</Row>
         <Row k="Situação">{u.status === 'ativo' ? 'Ativa' : u.status === 'bloqueado' ? 'Suspensa' : 'Pendente'}</Row>
+        <Row k="Verificação">{official ? <StatusTag tone="ok" label="✓ Usuário oficial" /> : 'Conta comum'}</Row>
         <Row k="Acesso">{u.access_suspended_at ? 'Suspenso pela administração' : 'Definido automaticamente pelo plano'}</Row>
         <Row k="Último acesso">{when(u.last_seen_at || d?.user?.last_seen_at)}</Row>
         <Row k="Cadastro">{when(u.created_at)}</Row>
@@ -85,6 +71,11 @@ export default function UserPanel({ u, onClose, reload, pros, reloadPros, onDele
       </Sec>
 
       <Sec id="acoes" title="Ações">
+        <h4>Conta oficial</h4>
+        <p className="upn-help">Libera todos os recursos compatíveis com os papéis desta conta e mostra o selo de usuário oficial. Não concede acesso administrativo.</p>
+        {official
+          ? <Button disabled={busy} onClick={async () => { if (await ask('Remover a verificação oficial?', { text: 'O selo será removido e o acesso voltará a seguir o plano da conta.', ok: 'Remover verificação', danger: true })) run(() => C.setOfficial(u.id, false))() }} data-testid="upn-official-remove">Remover verificação oficial</Button>
+          : <Button type="primary" disabled={busy} onClick={async () => { if (await ask('Tornar usuário oficial?', { text: 'A pessoa receberá acesso completo e selo de verificação, sem virar administradora.', ok: 'Tornar oficial' })) run(() => C.setOfficial(u.id, true, 'Verificado pela administração'))() }} data-testid="upn-official-add">Tornar usuário oficial</Button>}
         <h4>Segurança</h4>
         <p className="upn-help">Gera um link de uso único (vale 24 h) para a pessoa criar uma senha nova. Envie você mesmo.</p>
         <Button onClick={async () => { try { const r = await C.resetLink(u.id); await showValue('Link de nova senha (uso único, 24 h)', r.link) } catch (e) { notifyError(e) } }} data-testid="upn-link-senha">Gerar link de nova senha</Button>

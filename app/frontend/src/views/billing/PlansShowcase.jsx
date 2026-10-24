@@ -52,15 +52,17 @@ export function Price({ p }) {
 export function TrialSeal({ compact }) {
   return <div className={'pl-seal' + (compact ? ' pl-seal-c' : '')} data-testid="trial-seal"><Icon name="sparkles" /><span><b>Pagamento confirmado</b> libera seu plano{compact ? '' : ' · cupons válidos podem dar desconto na contratação'}</span></div>
 }
-export function PlanCard({ p, cta, current, selected, onSelect, compact }) {
+export function PlanCard({ p, cta, current, selected, onSelect, compact, badge, equiv }) {
   const Tag = onSelect ? 'button' : 'article'
-  return <Tag type={onSelect ? 'button' : undefined} className={'pl-card' + (current ? ' pl-current' : '') + (selected ? ' pl-sel' : '') + (compact ? ' pl-compact' : '')}
+  return <Tag type={onSelect ? 'button' : undefined} className={'pl-card' + (current ? ' pl-current' : '') + (selected ? ' pl-sel' : '') + (compact ? ' pl-compact' : '') + (badge ? ' pl-hl' : '')}
     onClick={onSelect} aria-pressed={onSelect ? !!selected : undefined} aria-label={onSelect ? `${selected ? 'Plano selecionado' : 'Selecionar plano'}: ${p.name}` : undefined} data-testid={'plan-card-' + p.id}>
     {current && <span className="pl-badge pl-badge-cur">Seu plano</span>}
+    {!current && badge && <span className="pl-badge pl-badge-hl">{badge}</span>}
     <span className="pl-tag">{TAG[p.id]}</span>
     <h3 className="pl-name">{p.name}</h3>
     <p className="pl-pitch">{PITCH[p.id] || p.description}</p>
     <Price p={p} />
+    {equiv && p.price_cents > 0 && <p className="pl-equiv">{equiv}</p>}
     <ul className="pl-bens">{benefitsOf(p).slice(0, compact ? 4 : 9).map(([i, t]) => <li key={t}><span className="pl-ico"><Icon name={i} /></span>{t}</li>)}</ul>
     {onSelect && <span className={'pl-select' + (selected ? ' is-selected' : '')} data-testid={'select-plan-' + p.id} aria-hidden="true">
       {selected ? '✓ Plano selecionado' : 'Selecionar plano'}
@@ -68,12 +70,12 @@ export function PlanCard({ p, cta, current, selected, onSelect, compact }) {
     {cta && <div className="pl-cta">{cta(p)}</div>}
   </Tag>
 }
-export function PlanGrid({ plans, cta, current = {}, lockAud }) {
+export function PlanGrid({ plans, cta, current = {}, lockAud, badge, equiv }) {
   const list = SELLABLE.map(id => plans.find(p => p.id === id)).filter(Boolean)
   const shown = lockAud ? list.filter(p => AUD_OF[p.id] === lockAud) : list
   return <div className="pl-wrap" data-testid="plan-grid">
     <div className={'pl-grid' + (shown.length === 1 ? ' pl-one' : '')}>
-      {shown.map(p => <div key={p.id} className="pl-slot"><PlanCard p={p} cta={cta} current={current[AUD_OF[p.id]] === p.id} /></div>)}
+      {shown.map(p => <div key={p.id} className="pl-slot"><PlanCard p={p} cta={cta} badge={badge?.(p)} equiv={equiv?.(p)} current={current[AUD_OF[p.id]] === p.id} /></div>)}
     </div>
   </div>
 }

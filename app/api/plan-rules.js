@@ -63,7 +63,11 @@ export function closeFriendsEnd(rules, periodStart, periodEnd) {
 
 /** Plano pago vigente do aluno (Básico ou Completo), com o ciclo e as regras. Simulador não conta. */
 export async function studentPlanOf(userId, c) {
-  const s = (await db(c).query(`select s.id, s.plan_id, p.name plan_name, s.status, coalesce(s.current_period_start, s.started_at) period_start, s.current_period_end period_end
+  const conn = db(c)
+  const official = (await conn.query('select official_verified_at from users where id=$1', [userId])).rows[0]?.official_verified_at
+  if (official) return { id: null, plan_id: STUDENT_PLANS.premium, plan_name: 'Usuário oficial', status: 'ativa', period_start: official,
+    period_end: new Date(new Date(official).getTime() + 100 * 365.25 * 864e5), label: 'Usuário oficial', official: true, rules: await rulesFor(STUDENT_PLANS.premium, c) }
+  const s = (await conn.query(`select s.id, s.plan_id, p.name plan_name, s.status, coalesce(s.current_period_start, s.started_at) period_start, s.current_period_end period_end
       from subscriptions s join plans p on p.id=s.plan_id
       where s.user_id=$1 and s.audience='aluno' and s.status = any($2) and s.plan_id = any($3) and s.current_period_end > now()
         and exists (select 1 from billing_charges ch where ch.subscription_id=s.id and ch.status='paga' and ch.amount_cents>0 and ch.paid_at is not null and ch.provider<>'simulado')

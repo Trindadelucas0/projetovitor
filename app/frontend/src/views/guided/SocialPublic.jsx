@@ -20,7 +20,7 @@ export default function SocialPublic() {
       {d.avatar?.url ? <img src={d.avatar.url} alt="" style={{ width: 112, height: 112, borderRadius: '50%', objectFit: 'cover' }} /> : <Av name={d.name} size={112} />}
       <h1 style={{ marginBottom: 0 }}>{d.name}</h1>
       {d.handle && <p className="g-mut g-sm" data-testid="pub-handle">@{d.handle}</p>}
-      {d.verified && <p className="g-acc g-sm" data-testid="pub-verified">✓ Profissional verificado</p>}
+      {d.official_verified ? <p className="g-acc g-sm" data-testid="pub-official-verified">✓ Usuário oficial</p> : d.verified && <p className="g-acc g-sm" data-testid="pub-verified">✓ Profissional verificado</p>}
       <p className="g-sm"><b>{d.followers}</b> seguidor(es) · <b>{d.following}</b> seguindo</p>
     </div>
     {d.restricted ? <p className="g-card g-sm" data-testid="pub-restricted">Este perfil é privado. Você verá mais informações quando a pessoa aprovar seu pedido para seguir.</p>

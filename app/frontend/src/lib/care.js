@@ -18,6 +18,7 @@ export const C = {
   // admin
   overview: () => api('/api/adm/overview'), users: (status, q, assignment) => api('/api/adm/users?' + new URLSearchParams({ ...(status ? { status } : {}), ...(assignment ? { assignment } : {}), q: q || '' })),
   setStatus: (id, status, reason) => post('/api/adm/users/status', { id, status, reason }), setRole: (id, role, on) => post('/api/adm/users/role', { id, role, on }),
+  setOfficial: (id, on, note) => post('/api/adm/users/official', { id, on, note }),
   setPlan: (id, plan_id) => post('/api/adm/users/plan', { id, plan_id }), plans: () => api('/api/adm/plans'), savePlanAcc: b => post('/api/adm/plans', b),
   admPros: () => api('/api/adm/professionals'),
   updUser: b => post('/api/adm/users/update', b), setPerfil: (id, perfil) => post('/api/adm/users/perfil', { id, perfil }),

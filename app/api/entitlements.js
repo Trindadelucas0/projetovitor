@@ -4,6 +4,7 @@ import { q, pool } from './db/pool.js'
 import { audit } from './auth.js'
 import { fail } from './errors.js'
 import { isInternalPersonal } from './internal-personal.js'
+import { mergeOfficialEntitlements, officialPlanVersions, officialStatus } from './official-access.js'
 
 export const AUDIENCES = ['aluno', 'profissional']
 // V5: inadimplente e carencia mantem o acesso (retentativas/carencia sem atrito); so suspensa/cancelada bloqueiam
@@ -58,8 +59,15 @@ export async function resolve(userId, audience, c, { lock = false } = {}) {
     if (x.kind === 'feature') features[x.key] = x.value === true || x.value === 'true'
     if (x.kind === 'limit' && limits[x.key] != null) limits[x.key] = +limits[x.key] + (+x.value || 0)   // concessão SOMA ao limite do plano
   }
-  return { subscription_id: s.id, plan_id: s.plan_id, plan_name: s.plan_name, plan_version: s.plan_version, is_free: s.is_free, is_placeholder: s.is_placeholder,
-    status: s.status, active: finSusp || !INACTIVE.includes(s.status), trial: tr ? { plan_id: tr.plan_id, ends_at: tr.ends_at } : null, financial_suspended: finSusp, over_limit: s.over_limit, features, limits, grants: g }
+  const officialAt = await officialStatus(userId, c)
+  if (officialAt) {
+    const complete = mergeOfficialEntitlements(features, limits, await officialPlanVersions(audience, c))
+    Object.assign(features, complete.features)
+    for (const key of Object.keys(limits)) delete limits[key]
+    Object.assign(limits, complete.limits)
+  }
+  return { subscription_id: s.id, plan_id: s.plan_id, plan_name: officialAt ? 'Usuário oficial' : s.plan_name, plan_version: s.plan_version, is_free: officialAt ? true : s.is_free, is_placeholder: s.is_placeholder,
+    status: officialAt ? 'ativa' : s.status, active: !!officialAt || finSusp || !INACTIVE.includes(s.status), official: !!officialAt, trial: tr ? { plan_id: tr.plan_id, ends_at: tr.ends_at } : null, financial_suspended: officialAt ? false : finSusp, over_limit: officialAt ? false : s.over_limit, features, limits, grants: g }
 }
 
 // checagem de recurso: devolve null (ok) ou { code, error }
@@ -172,7 +180,7 @@ async function catalogGate(rule, user, res, json) {
 }
 export async function entitlementGate(key, user, res, json) {
   const rule = ROUTE_RULES[key]
-  if (!rule || !user || user.roles.includes('admin')) return true
+  if (!rule || !user || user.roles.includes('admin') || user.official_verified_at) return true
   if (!user.roles.includes(rule.audience)) return true   // o handler responde PERMISSION_DENIED com a mensagem própria
   if (rule.catalog) return catalogGate(rule, user, res, json)
   if (rule.whenMonetized && (await q(`select value from app_settings where tenant_id=$1 and key='monetizacao_ativa'`, [user.tenant_id])).rows[0]?.value !== true) return true

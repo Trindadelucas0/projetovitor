@@ -48,8 +48,9 @@ export async function revokeRequestToken(req) {
 }
 async function loadUser(id) {
   const r = await q(`select u.id,u.name,u.email,u.tenant_id,u.disabled_at,u.status,u.active_context,u.token_version,u.account_type,u.must_change_password,u.managed_by,u.access_unlocked_at,
-      u.access_suspended_at,u.access_suspension_reason,
-      exists(select 1 from subscriptions s join plans p on p.id=s.plan_id where s.user_id=u.id and s.audience='aluno' and not p.is_free and s.status in ('ativa','trial','inadimplente','carencia'))
+      u.access_suspended_at,u.access_suspension_reason,u.official_verified_at,
+      u.official_verified_at is not null
+        or exists(select 1 from subscriptions s join plans p on p.id=s.plan_id where s.user_id=u.id and s.audience='aluno' and not p.is_free and s.status in ('ativa','trial','inadimplente','carencia'))
         or exists(select 1 from trial_grants g where g.user_id=u.id and g.audience='aluno' and g.revoked_at is null and g.starts_at<=now() and g.ends_at>now())
         or exists(select 1 from entitlement_grants g where g.user_id=u.id and g.audience='aluno' and g.kind='feature' and g.key='acesso' and g.revoked_at is null and g.starts_at<=now() and (g.expires_at is null or g.expires_at>now())) own_student_access,
       exists(select 1 from subscriptions s join plans p on p.id=s.plan_id where s.user_id=u.managed_by and s.audience='profissional' and not p.is_free and s.status in ('ativa','trial','inadimplente','carencia'))
@@ -116,6 +117,7 @@ export const pub = u => {
   return { id: u.id, name: u.name, email: u.email, roles, admin: roles.includes('admin'), pro: roles.includes('profissional'), status: u.status,
   capacities: roles.filter(r => r === 'aluno' || r === 'profissional'), context: contextOf(u), verification: u.verification || null,
   internal_personal: !!u.internal_personal,
+  official_verified: !!u.official_verified_at,
   tenant: { id: u.tenant_id, slug: u.tenant_slug, name: u.tenant_name },
   // Aluno coberto pelo personal fica no escopo do PRO ate adquirir acesso Individual proprio.
   account_type: u.account_type || 'normal', must_change_password: !!u.must_change_password,

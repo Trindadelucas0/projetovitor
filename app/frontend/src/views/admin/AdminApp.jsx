@@ -48,7 +48,7 @@ const act = (fn, reload) => async (...a) => { try { const r = await fn(...a); re
 function Usuarios({ pendingOnly = false }) {
   const [st, setSt] = useState(''), [assignment, setAssignment] = useState(''), [d, err, reload] = useLoad(() => C.users(st, '', assignment), [st, assignment])
   const [sel, setSel] = useState(null)
-  const cols = [{ k: 'name', l: 'Nome' }, { k: 'email', l: 'E-mail' }, { k: 'status', l: 'Status', r: r => <StatusTag v={r.status} /> },
+  const cols = [{ k: 'name', l: 'Nome', r: r => <span>{r.name} {r.official_verified_at && <StatusTag tone="ok" label="Oficial" />}</span> }, { k: 'email', l: 'E-mail' }, { k: 'status', l: 'Status', r: r => <StatusTag v={r.status} /> },
     { k: 'mensalidade', l: 'Assinatura', csv: r => mensalidadePT(r).t, r: r => { const m = mensalidadePT(r); return <StatusTag tone={m.c} label={m.t} title={m.s} /> } },
     { k: 'links', l: 'Atendimento', r: r => r.assignment_status === 'aguardando_personal' ? <StatusTag tone="warn" label="Aguardando personal" /> : r.links ? <StatusTag tone="ok" label="Atribuído" /> : '—' },
     { k: 'created_at', l: 'Cadastro', r: r => r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '—', sv: r => r.created_at }]

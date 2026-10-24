@@ -1201,3 +1201,272 @@ html[data-lp] .pl-btn.pl-sec {
     display: none;
   }
 }
+
+/* ======================================================================
+   Página longa: faixa de números, pilares, blocos profundos com mockup e
+   objetivos atendidos. Estrutura em Landing.jsx; as telas em mockups.css.
+   ====================================================================== */
+
+/* ---------- faixa de números (GET /api/public/stats) ---------- */
+.lp-numbers {
+  border-top: 1px solid var(--lp-line);
+  border-bottom: 1px solid var(--lp-line);
+  background: linear-gradient(180deg, #0a0f0a, #000);
+  padding: clamp(34px, 4.6vw, 56px) 0;
+}
+
+.lp-numbers-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.lp-num {
+  display: grid;
+  gap: 6px;
+  padding-left: 18px;
+  border-left: 2px solid #20f51b3d;
+}
+
+.lp-num b {
+  font-family: var(--font-head, Montserrat, system-ui, sans-serif);
+  font-size: clamp(32px, 4.4vw, 52px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -.045em;
+  color: var(--lp-green);
+  font-variant-numeric: tabular-nums;
+}
+
+.lp-num > span {
+  color: var(--lp-mut);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* ---------- pilares ---------- */
+.lp-grid-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.lp-pillar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 26px 22px 22px;
+}
+
+.lp-pillar::after {
+  content: attr(data-n);
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  font-family: var(--font-head, Montserrat, system-ui, sans-serif);
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffffff1a;
+  letter-spacing: -.04em;
+}
+
+.lp-pillar h3 {
+  margin: 16px 0 12px;
+  font-size: 18px;
+}
+
+.lp-ticks {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-ticks li {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  align-items: start;
+  color: #c7ccc7;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.lp-ticks svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: var(--lp-green);
+}
+
+.lp-ticks-lg li {
+  font-size: 15.5px;
+}
+
+.lp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding: 14px 0 0;
+  border: 0;
+  background: none;
+  color: var(--lp-green);
+  font-family: var(--font-body, Inter, sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.lp-link svg {
+  width: 15px;
+  height: 15px;
+  transition: transform .18s ease;
+}
+
+.lp-link:hover svg {
+  transform: translateX(3px);
+}
+
+/* ---------- blocos profundos (copy + mockup) ---------- */
+.lp-deep {
+  overflow: hidden;
+}
+
+.lp-deep-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  align-items: center;
+  gap: clamp(32px, 5vw, 76px);
+}
+
+.lp-deep-inner.is-flip .lp-deep-copy {
+  order: 2;
+}
+
+.lp-deep-copy h2 {
+  margin: 14px 0 16px;
+  font-size: clamp(27px, 3.5vw, 42px);
+  font-weight: 900;
+  line-height: 1.04;
+  letter-spacing: -.04em;
+}
+
+.lp-deep-copy .lp-copy {
+  max-width: 54ch;
+  margin-bottom: 24px;
+}
+
+.lp-deep-copy .lp-btn {
+  margin-top: 28px;
+}
+
+.lp-deep-art {
+  display: flex;
+  justify-content: center;
+}
+
+/* ---------- objetivos atendidos ---------- */
+.lp-goals {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.lp-goal {
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  gap: 16px;
+  align-items: start;
+  padding: 22px;
+  border: 1px solid var(--lp-line);
+  border-radius: 20px;
+  background: var(--lp-card);
+  transition: border-color .2s ease;
+}
+
+.lp-goal:hover {
+  border-color: #20f51b4d;
+}
+
+.lp-goal h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.lp-goal .lp-copy {
+  font-size: 14px;
+}
+
+/* ---------- planos: destaque do Completo (badge/equiv vêm da landing) ---------- */
+.orny-landing .pl-card.pl-hl {
+  border-color: #20f51b66;
+  background: linear-gradient(180deg, #0f1a0f, var(--lp-card) 55%);
+  box-shadow: 0 30px 70px -40px #20f51b40;
+}
+
+.orny-landing .pl-badge-hl {
+  background: var(--lp-green);
+  color: #000;
+  font-weight: 800;
+}
+
+.orny-landing .pl-equiv {
+  margin: 8px 0 0;
+  color: var(--lp-green);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+/* o celular do "como funciona" passou a ser mockup em CSS, não imagem */
+.lp-how .lp-phone {
+  display: flex;
+  justify-content: center;
+}
+
+/* ---------- responsivo das seções novas ---------- */
+@media (max-width: 1040px) {
+  .lp-grid-4,
+  .lp-goals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lp-numbers-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+  }
+}
+
+@media (max-width: 900px) {
+  .lp-deep-inner,
+  .lp-deep-inner.is-flip {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-deep-inner .lp-deep-copy,
+  .lp-deep-inner.is-flip .lp-deep-copy {
+    order: 0;
+  }
+
+  .lp-deep-art {
+    order: -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .lp-grid-4,
+  .lp-goals {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-num {
+    padding-left: 14px;
+  }
+
+  .lp-deep-copy .lp-btn {
+    width: 100%;
+  }
+}

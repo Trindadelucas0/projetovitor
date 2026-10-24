@@ -41,6 +41,7 @@ jobs:
         run: |
           npm run test:email
           npm run test:plano-unico
+          npm run test:official
 
       - name: Instalar dependencias do frontend
         working-directory: app/frontend

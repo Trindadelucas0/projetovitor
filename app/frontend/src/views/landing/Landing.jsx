@@ -7,6 +7,12 @@
 //
 // O acesso só é liberado após a confirmação do pagamento (api/auth.js exige um plano vendável),
 // por isso não há CTA de "começar grátis" em lugar nenhum.
+//
+// Formato da página (página longa, no padrão das landings de app): hero → faixa de números reais
+// → 4 pilares → seis blocos profundos, cada um com o mockup da tela correspondente ao lado da
+// lista de capacidades → objetivos atendidos → como funciona → planos → instalação → dúvidas.
+// Os números da faixa vêm de GET /api/public/stats (contagem real do catálogo); se a API falhar
+// ou vier zero, a faixa simplesmente não aparece — nenhum número é inventado.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Brand from '../../components/Brand.jsx'
 import Icon from '../../components/Icon.jsx'
@@ -15,6 +21,7 @@ import { useStore } from '../../store/useStore.js'
 import InstallWalkthrough from '../../components/InstallWalkthrough.jsx'
 import { parseEntry, signupHref, rememberEntry } from '../../lib/landingParams.js'
 import { PlanGrid, TrialSeal, Faq } from '../billing/PlansShowcase.jsx'
+import { MkToday, MkRun, MkProgress, MkHistory, MkPrograms, MkCall, MkSignup } from './mockups.jsx'
 import './landing.css'
 
 const AUDIENCE = {
@@ -28,18 +35,95 @@ const AUDIENCE = {
     alt: 'Pessoa seguindo o treino do dia pelo celular na academia',
     panelTitle: 'O treino deixa de depender de memória, print ou improviso.',
     panelCopy: 'Chegar na academia sem saber exatamente o que fazer atrapalha a rotina. Na ORNY o treino fica no celular: exercícios, séries, cargas, cronômetro e o registro do que foi feito.',
-    proof: [
-      ['clipboard', 'Treino do dia e próximo treino', 'Você abre o app e já sabe o que fazer hoje e o que vem depois.'],
-      ['dumbbell', 'Execução guiada no celular', 'Exercício por exercício, com as orientações da ficha.'],
-      ['timer', 'Cronômetro de série e descanso', 'O descanso deixa de ser chute entre uma série e outra.'],
-      ['chart', 'Séries, cargas e repetições registradas', 'Você confirma os pesos antes de começar e registra o que levantou.'],
-      ['history', 'Histórico, frequência, volume e recordes', 'O que você já fez fica guardado e vira comparação.'],
-      ['target', 'Programas por objetivo, nível e local', 'Catálogo de programas guiados para escolher um caminho.'],
-    ],
   },
 }
 
-const NAV = [['beneficios', 'Para quem é'], ['recursos', 'O que faz'], ['como-funciona', 'Como funciona'], ['planos', 'Planos'], ['duvidas', 'Dúvidas']]
+const NAV = [['recursos', 'O que faz'], ['telas', 'Por dentro'], ['como-funciona', 'Como funciona'], ['planos', 'Planos'], ['duvidas', 'Dúvidas']]
+
+// Os 4 pilares (cada um aponta para o bloco profundo que mostra a tela)
+const PILLARS = [
+  ['01', 'clipboard', 'A ficha do seu personal', 'treino-do-dia', [
+    'Treino do dia e próximo treino na abertura do app',
+    'Exercícios, séries, repetições e dias da semana',
+    'Vídeo de execução em cada exercício da ficha',
+  ]],
+  ['02', 'timer', 'Execução guiada', 'execucao', [
+    'Exercício por exercício, com as orientações da ficha',
+    'Cronômetro de série e de descanso',
+    'Carga e repetições registradas série a série',
+  ]],
+  ['03', 'chart', 'Progresso e histórico', 'progresso', [
+    'Volume, frequência e recordes pessoais',
+    'Histórico de tudo que você já treinou',
+    'Comparação com as semanas anteriores',
+  ]],
+  ['04', 'users', 'Seu personal de perto', 'personal', [
+    'Call de 15 minutos no Zoom, marcada no app',
+    'Avaliação postural enviada ao seu personal',
+    'Comunidade no WhatsApp e live semanal',
+  ]],
+]
+
+// Blocos profundos: [id, kicker, h2, parágrafo, bullets, mockup, invertido]
+const DEEP = [
+  ['treino-do-dia', 'Treino do dia', 'Você abre o app e já sabe o que fazer',
+    'A ficha montada pelo seu personal vira a tela inicial. O treino do dia aparece com os exercícios na ordem, as séries, as repetições e a carga que você usou na última vez — e o próximo treino já fica indicado.',
+    ['Treino do dia e próximo treino sempre visíveis',
+      'Exercícios na ordem, com séries e repetições da ficha',
+      'A carga da última sessão aparece como referência',
+      'Barra de progresso do treino enquanto você avança',
+      'Vídeo de execução em cada exercício'],
+    MkToday, false],
+  ['execucao', 'Execução', 'Cronômetro, carga e repetições na mão',
+    'Durante o treino a ORNY conduz exercício por exercício. Você confirma a carga antes de começar, registra o que levantou em cada série e o descanso deixa de ser chute entre uma série e outra.',
+    ['Cronômetro de descanso entre séries, com aviso',
+      'Confirmação da carga antes de iniciar o exercício',
+      'Registro de carga e repetições série a série',
+      'Orientações da ficha junto do exercício',
+      'Retoma de onde você parou se sair do app'],
+    MkRun, true],
+  ['progresso', 'Progresso', 'Não é só treinar — é ver a evolução',
+    'Cada série registrada alimenta o seu progresso: volume por semana, frequência, sequência de semanas treinadas e recordes pessoais por exercício. A comparação com as semanas anteriores fica na tela.',
+    ['Volume de treino por semana, em gráfico',
+      'Frequência semanal e sequência de semanas',
+      'Recordes pessoais por exercício',
+      'Comparação com o período anterior',
+      'Tudo calculado do que você registrou'],
+    MkProgress, false],
+  ['historico', 'Histórico', 'Nada do que você treinou se perde',
+    'Todo treino concluído fica guardado com data, duração e volume. Se você parar e voltar depois, o histórico continua lá — e seu personal usa esse registro para montar a ficha seguinte.',
+    ['Lista de treinos concluídos por data',
+      'Duração e volume de cada sessão',
+      'Calendário da semana com os dias treinados',
+      'Base para a próxima ficha do seu personal',
+      'Os dados ficam salvos mesmo sem plano ativo'],
+    MkHistory, true],
+  ['programas', 'Programas', 'Um caminho pronto quando você quiser',
+    'Além da ficha do personal, a ORNY tem um catálogo de programas guiados organizados por objetivo, nível, local de treino e quantidade de dias por semana. Dá para escolher e começar.',
+    ['Catálogo de programas guiados por objetivo',
+      'Filtro por nível, local de treino e dias por semana',
+      'Programas para academia e para treinar em casa',
+      'Sequência de treinos já montada',
+      'Mesma execução guiada da ficha do personal'],
+    MkPrograms, false],
+  ['personal', 'Acompanhamento', 'Um personal acompanhando, não um app sozinho',
+    'A ficha é montada por uma pessoa. Homens são atendidos por um personal e mulheres por uma personal. A call de 15 minutos no Zoom é marcada no app, num horário livre da agenda dele, com pelo menos 12 horas de antecedência.',
+    ['Ficha montada pelo seu personal, não automática',
+      'Call de 15 minutos no Zoom marcada pelo app',
+      'Avaliação postural registrada e enviada',
+      'Comunidade no WhatsApp: grupo geral e avisos',
+      'Live semanal e Close Friends no Instagram'],
+    MkCall, true],
+]
+
+const GOALS = [
+  ['dumbbell', 'Hipertrofia', 'Programas de volume e progressão de carga, da iniciante à avançada.'],
+  ['flame', 'Emagrecimento', 'Rotinas com gasto maior e frequência ajustada ao seu tempo.'],
+  ['barbell', 'Força', 'Trabalho nos movimentos principais, com registro de recorde pessoal.'],
+  ['figureRun', 'Condicionamento', 'Treinos para constância e resistência ao longo da semana.'],
+  ['house', 'Treino em casa', 'Programas sem equipamento ou com o mínimo que você tem em casa.'],
+  ['machine', 'Academia', 'Programas por equipamento disponível, de máquina a peso livre.'],
+]
 
 const STEPS = [
   ['01', 'Crie a sua conta', 'Seus dados de acesso, data de nascimento e contato.'],
@@ -50,7 +134,10 @@ const STEPS = [
 const FAQ_LANDING = [
   ['Preciso instalar alguma coisa?', 'Não. A ORNY funciona no navegador do celular ou do computador. Adicionar à tela inicial é opcional e pode ser feito depois do cadastro.'],
   ['Quem monta o meu treino?', 'O seu personal. Homens são atendidos por um personal e mulheres por uma personal. A ficha vem com os exercícios, as séries, as cargas, os dias da semana e os vídeos de execução, e aparece no seu app.'],
+  ['Funciona no computador também?', 'Sim. É a mesma ORNY no navegador do computador, com os mesmos dados: você pode registrar o treino no celular na academia e olhar o progresso no computador depois.'],
+  ['Preciso de academia para usar?', 'Não necessariamente. O catálogo tem programas para academia e programas para treinar em casa, com pouco ou nenhum equipamento. A ficha do seu personal também é montada de acordo com o que você tem disponível.'],
   ['Como funciona a call com o personal?', 'Você escolhe no app um horário livre do seu personal, com pelo menos 12 horas de antecedência, e recebe o link do Zoom. A call dura 15 minutos: 1 por mês no Básico e 1 a cada 15 dias no Completo.'],
+  ['O que acontece se eu cancelar?', 'No Básico o acesso continua até o fim do período já pago. O Completo não renova: o acesso acaba na data indicada. Em qualquer caso os seus treinos, histórico e progresso ficam guardados e voltam quando você assinar de novo.'],
   ['Como funcionam as notificações?', 'Você escolhe se quer ativar. A ORNY explica antes de pedir a permissão do aparelho, e isso nunca bloqueia o seu acesso.'],
 ]
 
@@ -64,6 +151,7 @@ const HERO_VIDEO = false
 // Âncora interna: o app usa HashRouter, então <a href="#secao"> troca a rota e desmonta a landing.
 const goTo = id => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 const toTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
+const money = c => (c / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function Landing() {
   const root = useRef(null)
@@ -71,6 +159,7 @@ export default function Landing() {
   const user = useStore(s => s.user)
   const entry = useMemo(() => parseEntry(window.location.search, window.location.hash), [])
   const [plans, setPlans] = useState(null)
+  const [stats, setStats] = useState(null)
   const [error, setError] = useState('')
   // Plano único: a landing fala com uma pessoa só, o aluno. Não há mais área de personal
   // para visitante conhecer nem seletor de perfil.
@@ -81,6 +170,25 @@ export default function Landing() {
   useEffect(() => { rememberEntry(entry) }, [entry])
 
   useEffect(() => { api('/api/public/plans').then(setPlans).catch(e => setError(e.message || 'Não foi possível carregar os planos.')) }, [])
+  // Falhar aqui não é erro de página: a faixa de números simplesmente não aparece.
+  useEffect(() => { api('/api/public/stats').then(setStats).catch(() => setStats(null)) }, [])
+
+  // Números da faixa: só o que é verdade e verificável. Os dois primeiros vêm do banco.
+  const facts = useMemo(() => [
+    stats?.exercises > 0 && [stats.exercises, '+', 'exercícios no catálogo'],
+    stats?.programs > 0 && [stats.programs, '+', 'programas guiados'],
+    [15, ' min', 'de call no Zoom com o seu personal'],
+    [2, '', 'planos: Básico mensal ou Completo de 3 meses'],
+  ].filter(Boolean), [stats])
+
+  // Destaque do Completo. O selo é fixo porque o Completo não é o plano mais barato: ele é o
+  // mais perto (ficha e call a cada 15 dias, avaliação postural). A equivalência mensal é
+  // calculada do price_cents que a API devolveu — sem preço, a linha não aparece.
+  const highlight = useMemo(() => {
+    const com = (plans?.plans || []).find(p => p.id === 'completo')?.price_cents
+    if (!(com > 0)) return {}
+    return { badge: 'Acompanhamento mais perto', equiv: 'Equivale a R$ ' + money(Math.round(com / 3)) + '/mês' }
+  }, [plans])
 
   // A landing é preta mesmo quando o visitante usa o tema claro: html/body e a cor da barra
   // do navegador vivem fora deste componente, por isso a marcação vai no <html>.
@@ -102,7 +210,7 @@ export default function Landing() {
     }
   }, [])
 
-  useGsap(root, heroRef, [plans, aud])
+  useGsap(root, heroRef, [plans, stats, aud])
   useHeroVideo(heroRef)
 
   return <main ref={root} className="orny-landing" data-testid="landing">
@@ -143,6 +251,67 @@ export default function Landing() {
       </div>
     </section>
 
+    {facts.length > 0 && <section className="lp-numbers" aria-label="A ORNY em números" data-testid="landing-numbers">
+      <div className="lp-shell lp-numbers-grid">
+        {facts.map(([n, suf, label]) => <div key={label} data-reveal className="lp-num">
+          <b><span data-count={n}>{n}</span>{suf}</b>
+          <span>{label}</span>
+        </div>)}
+      </div>
+    </section>}
+
+    <section id="recursos" className="lp-section" data-testid="landing-pillars">
+      <div className="lp-shell">
+        <div data-reveal className="lp-head">
+          <span className="lp-kicker">O que a ORNY faz hoje</span>
+          <h2>Os quatro pilares do seu treino</h2>
+          <p className="lp-copy">Tudo abaixo já existe no sistema. Nenhuma promessa de resultado.</p>
+        </div>
+        <div className="lp-grid lp-grid-4">
+          {PILLARS.map(([n, icon, title, target, items]) =>
+            <article key={n} data-card data-n={n} className="lp-card lp-pillar">
+              <span className="lp-card-ico"><Icon name={icon} /></span>
+              <h3>{title}</h3>
+              <ul className="lp-ticks">{items.map(t => <li key={t}><Icon name="check" />{t}</li>)}</ul>
+              <button type="button" className="lp-link" onClick={() => goTo(target)}>Ver a tela<Icon name="chevronRight" /></button>
+            </article>)}
+        </div>
+      </div>
+    </section>
+
+    <div id="telas">
+      {DEEP.map(([id, kicker, title, copy, items, Mock, flip], i) =>
+        <section key={id} id={id} className={'lp-section lp-deep' + (i % 2 ? ' lp-section-alt' : '')} data-testid={'deep-' + id}>
+          <div className={'lp-shell lp-deep-inner' + (flip ? ' is-flip' : '')}>
+            <div data-reveal className="lp-deep-copy">
+              <span className="lp-kicker">{kicker}</span>
+              <h2>{title}</h2>
+              <p className="lp-copy">{copy}</p>
+              <ul className="lp-ticks lp-ticks-lg">{items.map(t => <li key={t}><Icon name="check" />{t}</li>)}</ul>
+              <a href={href()} className="lp-btn lp-btn-primary">Criar minha conta<Icon name="chevronRight" /></a>
+            </div>
+            <div data-reveal className="lp-deep-art"><Mock /></div>
+          </div>
+        </section>)}
+    </div>
+
+    <section id="objetivos" className="lp-section lp-section-alt">
+      <div className="lp-shell">
+        <div data-reveal className="lp-head">
+          <span className="lp-kicker">Para o seu objetivo</span>
+          <h2>Serve para o treino que você faz</h2>
+          <p className="lp-copy">O catálogo de programas cobre objetivos e locais de treino diferentes, e a ficha do seu personal é montada de acordo com o que você tem disponível.</p>
+        </div>
+        <div className="lp-grid lp-goals">
+          {GOALS.map(([icon, title, copy]) =>
+            <article key={title} data-card className="lp-goal">
+              <span className="lp-card-ico"><Icon name={icon} /></span>
+              <div><h3>{title}</h3><p className="lp-copy">{copy}</p></div>
+            </article>)}
+        </div>
+      </div>
+    </section>
+
     <section id="beneficios" className="lp-section">
       <div className="lp-shell">
         <div data-reveal className="lp-head">
@@ -161,29 +330,9 @@ export default function Landing() {
       </div>
     </section>
 
-    <section id="recursos" className="lp-section lp-section-alt">
-      <div className="lp-shell">
-        <div data-reveal className="lp-head">
-          <span className="lp-kicker">O que a ORNY faz hoje</span>
-          <h2>Do treino do dia ao histórico</h2>
-          <p className="lp-copy">Tudo abaixo já existe no sistema. Nenhuma promessa de resultado.</p>
-        </div>
-        <div className="lp-grid">
-          {sel.proof.map(([icon, title, copy]) =>
-            <article key={title} data-card className="lp-card">
-              <span className="lp-card-ico"><Icon name={icon} /></span>
-              <h3>{title}</h3>
-              <p className="lp-copy">{copy}</p>
-            </article>)}
-        </div>
-      </div>
-    </section>
-
-    <section id="como-funciona" className="lp-section">
+    <section id="como-funciona" className="lp-section lp-section-alt">
       <div className="lp-shell lp-how">
-        <div data-reveal className="lp-phone">
-          <img src="/landing/app-orny.webp" alt="A ORNY aberta em um celular" width="1024" height="1536" loading="lazy" decoding="async" />
-        </div>
+        <div data-reveal className="lp-phone"><MkSignup /></div>
         <div>
           <div data-reveal className="lp-head lp-head-left">
             <span className="lp-kicker">Simples desde o primeiro acesso</span>
@@ -201,10 +350,10 @@ export default function Landing() {
       </div>
     </section>
 
-    <section id="planos" className="lp-section lp-section-alt" data-testid="landing-plans">
+    <section id="planos" className="lp-section" data-testid="landing-plans">
       <div className="lp-shell">
         <div data-reveal className="lp-head">
-          <span className="lp-kicker">Planos</span>
+          <span className="lp-kicker">Planos e valores</span>
           <h2>Básico ou Completo</h2>
           <p className="lp-copy">Nos dois planos você treina com acompanhamento de um personal: homens com um personal, mulheres com uma personal. Os valores vêm do catálogo atual da ORNY e o acesso começa depois que o pagamento é confirmado.</p>
         </div>
@@ -214,16 +363,19 @@ export default function Landing() {
             // sem data-reveal: este bloco so existe depois da resposta da API, e o
             // ScrollTrigger.batch so enxerga o que ja estava no DOM quando foi criado
             : <div className="lp-plans">
-              <PlanGrid plans={plans.plans} lockAud={aud} cta={p => !p.purchasable
-                ? <span className="pl-btn" aria-disabled="true" data-testid={'cta-' + p.id}>Em breve</span>
-                : <a className="pl-btn" href={href(p.id)} data-testid={'cta-' + p.id}>{user ? 'Assinar o ' + p.name : 'Começar com o ' + p.name}<Icon name="bolt" /></a>} />
+              <PlanGrid plans={plans.plans} lockAud={aud}
+                badge={p => p.id === 'completo' ? highlight.badge : null}
+                equiv={p => p.id === 'completo' ? highlight.equiv : null}
+                cta={p => !p.purchasable
+                  ? <span className="pl-btn" aria-disabled="true" data-testid={'cta-' + p.id}>Em breve</span>
+                  : <a className="pl-btn" href={href(p.id)} data-testid={'cta-' + p.id}>{user ? 'Assinar o ' + p.name : 'Começar com o ' + p.name}<Icon name="bolt" /></a>} />
               <TrialSeal />
               <p className="lp-note">Básico: cobrança mensal no cartão de crédito; cancele quando quiser e o acesso continua até o fim do período pago. Completo: pagamento único por 3 meses, em até 4x no cartão, sem renovação automática. Seus dados ficam salvos.</p>
             </div>}
       </div>
     </section>
 
-    <section id="instalacao" className="lp-section">
+    <section id="instalacao" className="lp-section lp-section-alt">
       <div className="lp-shell">
         <div data-reveal className="lp-head">
           <span className="lp-kicker">No seu celular</span>
@@ -235,7 +387,7 @@ export default function Landing() {
       </div>
     </section>
 
-    <section id="duvidas" className="lp-section lp-section-alt" data-testid="landing-faq">
+    <section id="duvidas" className="lp-section" data-testid="landing-faq">
       <div className="lp-shell lp-narrow">
         <div data-reveal className="lp-head">
           <span className="lp-kicker">Dúvidas frequentes</span>
@@ -270,6 +422,7 @@ export default function Landing() {
           <nav className="lp-footer-group" aria-labelledby="lp-footer-conheca">
             <h2 id="lp-footer-conheca">Conheça</h2>
             {NAV.map(([id, label]) => <button key={id} type="button" onClick={() => goTo(id)}>{label}</button>)}
+            <button type="button" onClick={() => goTo('objetivos')}>Objetivos</button>
             <button type="button" onClick={() => goTo('instalacao')}>Instalação</button>
           </nav>
           <nav className="lp-footer-group" aria-labelledby="lp-footer-acesso">
@@ -345,6 +498,16 @@ function useGsap(root, heroRef, deps) {
               to: { y: 0, rotateX: 0, duration: small ? .5 : .75, stagger: .07, ease: 'power3.out', overwrite: true, ...(small ? {} : { transformPerspective: 800, transformOrigin: 'center top' }) },
             }),
           })
+          // contadores da faixa de números: o valor final já está no HTML, então quem não
+          // tem animação (ou perde o chunk do GSAP) lê o número certo de qualquer forma.
+          for (const el of document.querySelectorAll('.orny-landing [data-count]')) {
+            const to = Number(el.dataset.count)
+            if (!(to > 0)) continue
+            gsap.fromTo(el, { innerText: 0 }, {
+              innerText: to, duration: 1.4, ease: 'power2.out', snap: { innerText: 1 },
+              scrollTrigger: { trigger: el, start: 'top 92%', once: true },
+            })
+          }
           gsap.fromTo('[data-progress-line]', { scaleY: 0 }, {
             scaleY: 1, transformOrigin: 'top', ease: 'none',
             scrollTrigger: { trigger: '.lp-steps', start: 'top 72%', end: 'bottom 70%', scrub: .4 },
@@ -358,7 +521,7 @@ function useGsap(root, heroRef, deps) {
     return () => { cancelled = true; mm?.kill(); ctx?.revert(); st.current = null }
   }, [root, heroRef])
 
-  // os planos chegam da API depois dos gatilhos e a troca de perfil muda a altura da grade
+  // os planos e os números chegam da API depois dos gatilhos e mudam a altura da página
   useEffect(() => { const id = setTimeout(() => st.current?.refresh(), 120); return () => clearTimeout(id) }, deps)   // eslint-disable-line react-hooks/exhaustive-deps
 }
 

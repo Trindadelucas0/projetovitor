@@ -67,6 +67,7 @@ const FEED_SQL = `select p.id,p.title,p.body,p.category,p.image_url,p.status,p.c
        else coalesce(pp.display_name,a.name) end author_name,
   case when p.official and p.author_id::text not in (${PERSONAL_IDS}) then null
        else coalesce((select '/api/media/pub?k=' || ua.key_128 from user_avatar ua where ua.user_id=a.id), pp.photo_url) end author_photo, has_admin.is_admin author_admin,
+  (a.official_verified_at is not null) author_verified_official,
   coalesce((select array_agg(distinct coalesce(q.area,q.kind)) from professional_qualifications q where q.user_id=p.author_id and q.status='verificada'),'{}') verified,
   (select count(*) from post_likes l where l.post_id=p.id)::int likes, exists(select 1 from post_likes l where l.post_id=p.id and l.user_id=$2) liked,
   (select count(*) from post_comments c where c.post_id=p.id and c.status='visivel')::int comments
@@ -114,6 +115,7 @@ export function communityRoutes({ json, readBody }) {
                     and a.id::text not in (select s.value #>> '{}' from app_settings s where s.tenant_id=a.tenant_id and s.key in ('personal_user_id','personal_feminino_user_id')) then null
                else coalesce((select '/api/media/pub?k=' || ua.key_128 from user_avatar ua where ua.user_id=a.id), pp.photo_url) end author_photo,
           exists(select 1 from user_roles r where r.user_id=a.id and r.role_id='profissional') author_pro,
+          (a.official_verified_at is not null) author_verified_official,
           exists(select 1 from user_roles r where r.user_id=a.id and r.role_id='admin') author_official, (c.author_id=$2) mine,
           (select count(*) from comment_likes l where l.comment_id=c.id)::int likes, exists(select 1 from comment_likes l where l.comment_id=c.id and l.user_id=$2) liked
         from post_comments c join users a on a.id=c.author_id left join professional_profiles pp on pp.user_id=a.id left join social_profiles sp on sp.user_id=a.id

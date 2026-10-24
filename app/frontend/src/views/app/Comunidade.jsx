@@ -23,7 +23,7 @@ function CommentItem({ c, user, canReply, onReply, reload, reply }) {
   return <div className={'com-c' + (reply ? ' com-reply' : '')} data-testid={reply ? 'comment-reply' : 'comment'} data-id={c.id}>
     <Av name={c.author_name} url={c.author_photo} size={reply ? 28 : 34} />
     <div className="com-c-b">
-      <div className="g-row" style={{ gap: 6, flexWrap: 'wrap' }}><b className="g-sm">{c.author_name}</b>{c.author_official ? <Pill className="g-pill g-ok">Perfil oficial</Pill> : c.author_pro && <Pill className="g-pill g-ok">profissional</Pill>}<span className="g-xs g-dim">{dt(c.created_at)}</span></div>
+      <div className="g-row" style={{ gap: 6, flexWrap: 'wrap' }}><b className="g-sm">{c.author_name}</b>{c.author_verified_official ? <Pill className="g-pill g-ok">✓ Usuário oficial</Pill> : c.author_official ? <Pill className="g-pill g-ok">Perfil oficial</Pill> : c.author_pro && <Pill className="g-pill g-ok">profissional</Pill>}<span className="g-xs g-dim">{dt(c.created_at)}</span></div>
       {c.reply_to && <p className="g-xs g-mut">respondendo a {c.reply_to}</p>}
       <p className="g-sm" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{gone ? (c.body != null ? <i className="g-dim">[{c.status}] {c.body}</i> : <i className="g-dim">Comentário removido.</i>) : c.body}</p>
       {!gone && <div className="g-row com-c-act">
@@ -80,7 +80,7 @@ export function PostCard({ p, onChange, full }) {
   const like = async () => { if (busy) return; setBusy(true); try { setLk(await F.like(p.id, !lk.liked)) } catch { /* */ } finally { setBusy(false) } }
   return <article className="g-card g-post" data-testid="post">
     <div className="g-row"><button className="g-row" style={{ background: 'none', border: 0, color: 'inherit', padding: 0, cursor: 'pointer', textAlign: 'left' }} onClick={() => !p.author_admin && nav('/profissional/' + p.author_id)}>
-      <Av name={p.author_name} url={p.author_photo} /><span><b>{p.author_name}</b><br /><span className="g-mut g-xs">{p.official ? 'Perfil oficial' : p.author_admin && !p.verified.length ? 'Administração ORNY' : p.verified.length ? '✓ ' + p.verified.join(' · ') : 'Profissional'} · {dt(p.publish_at || p.created_at)}{p.edited_at ? ' · editado' : ''}</span></span></button>
+      <Av name={p.author_name} url={p.author_photo} /><span><b>{p.author_name}</b><br /><span className="g-mut g-xs">{p.official ? 'Perfil oficial' : p.author_verified_official ? '✓ Usuário oficial' : p.author_admin && !p.verified.length ? 'Administração ORNY' : p.verified.length ? '✓ ' + p.verified.join(' · ') : 'Profissional'} · {dt(p.publish_at || p.created_at)}{p.edited_at ? ' · editado' : ''}</span></span></button>
       <span className="g-sp" />{p.status !== 'publicado' && <Pill className="g-pill g-warn2">{p.status}</Pill>}</div>
     <h3 style={{ marginTop: 10, cursor: full ? 'auto' : 'pointer' }} onClick={() => !full && nav('/post/' + p.id)}>{p.title}</h3>
     <p className="g-sm" style={{ whiteSpace: 'pre-wrap', marginTop: 4 }}>{full ? p.body : p.body.length > 280 ? p.body.slice(0, 280) + '…' : p.body}</p>
