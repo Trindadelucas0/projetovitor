@@ -22,8 +22,19 @@ test('escapa texto e não aceita URL executável', () => {
   assert.match(result.html, /\/brand\/orny-wordmark\.png/)
   assert.ok(!result.html.includes('javascript:'))
 })
-test('links são construídos a partir da origem configurada', () => {
-  assert.match(appLink('/redefinir?t=teste'), /^https?:\/\/[^/]+\/#\/redefinir\?t=teste$/)
+test('links compartilháveis priorizam a URL pública sem alterar a origem local', () => {
+  const previousPublicUrl = process.env.PUBLIC_URL
+  const previousOrigin = process.env.ORIGIN
+  try {
+    process.env.PUBLIC_URL = 'https://academia.avadesk.com.br/'
+    process.env.ORIGIN = 'http://localhost:5551'
+    assert.equal(appLink('/redefinir?t=teste'), 'https://academia.avadesk.com.br/#/redefinir?t=teste')
+  } finally {
+    if (previousPublicUrl === undefined) delete process.env.PUBLIC_URL
+    else process.env.PUBLIC_URL = previousPublicUrl
+    if (previousOrigin === undefined) delete process.env.ORIGIN
+    else process.env.ORIGIN = previousOrigin
+  }
 })
 test('Resend recebe idempotência, cópia, HTML, texto e anexo base64', async () => {
   let sent

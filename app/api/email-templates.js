@@ -1,8 +1,8 @@
 // Templates transacionais: somente texto escapado e links construídos pelo servidor.
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 export function appLink(path = '/perfil') {
-  const origin = new URL(process.env.ORIGIN || 'http://localhost:5551')
-  if (!['http:', 'https:'].includes(origin.protocol)) throw new Error('ORIGIN inválida')
+  const origin = new URL(process.env.PUBLIC_URL || process.env.ORIGIN || 'http://localhost:5551')
+  if (!['http:', 'https:'].includes(origin.protocol)) throw new Error('PUBLIC_URL/ORIGIN inválida')
   return origin.origin + '/#' + (String(path).startsWith('/') ? path : '/perfil')
 }
 export function renderEmail({ subject, body, actionUrl, actionLabel = 'Abrir ORNY', preview = false }) {

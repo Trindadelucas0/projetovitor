@@ -76,6 +76,7 @@ Para a **Live semanal**, o administrador não precisa repetir esse cadastro. Em 
 3. Em **Avaliação postural**, o administrador pode acompanhar todas as avaliações do ambiente, inclusive mídias, e administrar protocolos, versões, termo e retenção.
 4. A conta administrativa não é necessária para cadastrar alunos, montar fichas ou fazer o atendimento diário do personal.
 5. Em uma instalação nova, preencha os dados oficiais em **Dados da empresa** antes de liberar cadastros. Os contatos salvos nessa tela continuam editáveis e têm prioridade sobre a configuração inicial do servidor.
+6. Para enviar uma nova senha, abra **Administração → Alunos**, abra a conta e use **Gerar link de nova senha**. O link vale 24 horas, uma única vez, e deve abrir `https://academia.avadesk.com.br/#/redefinir?...`, inclusive quando o painel administrativo estiver sendo usado no ambiente local.
 
 ## Personal interno e transferência
 

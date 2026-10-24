@@ -106,6 +106,14 @@ export function billingRoutes({ json, readBody }) {
       const info = providerInfo()
       json(res, 200, { plans: r.rows.map(p => ({ ...pubPlan(p), purchasable: !p.is_free && !!p.sellable && p.price_cents != null })).map(p => ({ ...p, price_label: p.is_free ? 'Gratuito' : p.price_cents == null ? 'Preço a definir' : null })), test_mode: !!info.test, hosted_checkout: !!info.hosted_checkout, payment_types: info.payment_types }, { 'Cache-Control': 'public, max-age=60' })
     },
+    // Numeros reais do catalogo publico, usados na faixa de fatos da landing. Sem dado de
+    // usuario e sem numero inventado: se a contagem vier zero a landing nao mostra a faixa.
+    'GET /api/public/stats': async (req, res) => {
+      const r = await q(`select
+        (select count(*) from exercises where tenant_id is null and archived_at is null) exercises,
+        (select count(*) from programs where tenant_id is null and visibility='public' and archived_at is null) programs`)
+      json(res, 200, { exercises: Number(r.rows[0].exercises) || 0, programs: Number(r.rows[0].programs) || 0 }, { 'Cache-Control': 'public, max-age=300' })
+    },
     // Aposentada: o personal e admin e nao contrata plano. A rota responde 410
     // para nao quebrar app antigo em cache.
     'GET /api/billing/pro-summary': async (req, res) => {
