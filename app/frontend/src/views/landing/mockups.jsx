@@ -22,6 +22,6 @@ export const MkToday = shot('app-hoje.webp', 'Tela Início do app ORNY: meta da 
 export const MkRun = shot('app-execucao.webp', 'Tela de execução do treino no app ORNY: cronômetro de descanso entre séries e a próxima série indicada')
 export const MkProgress = shot('app-estatisticas.webp', 'Tela Estatísticas detalhadas do app ORNY: treinos, consistência, volume e recordes do período')
 export const MkHistory = shot('app-historico.webp', 'Tela Progresso do app ORNY: treinos recentes com data, duração, séries e volume')
-export const MkPrograms = shot('app-treinos.webp', 'Tela Treinos do app ORNY: ficha ativa montada pelo personal, com os treinos A, B, C e D da semana')
+export const MkPrograms = shot('app-treinos.webp', 'Tela Treinos do app ORNY: ficha ativa montada pelo personal, com a orientação dele e os botões para começar o Treino A, B, C ou D')
 export const MkCall = shot('app-calls.webp', 'Tela Benefícios do app ORNY: agenda de calls com a personal, com os dias e horários livres')
 export const MkSignup = shot('app-cadastro.webp', 'Tela de cadastro do app ORNY: primeira etapa, escolha do perfil')

@@ -130,17 +130,18 @@ for (const width of [375, 800, 1280]) {   // 800 = largura onde "ACOMPANHAMENTO"
 }
 
 // ---------- pagina longa: faixa de numeros, blocos profundos e destaque do Completo ----------
-// A faixa de numeros nao pode inventar nada: os dois primeiros itens vem de /api/public/stats
-// e os outros dois sao fatos do catalogo. Prova social (usuarios, nota, depoimento) e proibida.
+// A faixa de numeros nao pode inventar nada: a contagem de exercicios vem de /api/public/stats
+// e os outros itens sao fatos do catalogo. Prova social (usuarios, nota, depoimento) e proibida.
+// O catalogo de programas foi desativado para o aluno: a contagem de programas nao aparece mais.
 test('a faixa de numeros usa a contagem real do catalogo', async ({ page }) => {
   await visitor(page)
   await page.route('**/api/public/stats', r => r.fulfill({ json: { exercises: 480, programs: 24 } }))
   await page.goto('/')
   const faixa = page.getByTestId('landing-numbers')
   await expect(faixa).toContainText('exercícios no catálogo')
-  await expect(faixa).toContainText('programas guiados')
+  await expect(faixa).not.toContainText('programas guiados')
   await expect(faixa.locator('[data-count="480"]')).toHaveCount(1)
-  await expect(faixa.locator('[data-count="24"]')).toHaveCount(1)
+  await expect(faixa.locator('[data-count="24"]')).toHaveCount(0)
 })
 
 test('sem contagem da API a faixa nao mostra numero de catalogo', async ({ page }) => {

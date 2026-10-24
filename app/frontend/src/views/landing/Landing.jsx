@@ -98,13 +98,13 @@ const DEEP = [
       'Base para a próxima ficha do seu personal',
       'Os dados ficam salvos mesmo sem plano ativo'],
     MkHistory, true],
-  ['programas', 'Programas', 'Um caminho pronto quando você quiser',
-    'Além da ficha do personal, a ORNY tem um catálogo de programas guiados organizados por objetivo, nível, local de treino e quantidade de dias por semana. Dá para escolher e começar.',
-    ['Catálogo de programas guiados por objetivo',
-      'Filtro por nível, local de treino e dias por semana',
-      'Programas para academia e para treinar em casa',
-      'Sequência de treinos já montada',
-      'Mesma execução guiada da ficha do personal'],
+  ['programas', 'Sua ficha', 'O treino montado para você, na aba Treinos',
+    'Você não garimpa catálogo: o seu personal monta a ficha no app, com o objetivo, os dias e os exercícios escolhidos para você. Ela aparece na aba Treinos dividida em dias — Treino A, B, C, D — e é só tocar no dia para começar o treino guiado.',
+    ['Ficha do personal dividida em dias (A, B, C, D)',
+      'Séries, repetições, carga e descanso definidos por ele',
+      'Imagem ou vídeo do exercício e o passo a passo em "Como fazer"',
+      'Você escolhe em que dia da semana cada treino aparece',
+      'Tocou no dia, o treino guiado começa'],
     MkPrograms, false],
   ['personal', 'Acompanhamento', 'Um personal acompanhando, não um app sozinho',
     'A ficha é montada por uma pessoa. Homens são atendidos por um personal e mulheres por uma personal. A call de 15 minutos no Zoom é marcada no app, num horário livre da agenda dele, com pelo menos 12 horas de antecedência.',
@@ -117,12 +117,12 @@ const DEEP = [
 ]
 
 const GOALS = [
-  ['dumbbell', 'Hipertrofia', 'Programas de volume e progressão de carga, da iniciante à avançada.'],
+  ['dumbbell', 'Hipertrofia', 'Ficha com volume e progressão de carga, da iniciante à avançada.'],
   ['flame', 'Emagrecimento', 'Rotinas com gasto maior e frequência ajustada ao seu tempo.'],
   ['barbell', 'Força', 'Trabalho nos movimentos principais, com registro de recorde pessoal.'],
   ['figureRun', 'Condicionamento', 'Treinos para constância e resistência ao longo da semana.'],
-  ['house', 'Treino em casa', 'Programas sem equipamento ou com o mínimo que você tem em casa.'],
-  ['machine', 'Academia', 'Programas por equipamento disponível, de máquina a peso livre.'],
+  ['house', 'Treino em casa', 'Ficha sem equipamento ou com o mínimo que você tem em casa.'],
+  ['machine', 'Academia', 'Exercícios escolhidos pelo equipamento disponível, de máquina a peso livre.'],
 ]
 
 const STEPS = [
@@ -135,7 +135,7 @@ const FAQ_LANDING = [
   ['Preciso instalar alguma coisa?', 'Não. A ORNY funciona no navegador do celular ou do computador. Adicionar à tela inicial é opcional e pode ser feito depois do cadastro.'],
   ['Quem monta o meu treino?', 'O seu personal. Homens são atendidos por um personal e mulheres por uma personal. A ficha vem com os exercícios, as séries, as cargas, os dias da semana e os vídeos de execução, e aparece no seu app.'],
   ['Funciona no computador também?', 'Sim. É a mesma ORNY no navegador do computador, com os mesmos dados: você pode registrar o treino no celular na academia e olhar o progresso no computador depois.'],
-  ['Preciso de academia para usar?', 'Não necessariamente. O catálogo tem programas para academia e programas para treinar em casa, com pouco ou nenhum equipamento. A ficha do seu personal também é montada de acordo com o que você tem disponível.'],
+  ['Preciso de academia para usar?', 'Não necessariamente. O seu personal monta a ficha para a academia ou para treinar em casa, com pouco ou nenhum equipamento, de acordo com o que você tem disponível.'],
   ['Como funciona a call com o personal?', 'Você escolhe no app um horário livre do seu personal, com pelo menos 12 horas de antecedência, e recebe o link do Zoom. A call dura 15 minutos: 1 por mês no Básico e 1 a cada 15 dias no Completo.'],
   ['O que acontece se eu cancelar?', 'No Básico o acesso continua até o fim do período já pago. O Completo não renova: o acesso acaba na data indicada. Em qualquer caso os seus treinos, histórico e progresso ficam guardados e voltam quando você assinar de novo.'],
   ['Como funcionam as notificações?', 'Você escolhe se quer ativar. A ORNY explica antes de pedir a permissão do aparelho, e isso nunca bloqueia o seu acesso.'],
@@ -186,7 +186,6 @@ export default function Landing() {
   const facts = useMemo(() => [
     // sem "+": a contagem e exata, e "63+" seria falso
     stats?.exercises > 0 && [stats.exercises, '', 'exercícios no catálogo'],
-    stats?.programs > 0 && [stats.programs, '', 'programas guiados'],
     [15, ' min', 'de call no Zoom com o seu personal'],
     [2, '', 'planos: Básico mensal ou Completo de 3 meses'],
   ].filter(Boolean), [stats])
@@ -310,7 +309,7 @@ export default function Landing() {
         <div data-reveal className="lp-head">
           <span className="lp-kicker">Para o seu objetivo</span>
           <h2>Serve para o treino que você faz</h2>
-          <p className="lp-copy">O catálogo de programas cobre objetivos e locais de treino diferentes, e a ficha do seu personal é montada de acordo com o que você tem disponível.</p>
+          <p className="lp-copy">O seu personal define o objetivo da ficha e escolhe os exercícios de acordo com o local de treino e o que você tem disponível.</p>
         </div>
         <div className="lp-grid lp-goals">
           {GOALS.map(([icon, title, copy]) =>
