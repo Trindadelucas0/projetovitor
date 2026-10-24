@@ -30,7 +30,7 @@ function StepArtwork({ platform, step }) {
             {android ? <span className={`iw-menu-dots ${step === 0 ? 'is-target' : ''}`}>⋮</span> : <span className="iw-browser-tabs">▢</span>}
           </div>
           <div className="iw-site-preview">
-            <img src="/landing/app-orny.webp" alt="" />
+            <img src="/landing/telas/app-hoje.webp" alt="" width="624" height="1309" loading="lazy" decoding="async" />
             <div className="iw-site-scrim" />
             <div className="iw-site-brand"><img src="/brand/orny-symbol.png" alt="" /><span>SEU TREINO, NO SEU RITMO</span></div>
           </div>

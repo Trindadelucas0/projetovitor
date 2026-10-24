@@ -9,8 +9,8 @@
 // por isso não há CTA de "começar grátis" em lugar nenhum.
 //
 // Formato da página (página longa, no padrão das landings de app): hero → faixa de números reais
-// → 4 pilares → seis blocos profundos, cada um com o mockup da tela correspondente ao lado da
-// lista de capacidades → objetivos atendidos → como funciona → planos → instalação → dúvidas.
+// → 4 pilares → seis blocos profundos, cada um com o print real da tela correspondente (moldura
+// de celular, ver mockups.jsx) ao lado da lista de capacidades → objetivos atendidos → como funciona → planos → instalação → dúvidas.
 // Os números da faixa vêm de GET /api/public/stats (contagem real do catálogo); se a API falhar
 // ou vier zero, a faixa simplesmente não aparece — nenhum número é inventado.
 import { useEffect, useMemo, useRef, useState } from 'react'

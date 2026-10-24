@@ -9,12 +9,12 @@ export const LEVEL_PT = { beginner: 'Iniciante', intermediate: 'Intermediário',
 export const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 export const WD_SHORT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
 
-export const blankDay = i => ({ name: 'Treino ' + String.fromCharCode(65 + i), description: '', next_time_guidance: '', weekday: null, exercises: [] })
+export const blankDay = i => ({ name: 'Treino ' + String.fromCharCode(65 + i), description: '', next_time_guidance: '', weekday: null, warmup_items: [], exercises: [] })
 
 export const newEx = x => ({
   exercise_id: x.id, name: x.name, media: x.media, sets: 3, reps: '10-12', load_kg: '', duration_sec: '',
   rest_sec: 60, tempo: '', rpe: '', rir: '', per_set: [], side: 'bilateral', technique: 'normal',
-  instructions: '', notes: '', video_url: '', group: null,
+  instructions: '', notes: '', video_url: '', group: null, warmup_sets: [],
 })
 
 // Hidrata um exercício gravado (a ficha antiga guarda reps_min/reps_max em vez de reps).
@@ -24,6 +24,7 @@ export const fromSaved = e => ({
   reps: e.reps || (e.reps_min || e.reps_max ? (e.reps_min && e.reps_max && e.reps_min !== e.reps_max ? `${e.reps_min}-${e.reps_max}` : String(e.reps_max || e.reps_min)) : ''),
   load_kg: e.load_kg ?? '', duration_sec: e.duration_sec ?? '', tempo: e.tempo || '', rpe: e.rpe ?? '', rir: e.rir ?? '',
   instructions: e.instructions || e.notes || '', per_set: e.per_set || [],
+  warmup_sets: e.warmup_sets || [],
 })
 
 export const cleanDays = days => days.map(d => ({

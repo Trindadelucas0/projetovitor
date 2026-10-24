@@ -641,7 +641,7 @@ html[data-lp] .orny-landing .lp-accent {
 .iw-menu-dots { width:30px; height:34px; display:grid; place-items:center; border-radius:50%; font-size:24px; font-weight:700; }
 .iw-menu-dots.is-target { color:#132113; background:#c7f4c5; box-shadow:0 0 0 5px #20f51b55; animation:iw-ring 1.5s ease-in-out infinite; }
 .iw-site-preview { position:absolute; inset:74px 0 0; overflow:hidden; background:#101410; }
-.iw-site-preview img { width:100%; height:100%; object-fit:cover; object-position:center; }
+.iw-site-preview img { width:100%; height:100%; object-fit:cover; object-position:top center; }
 .iw-site-scrim { position:absolute; inset:0; background:linear-gradient(180deg,#0002 20%,#000b 100%); }
 .iw-site-brand { position:absolute; right:12px; bottom:22px; left:12px; display:flex; align-items:center; gap:9px; color:white; font-weight:800; font-size:10px; letter-spacing:.06em; }
 .iw-site-brand img { width:28px; height:28px; object-fit:contain; }
@@ -1203,8 +1203,8 @@ html[data-lp] .pl-btn.pl-sec {
 }
 
 /* ======================================================================
-   Página longa: faixa de números, pilares, blocos profundos com mockup e
-   objetivos atendidos. Estrutura em Landing.jsx; as telas em mockups.css.
+   Página longa: faixa de números, pilares, blocos profundos com print do app
+   e objetivos atendidos. Estrutura em Landing.jsx; a moldura em mockups.css.
    ====================================================================== */
 
 /* ---------- faixa de números (GET /api/public/stats) ---------- */
@@ -1421,7 +1421,7 @@ html[data-lp] .pl-btn.pl-sec {
   font-weight: 700;
 }
 
-/* o celular do "como funciona" passou a ser mockup em CSS, não imagem */
+/* o celular do "como funciona": moldura em CSS com o print real do cadastro (mockups.jsx) */
 .lp-how .lp-phone {
   display: flex;
   justify-content: center;

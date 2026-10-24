@@ -26,6 +26,7 @@ export function initialState({ planId, templateId, templateScope, student }) {
 // Dias vindos do servidor (ficha ou modelo) para a forma da tela.
 export const daysFromSaved = p => (p.days?.length ? p.days : [{ ...blankDay(0), exercises: p.exercises || [] }]).map(d => ({
   ...d, description: d.description || '', next_time_guidance: d.next_time_guidance || '', weekday: d.weekday == null ? null : +d.weekday,
+  warmup_items: d.warmup_items || [],
   exercises: (d.exercises || []).map(fromSaved),
 }))
 
@@ -74,7 +75,7 @@ function reduce(st, a) {
       if (st.w.days.length >= MAX_DAYS) return st
       const d = curDay()
       // O dia da semana não é copiado: dois treinos no mesmo dia são recusados.
-      const copy = { ...d, name: nextDayName(st.w.days, d.name), weekday: null, exercises: d.exercises.map(e => ({ ...e })) }
+      const copy = { ...d, name: nextDayName(st.w.days, d.name), weekday: null, warmup_items: (d.warmup_items || []).map(x => ({ ...x })), exercises: d.exercises.map(e => ({ ...e, warmup_sets: (e.warmup_sets || []).map(x => ({ ...x })) })) }
       const days = [...st.w.days]; days.splice(st.day + 1, 0, copy)
       return { ...setW({ ...st.w, days }), day: st.day + 1, sel: new Set(), openEx: null }
     }
@@ -100,7 +101,7 @@ function reduce(st, a) {
       if (curDay().exercises.length >= MAX_EX_PER_DAY) return st
       return mapDay(d => {
         const ex = [...d.exercises]
-        ex.splice(a.i + 1, 0, { ...ex[a.i], group: null, per_set: ex[a.i].per_set.map(x => ({ ...x })) })
+        ex.splice(a.i + 1, 0, { ...ex[a.i], group: null, per_set: ex[a.i].per_set.map(x => ({ ...x })), warmup_sets: (ex[a.i].warmup_sets || []).map(x => ({ ...x })) })
         return { ...d, exercises: ex }
       })
     }

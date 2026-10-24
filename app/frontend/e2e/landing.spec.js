@@ -167,8 +167,11 @@ test('os seis blocos profundos aparecem com a tela do app ao lado', async ({ pag
   for (const id of ['treino-do-dia', 'execucao', 'progresso', 'historico', 'programas', 'personal']) {
     const bloco = page.getByTestId('deep-' + id)
     await expect(bloco.locator('h2')).toHaveCount(1)
-    // o mockup e decoracao: vai inteiro com aria-hidden para nao ser lido como se fosse o app
-    await expect(bloco.locator('.mk-phone[aria-hidden="true"]')).toHaveCount(1)
+    // a tela e um print real do app, com alt descritivo em pt-BR e carregamento adiado
+    const tela = bloco.locator('.mk-phone img')
+    await expect(tela).toHaveCount(1)
+    await expect(tela).toHaveAttribute('alt', /app ORNY/)
+    await expect(tela).toHaveAttribute('loading', 'lazy')
   }
 })
 
