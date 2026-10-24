@@ -128,3 +128,83 @@ for (const width of [375, 800, 1280]) {   // 800 = largura onde "ACOMPANHAMENTO"
     expect(r.violations.map(v => `${v.id}: ${v.nodes.length}`)).toEqual([])
   })
 }
+
+// ---------- pagina longa: faixa de numeros, blocos profundos e destaque do Completo ----------
+// A faixa de numeros nao pode inventar nada: os dois primeiros itens vem de /api/public/stats
+// e os outros dois sao fatos do catalogo. Prova social (usuarios, nota, depoimento) e proibida.
+test('a faixa de numeros usa a contagem real do catalogo', async ({ page }) => {
+  await visitor(page)
+  await page.route('**/api/public/stats', r => r.fulfill({ json: { exercises: 480, programs: 24 } }))
+  await page.goto('/')
+  const faixa = page.getByTestId('landing-numbers')
+  await expect(faixa).toContainText('exercícios no catálogo')
+  await expect(faixa).toContainText('programas guiados')
+  await expect(faixa.locator('[data-count="480"]')).toHaveCount(1)
+  await expect(faixa.locator('[data-count="24"]')).toHaveCount(1)
+})
+
+test('sem contagem da API a faixa nao mostra numero de catalogo', async ({ page }) => {
+  await visitor(page)
+  await page.route('**/api/public/stats', r => r.fulfill({ status: 500, json: { error: 'x' } }))
+  await page.goto('/')
+  const faixa = page.getByTestId('landing-numbers')
+  await expect(faixa).not.toContainText('exercícios no catálogo')
+  await expect(faixa).not.toContainText('programas guiados')
+  await expect(faixa).toContainText('de call no Zoom')   // os fatos fixos continuam
+  await expect(faixa).not.toContainText('0 ')
+})
+
+test('nenhuma prova social na pagina', async ({ page }) => {
+  await visitor(page)
+  await page.goto('/')
+  const lp = page.getByTestId('landing')
+  for (const proibido of [/depoimento/i, /avalia(ç|c)(õ|o)es nas lojas/i, /downloads/i, /estrelas/i, /usu(á|a)rios/i, /mil alunos/i]) await expect(lp).not.toContainText(proibido)
+})
+
+test('os seis blocos profundos aparecem com a tela do app ao lado', async ({ page }) => {
+  await visitor(page)
+  await page.goto('/')
+  for (const id of ['treino-do-dia', 'execucao', 'progresso', 'historico', 'programas', 'personal']) {
+    const bloco = page.getByTestId('deep-' + id)
+    await expect(bloco.locator('h2')).toHaveCount(1)
+    // o mockup e decoracao: vai inteiro com aria-hidden para nao ser lido como se fosse o app
+    await expect(bloco.locator('.mk-phone[aria-hidden="true"]')).toHaveCount(1)
+  }
+})
+
+test('os pilares levam para o bloco da tela correspondente', async ({ page }) => {
+  await visitor(page)
+  await page.goto('/')
+  await expect(page.getByTestId('landing-pillars').locator('.lp-pillar')).toHaveCount(4)
+  await page.getByTestId('landing-pillars').getByRole('button', { name: 'Ver a tela' }).nth(1).click()
+  await page.waitForTimeout(1200)   // scrollIntoView com behavior: 'smooth'
+  await expect(page.getByTestId('deep-execucao')).toBeInViewport({ ratio: .2 })
+  await expect(page.locator('.lg-wrap')).toHaveCount(0)   // ancora interna nao troca a rota
+})
+
+test('o Completo vem destacado com a equivalencia mensal calculada do preco da API', async ({ page }) => {
+  await visitor(page)
+  await page.goto('/')
+  const completo = page.getByTestId('plan-card-completo')
+  await expect(completo).toHaveClass(/pl-hl/)
+  await expect(completo).toContainText('Acompanhamento mais perto')
+  await expect(completo).toContainText('Equivale a R$ 166,33/mês')   // 49900 / 3
+  // o Basico nao recebe selo nem equivalencia: ja e cobrado por mes
+  const basico = page.getByTestId('plan-card-individual')
+  await expect(basico).not.toHaveClass(/pl-hl/)
+  await expect(basico).not.toContainText('Equivale a')
+})
+
+test('sem preco do Completo nao aparece equivalencia nem selo', async ({ page }) => {
+  await page.route('**/api/**', route => {
+    const p = new URL(route.request().url()).pathname
+    if (p === '/api/me') return route.fulfill({ status: 401, json: { error: 'Entre na sua conta' } })
+    if (p === '/api/public/plans') return route.fulfill({ json: { ...PLANS, plans: PLANS.plans.map(p => p.id === 'completo' ? { ...p, price_cents: null, purchasable: false } : p) } })
+    return route.fulfill({ json: {} })
+  })
+  await page.goto('/')
+  const completo = page.getByTestId('plan-card-completo')
+  await expect(completo).toContainText('Em breve')
+  await expect(completo).not.toContainText('Equivale a')
+  await expect(completo).not.toHaveClass(/pl-hl/)
+})

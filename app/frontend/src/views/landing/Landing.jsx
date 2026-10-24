@@ -503,9 +503,12 @@ function useGsap(root, heroRef, deps) {
           for (const el of document.querySelectorAll('.orny-landing [data-count]')) {
             const to = Number(el.dataset.count)
             if (!(to > 0)) continue
+            // immediateRender: false e obrigatorio aqui. Com o padrao do fromTo o GSAP
+            // escreveria 0 no DOM na criacao do tween e a faixa ficaria em "0" ate o
+            // visitante rolar ate ela — quem nao rola (ou perde a animacao) leria zero.
             gsap.fromTo(el, { innerText: 0 }, {
-              innerText: to, duration: 1.4, ease: 'power2.out', snap: { innerText: 1 },
-              scrollTrigger: { trigger: el, start: 'top 92%', once: true },
+              innerText: to, duration: 1.4, ease: 'power2.out', snap: { innerText: 1 }, immediateRender: false,
+              scrollTrigger: { trigger: el, start: 'top 95%', once: true },
             })
           }
           gsap.fromTo('[data-progress-line]', { scaleY: 0 }, {
