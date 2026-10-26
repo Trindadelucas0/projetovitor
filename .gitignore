@@ -44,6 +44,7 @@ app/api/private/
 app/frontend/test-artifacts/
 app/frontend/e2e-results/
 app/frontend/.cache/
+app/frontend/.vitest-tmp/
 test-results/
 playwright-report/
 blob-report/
