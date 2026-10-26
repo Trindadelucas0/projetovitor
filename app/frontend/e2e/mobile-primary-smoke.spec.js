@@ -7,7 +7,7 @@ const paths = {
 }
 
 const readyTestId = {
-  '/comunidade': 'com-tabs',
+  '/comunidade': 'comunidade',
   '/progresso': 'progress',
   '/perfil': 'profile'
 }
