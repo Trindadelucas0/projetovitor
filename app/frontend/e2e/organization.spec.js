@@ -2,7 +2,7 @@
 import { test, expect } from '@playwright/test'
 const now = '2026-10-15T15:00:00Z'
 const program = { id: 'p1', program_id: 'catalog1', title: 'Força A/B', weeks: 8, week_index: 2, days_per_week: 3, minutes: 35, sessions_done: 4 }
-const workout = { id: 'w1', name: 'Treino A', exercises: [{ exercise_id: 'ex1', name: 'Agachamento', sets: 3, reps_min: 10, reps_max: 10, rest_sec: 60, suggestion: { weight: 10 } }] }
+const workout = { id: 'w1', name: 'Treino A', exercises: [{ exercise_id: 'ex1', name: 'Agachamento', sets: 3, reps_min: 10, reps_max: 10, rest_sec: 60, suggestion: { weight: 10 }, last: [{weight:8,reps:10}], last_max_weight: 8 }] }
 const features = { programas_guiados: true, ranking: true, progresso: true, prescrever: true, convidar_alunos: true, construtor_treino: true }
 async function boot(page, profile = 'aluno', { scoped = false, fail = null } = {}) {
   const user = { id: 'ui-' + profile, name: 'Conta de teste', email: 'ui\u0040example.test', roles: [profile], capacities: [profile], context: profile, status: 'ativo', admin: profile === 'admin', pro: profile === 'profissional', client_locked: scoped, access_locked: false }
@@ -66,22 +66,37 @@ test('comunidade: link antigo de grupo volta para Publicações', async ({page})
   await expect(page.getByRole('heading',{name:'Publicações',exact:true})).toBeVisible()
   expect(errors).toEqual([])
 })
-test('preparação preserva cargas e só inicia sessão após confirmar',async({page})=>{
+test('treino inicia direto e a carga é informada ao concluir a série',async({page})=>{
   const errors=await boot(page)
   const starts=[]
   await page.route('**/api/guided/sessions/start',async route=>{starts.push(route.request().postDataJSON());await route.fulfill({json:{started_at:new Date().toISOString()}})})
   await page.goto('/#/treinar')
-  await expect(page.getByRole('heading',{name:'Defina os pesos'})).toBeVisible()
-  expect(starts).toHaveLength(0)
-  await page.getByLabel('Agachamento · Peso (kg)').fill('')
-  await page.getByTestId('confirm-workout-weights').click()
-  expect(starts).toHaveLength(0)
-  await page.getByLabel('Agachamento · Peso (kg)').fill('0')
-  await page.getByTestId('confirm-workout-weights').click()
   await expect(page.getByTestId('start-set')).toBeVisible()
   expect(starts).toHaveLength(1)
-  await page.getByTestId('start-set').click()
-  await expect(page.getByTestId('set-clock')).toBeVisible()
+  await expect(page.getByRole('heading',{name:'Defina os pesos'})).toHaveCount(0)
+  await expect(page.getByLabel('Carga usada (kg)')).toHaveValue('')
+  await page.getByTestId('finish-set-quick').click()
+  await expect(page.getByText(/Informe a carga usada nesta série/)).toBeVisible()
+  await page.getByLabel('Carga usada (kg)').fill('0')
+  await page.getByTestId('finish-set-quick').click()
+  await expect(page.getByTestId('rest')).toBeVisible()
+  expect(errors).toEqual([])
+})
+test('aumento de carga avisa o aluno em relação à última sessão',async({page})=>{
+  const errors=await boot(page)
+  await page.route('**/api/guided/sessions/start',route=>route.fulfill({json:{started_at:new Date().toISOString()}}))
+  await page.goto('/#/treinar');await expect(page.getByTestId('start-set')).toBeVisible()
+  await expect(page.locator('#weight-reference')).toHaveText('Última vez: 8 kg')
+  await page.getByLabel('Carga usada (kg)').fill('10')
+  await page.getByTestId('finish-set-quick').click()
+  await expect(page.getByTestId('rest').getByText('Carga aumentada: 8 kg → 10 kg.')).toBeVisible()
+  expect(errors).toEqual([])
+})
+for(const width of [320,375,768,1280]) test(`carga durante o exercício cabe em ${width}px`,async({page})=>{
+  await page.setViewportSize({width,height:900});const errors=await boot(page)
+  await page.route('**/api/guided/sessions/start',route=>route.fulfill({json:{started_at:new Date().toISOString()}}))
+  await page.goto('/#/treinar');await expect(page.getByLabel('Carga usada (kg)')).toBeVisible();await fits(page)
+  await page.screenshot({path:`test-artifacts/organization/carga-exercicio-${width}.png`,fullPage:true,animations:'disabled'})
   expect(errors).toEqual([])
 })
 test('profissional: adicionar aluno, modelos, detalhe e atendimentos agrupados',async({page})=>{

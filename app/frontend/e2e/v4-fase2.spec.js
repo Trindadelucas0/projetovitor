@@ -37,8 +37,6 @@ const events = async (page, cid) => (await (await page.request.get('/api/guided/
 test('início autorizado, pausa registrada no servidor, pausa offline sincroniza depois', async ({ page, context }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/#/treinar')
-  const prep = page.getByTestId('confirm-workout-weights')   // reorganização: etapa de preparação dos pesos
-  if (await prep.waitFor({ timeout: 4000 }).then(() => true).catch(() => false)) { for (const i of await page.locator('input[type=number]').all()) await i.fill('0'); await prep.click() }
   await expect(page.getByTestId('train')).toBeVisible()
   const cid = await page.evaluate(k => JSON.parse(localStorage.getItem(k)).client_id, KEY)
   const open = await (await page.request.get('/api/guided/sessions/open')).json()

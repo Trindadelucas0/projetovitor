@@ -1,8 +1,8 @@
 # PRD — Projeto Vitor | aplicativo do personal e dos alunos
 
 **Produto:** Projeto Vitor — aplicativo de treino de um personal trainer e seus alunos
-**Versão do documento:** 1.1 · 22/10/2026
-**Base de referência:** frontend 2.1.0 · API 2.1.0 (arquivos locais; publicação não verificada nesta revisão)
+**Versão do documento:** 1.2 · 25/10/2026
+**Base de referência:** frontend 2.4.1 · API 2.4.1 (arquivos locais; publicação não verificada nesta revisão)
 
 **Natureza deste documento:** especificação do produto desejado, com App Flow e estado de entrega. Requisitos descrevem como o Projeto Vitor deve funcionar; presença de tela, rota ou módulo não significa jornada homologada. O comportamento comprovado no código e as limitações locais ficam na [documentação oficial](../app/DOCUMENTACAO-SISTEMA.md).
 
@@ -275,17 +275,20 @@ Legenda: **RF** requisito funcional · **RN** regra de negócio.
 - RN-3.3 Mesmo com agenda definida, o aluno pode abrir qualquer Treino A/B manualmente. Sessão em andamento precisa ser concluída antes da troca.
 - RN-3.4 No Início, se um dia está marcado para hoje (fuso `America/Sao_Paulo`), é esse treino que aparece; sem nada marcado, segue a sequência por sessões concluídas (`nextSessionOf` em `api/stats.js`).
 
-### 6.4 Preparação e execução do treino
+### 6.4 Início e execução do treino
 
-- RF-4.1 Antes de iniciar nova sessão, a tela **Defina os pesos** exige um peso numérico não negativo em kg para cada exercício de repetições. Cargas sugeridas vêm preenchidas e **precisam de confirmação**; `0 kg` indica exercício sem carga; exercícios por tempo dispensam o campo.
-- RF-4.2 **Confirmar pesos e iniciar treino** solicita o início ao servidor (`startRemote`) e só então salva a sessão local. O horário do servidor prevalece quando disponível.
-- RF-4.3 Durante a execução: nome do exercício antes da demonstração, mídias extras em *Como fazer*, **Iniciar série**, cronômetro de descanso ajustável, troca de exercício, pausa, relato de dor, ajuste de carga e conclusão.
-- RF-4.4 **Tenho uma dúvida neste vídeo** abre a folha de dúvida com o exercício preenchido e oferece informar o trecho (ex.: "dúvida no vídeo, em 0:12"). O trecho vai no texto da mensagem — não há coluna nova no banco.
-- RF-4.5 Conclusão (`/concluido`): resumo, sensação, dor e salvamento, com sincronização e histórico.
-- RN-4.1 Preparar as cargas **não** cria sessão nem conta tempo de treino. Voltar abandona a preparação sem salvar.
-- RN-4.2 Sessão já existente segue o fluxo de **retomada**, sem repetir a preparação.
-- RN-4.3 **Dúvida não pausa** o exercício. **Dor e desconforto pausam** até a orientação do personal.
-- RN-4.4 Treino esquecido: varredura a cada 5 min; lembrete a cada `SESSION_REMINDER_MIN` (padrão 60) até finalizar, corrigir ou descartar.
+- RF-4.1 Ao abrir um treino novo, o aplicativo solicita o início ao servidor (`startRemote`) e segue diretamente para o aquecimento ou primeiro exercício, sem a tela **Defina os pesos**. O horário do servidor prevalece quando disponível.
+- RF-4.2 Em cada série por repetições, **Carga usada (kg)** começa vazia e precisa ser informada antes de **Concluir série**. `0 kg` indica exercício sem carga; exercícios por tempo dispensam o campo. A carga fica salva por série.
+- RF-4.3 A tela mostra **Última vez** com a maior carga da sessão concluída válida mais recente e, separadamente, a **Meta do personal** quando houver prescrição. Nenhuma das duas preenche automaticamente a carga atual.
+- RF-4.4 Quando a carga supera a referência da sessão anterior, o aluno vê **Carga aumentada** imediatamente e o personal com vínculo ativo recebe um aviso com aluno, exercício, carga anterior e nova.
+- RF-4.5 Durante a execução: nome do exercício antes da demonstração, mídias extras em *Como fazer*, **Iniciar série**, cronômetro de descanso ajustável, troca de exercício, pausa, relato de dor, ajuste de carga e conclusão.
+- RF-4.6 **Tenho uma dúvida neste vídeo** abre a folha de dúvida com o exercício preenchido e oferece informar o trecho (ex.: "dúvida no vídeo, em 0:12"). O trecho vai no texto da mensagem — não há coluna nova no banco.
+- RF-4.7 Conclusão (`/concluido`): resumo, sensação, dor e salvamento, com sincronização e histórico.
+- RN-4.1 Sessão já existente segue o fluxo de **retomada**, sem criar outra sessão.
+- RN-4.2 O aumento compara a maior carga atual com a maior carga da sessão concluída válida mais recente do mesmo exercício. Primeiro registro, carga igual ou menor, sessão anulada e série removida não geram aviso.
+- RN-4.3 O aviso do personal tem uma chave por sessão e exercício. Se o aluno subir novamente a carga na mesma sessão, o mesmo aviso é atualizado, sem duplicação.
+- RN-4.4 **Dúvida não pausa** o exercício. **Dor e desconforto pausam** até a orientação do personal.
+- RN-4.5 Treino esquecido: varredura a cada 5 min; lembrete a cada `SESSION_REMINDER_MIN` (padrão 60) até finalizar, corrigir ou descartar.
 
 **Máquina de estados da sessão** (`api/session-machine.js`, espelhada em `frontend/src/lib/session-machine.js`; o servidor valida cada evento com ela e o app usa para decidir o que mostrar):
 
@@ -521,7 +524,8 @@ sequenceDiagram
   API-->>A: push/e-mail "acesso liberado"
   P->>API: publica a ficha do aluno
   A->>API: GET /hoje · treino do dia
-  A->>A: Defina os pesos → Confirmar pesos e iniciar treino
+  A->>API: abre o treino · servidor registra o início
+  A->>A: informa a carga ao realizar cada série
 ```
 
 Sem ficha publicada, **Treinos** informa que o aluno está aguardando o personal — e nada mais.
@@ -531,11 +535,8 @@ Sem ficha publicada, **Treinos** informa que o aluno está aguardando o personal
 ```mermaid
 flowchart TD
   T["Treinos: ficha ativa"] --> D{"Sessão aberta?"}
-  D -- sim --> RET["Retomada (sem repetir preparação)"]
-  D -- não --> PREP["Defina os pesos<br/>kg ≥ 0 por exercício de repetições<br/>0 = sem carga · tempo dispensa"]
-  PREP -->|Voltar| T
-  PREP --> CONF["Confirmar pesos e iniciar treino"]
-  CONF --> SRV["POST início no servidor<br/>horário do servidor prevalece"]
+  D -- sim --> RET["Retomada da sessão"]
+  D -- não --> SRV["POST início no servidor<br/>horário do servidor prevalece"]
   SRV --> EX["Execução"]
   RET --> EX
   EX --> V["Vídeo do personal<br/>0,5× / 0,75× / 1× · ±10 s"]
@@ -543,8 +544,11 @@ flowchart TD
   Q --> FILA["Dúvidas e atendimentos"]
   EX --> DOR["Relato de dor<br/>(pausa até orientação)"]
   DOR --> FILA
-  EX --> SET["Iniciar série → descanso → próxima"]
-  SET --> EX
+  EX --> SET["Iniciar série → informar carga usada<br/>→ concluir → descanso → próxima"]
+  SET --> INC{"Superou a última sessão válida?"}
+  INC -- sim --> AV["Avisa aluno e personal"]
+  INC -- não --> EX
+  AV --> EX
   EX --> FIN["Concluir"]
   FIN --> DONE["Conclusão: resumo, sensação, dor"]
   DONE --> SYNC["Sincroniza histórico e progresso"]

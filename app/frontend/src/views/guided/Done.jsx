@@ -85,6 +85,12 @@ export default function Done() {
       <div><b>{fmtMin(dur)}</b><span>Tempo</span></div><div><b>{exs}</b><span>Exercícios</span></div>
       <div><b>{sets}</b><span>Séries</span></div><div><b>{fmtKg(vol)}</b><span>Volume (carga × repetições)</span></div>
     </div>
+    {src.load_increases?.length > 0 && <section className="g-card" style={{ marginTop: 16 }} data-testid="done-load-increases">
+      <h3>Carga aumentada</h3>
+      {src.load_increases.map(item => <p className="g-note" key={item.exercise_id} style={{ marginTop: 8 }}>
+        {item.name}: {fmtKg(item.previous_weight)} → {fmtKg(item.weight)}. Seu personal também será avisado quando o treino sincronizar.
+      </p>)}
+    </section>}
     {(saved || view)?.synced && !corr && <section className="g-card" style={{ marginTop: 16, textAlign: 'center' }} data-testid="done-tapago"><span className="g-eyebrow">#TáPago</span><h2 style={{ margin: '6px 0' }}>Treino pago. Evolução garantida.</h2><p className="g-mut g-sm">Transforme seu treino confirmado em uma arte pronta para compartilhar.</p><button className="g-btn" style={{ marginTop: 12 }} onClick={() => nav('/compartilhar?tipo=treino' + ((saved || view).server_id ? '&sessao=' + (saved || view).server_id : ''))} data-testid="done-share"><Icon name="sparkles" /> Criar meu card</button></section>}
     {corr ? <p className="g-note" style={{ marginTop: 12 }} data-testid="done-corrected">Tempo corrigido por você ({fmtMin(corr.manual_sec)}). Este treino fica no histórico, mas não conta para os números do progresso.</p> : <TimingSummary t={timing} />}
 

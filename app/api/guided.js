@@ -307,6 +307,9 @@ export function guidedRoutes({ json, readBody }) {
       const b = await readBody(req)
       const cid = String(b.client_id || '').slice(0, 64); if (!cid) return json(res, 400, { error: 'client_id obrigatório' })
       const sets = (Array.isArray(b.sets) ? b.sets : []).slice(0, 300)
+      if (sets.some(s => s.weight != null && s.weight !== '' && (!Number.isFinite(+s.weight) || +s.weight < 0))) {
+        return json(res, 400, { error: 'Carga inválida', code: 'INVALID_WEIGHT' })
+      }
       const now = new Date()
       let cur = (await q('select id,tenant_id,status,state,started_at,server_started_at,integrity from sessions where user_id=$1 and client_id=$2', [u.id, cid])).rows[0]
       if (cur && cur.status === 'done') return json(res, 200, { id: cur.id, duplicate: true, state: cur.state, groups: await sessionMuscleGroups(cur.id, u) })
@@ -336,6 +339,15 @@ export function guidedRoutes({ json, readBody }) {
       if (Array.isArray(b.events) && b.events.length) state = (await applyEvents(u, { ...cur, state }, b.events)).state
       // séries: atualiza por (exercício, índice); a que sumiu do payload final fica marcada como removida (não apagada)
       const known = new Set((await q('select id from exercises where id = any($1)', [sets.map(s => String(s.exercise_id))])).rows.map(r => r.id))
+      const exerciseIds = [...known]
+      const previousRows = exerciseIds.length ? (await q(`with ranked as (
+          select ss.exercise_id,ss.weight::float weight,s.started_at,s.id,
+            dense_rank() over(partition by ss.exercise_id order by s.started_at desc,s.id desc) session_rank
+          from session_sets ss join sessions s on s.id=ss.session_id
+          where s.user_id=$1 and s.tenant_id=$2 and s.id<>$3 and s.status='done' and s.voided_at is null
+            and ss.removed_at is null and ss.exercise_id=any($4)
+        ) select exercise_id,max(weight)::float previous_max from ranked where session_rank=1 group by exercise_id`, [u.id, u.tenant_id, sid, exerciseIds])).rows : []
+      const previousMax = Object.fromEntries(previousRows.map(r => [r.exercise_id, r.previous_max]))
       const keep = []
       for (const s of sets) {
         if (!known.has(String(s.exercise_id))) continue
@@ -352,6 +364,14 @@ export function guidedRoutes({ json, readBody }) {
           [sid, b.pain.code, Math.max(0, Math.min(10, +b.pain.intensity || 0)), b.pain.notes ? String(b.pain.notes).slice(0, 500) : null])
       }
       const live = sets.filter(s => known.has(String(s.exercise_id)))
+      const currentMax = {}
+      for (const set of live) {
+        if (set.weight == null || set.weight === '' || !Number.isFinite(+set.weight) || +set.weight < 0) continue
+        const id = String(set.exercise_id), weight = +set.weight
+        currentMax[id] = currentMax[id] == null ? weight : Math.max(currentMax[id], weight)
+      }
+      const loadIncreases = Object.entries(currentMax).filter(([id, weight]) => previousMax[id] != null && weight > previousMax[id])
+        .map(([exercise_id, weight]) => ({ exercise_id, previous_weight: previousMax[exercise_id], weight }))
       const volume = live.reduce((a, s) => a + (+s.weight || 0) * (+s.reps || 0), 0)
       const exCount = new Set(live.map(s => s.exercise_id)).size
       const feeling = b.feeling == null ? null : Math.max(1, Math.min(5, +b.feeling | 0))
@@ -379,7 +399,7 @@ export function guidedRoutes({ json, readBody }) {
         [sid, finished, status, feeling, b.notes ? String(b.notes).slice(0, 500) : null, finished ? Math.round((finished - started) / 1000) : null, volume, live.length, exCount, +b.prescribed_count || null,
          newState, JSON.stringify(integrity), !!integrity.clock_invalid])
       if (finished && state !== 'concluida') await addEvent(q, cur, u.id, { id: 'finish:' + cid, type: correction ? 'correct_finish' : 'finish', at: finished, from: state, to: 'concluida', payload: {} })
-      const exNames = Object.fromEntries((await q('select id,name_pt as name from exercises where id = any($1)', [[...known]])).rows.map(r => [r.id, r.name]))
+      const exNames = Object.fromEntries((await q('select id,name_pt as name from exercises where id = any($1)', [exerciseIds])).rows.map(r => [r.id, r.name]))
       const tsets = live.map(s => ({ exercise_id: String(s.exercise_id), name: exNames[String(s.exercise_id)], started_at: okTs(s.started_at), done_at: okTs(s.done_at), rest_sec_real: okRest(s.rest_sec_real), rest_sec_target: okRest(s.rest_sec_target) }))
       const timing = finished ? summarize({ started_at: started, finished_at: finished, paused_sec: paused, sets: tsets }) : null
       await q('update sessions set paused_sec=$2, active_sec=$3, timing=$4, duration_sec=coalesce($5, duration_sec) where id=$1', [sid, paused, timing?.active_sec ?? null, timing ? JSON.stringify(timing) : null, timing?.total_sec ?? null])
@@ -387,7 +407,23 @@ export function guidedRoutes({ json, readBody }) {
         await recordCorrection(cur, u.id, timing?.total_sec ?? Math.round((finished - started) / 1000), correction)
         await q('update sessions set time_corrected_at=now() where id=$1', [sid])
       }
-      json(res, 200, { id: sid, volume, timing, state: newState, counts_in_metrics: !correction && !integrity.clock_invalid, groups: finished ? await sessionMuscleGroups(sid, u) : [] })
+      if (loadIncreases.length) {
+        const coaches = (await q(`select cs.coach_id from coach_students cs
+          where cs.student_id=$1 and cs.tenant_id=$2 and cs.status='ativo'`, [u.id, u.tenant_id])).rows
+        for (const coach of coaches) for (const increase of loadIncreases) {
+          const name = exNames[increase.exercise_id] || 'Exercício'
+          const body = `${u.name} aumentou a carga em ${name}: ${increase.previous_weight} kg → ${increase.weight} kg.`
+          const key = `carga-aumentada:${sid}:${increase.exercise_id}`
+          await q(`insert into notifications(user_id,kind,title,body,link,dedupe_key)
+            values($1,'treino','Carga aumentada no treino',$2,$3,$4)
+            on conflict (user_id,dedupe_key) where dedupe_key is not null do update
+              set body=excluded.body,link=excluded.link,created_at=now(),read_at=null
+              where notifications.body is distinct from excluded.body`, [coach.coach_id, body, `/pro?tab=alunos&id=${u.id}&sub=evolucao`, key])
+            .catch(e => console.error('[carga-aumentada]', e.message))
+        }
+      }
+      json(res, 200, { id: sid, volume, timing, state: newState, load_increases: loadIncreases,
+        counts_in_metrics: !correction && !integrity.clock_invalid, groups: finished ? await sessionMuscleGroups(sid, u) : [] })
     },
     'GET /api/guided/sessions/muscles': async (req, res) => {
       const u = await requireTrainee(req, res, json); if (!u) return

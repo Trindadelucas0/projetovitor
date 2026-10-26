@@ -29,8 +29,8 @@ async function register(rq, name, email, extra = {}) {
   return (await r.json()).user
 }
 async function doWorkout(page, F) {
-  await step(page, F, 'Abrir o treino de hoje (preparação dos pesos)', () => go(page, '/#/treinar', 'workout-weights'))
-  await step(page, F, 'Informar os pesos e iniciar', async () => { for (const i of await page.locator('input[type=number]').all()) await i.fill('10'); await page.getByTestId('confirm-workout-weights').click(); await expect(page.getByTestId('train')).toBeVisible() })
+  await step(page, F, 'Abrir o treino de hoje diretamente no exercício', () => go(page, '/#/treinar', 'train'))
+  await step(page, F, 'Informar a carga do exercício', async () => { await page.getByLabel('Carga usada (kg)').fill('10') })
   await step(page, F, 'Iniciar série (cronômetro rodando)', async () => { await page.getByTestId('start-set').click(); await page.waitForTimeout(1500); await expect(page.getByTestId('finish-set')).toBeVisible() })
   await step(page, F, 'Concluir série e entrar no descanso', async () => { await page.getByTestId('finish-set').click(); await expect(page.getByTestId('skip-rest')).toBeVisible() })
   await step(page, F, 'Pular descanso', () => page.getByTestId('skip-rest').click())
@@ -93,8 +93,8 @@ test('2) personal: cadastra aluno com senha provisória → aluno troca senha �
   await step(cp, F, 'Aluno vê a ficha como treino ativo', () => go(cp, '/#/treinos', 'active-training').then(() => expect(cp.getByTestId('active-training')).toContainText('Ficha Força A')))
   await step(cp, F, 'Aluno do personal: Progresso (layout clássico)', () => go(cp, '/#/progresso', 'progress-trophies'))
   await step(cp, F, 'Aluno coberto não pode desvincular', () => expect(cp.getByTestId('active-detach-pro')).toHaveCount(0))
-  await step(cp, F, 'Aluno inicia a ficha', async () => { await go(cp, '/#/treinos', 'active-training'); await cp.getByTestId('plan-start').first().click(); await expect(cp.getByTestId('workout-weights')).toBeVisible() })
-  await step(cp, F, 'Aluno informa pesos e treina', async () => { for (const i of await cp.locator('input[type=number]').all()) await i.fill('20'); await cp.getByTestId('confirm-workout-weights').click(); await cp.getByTestId('start-set').click(); await cp.waitForTimeout(1200); await cp.getByTestId('finish-set').click() })
+  await step(cp, F, 'Aluno inicia a ficha', async () => { await go(cp, '/#/treinos', 'active-training'); await cp.getByTestId('plan-start').first().click(); await expect(cp.getByTestId('train')).toBeVisible() })
+  await step(cp, F, 'Aluno informa a carga e treina', async () => { await cp.getByLabel('Carga usada (kg)').fill('20'); await cp.getByTestId('start-set').click(); await cp.waitForTimeout(1200); await cp.getByTestId('finish-set').click() })
   await step(cp, F, 'Aluno abre "Tenho uma dúvida"', async () => { await cp.getByTestId('skip-rest').click().catch(() => {}); await cp.getByTestId('ask').click(); await expect(cp.getByRole('dialog').first()).toBeVisible() })
   await step(cp, F, 'Acompanhamento do aluno', () => go(cp, '/#/acompanhamento'))
   await step(P.page, F, 'Atendimentos: Pendentes / Em andamento / Encerrados', async () => { await go(P.page, '/#/pro?tab=atendimentos'); await expect(P.page.getByRole('tab', { name: 'Encerrados' }).or(P.page.getByText('Encerrados'))).toBeVisible() })

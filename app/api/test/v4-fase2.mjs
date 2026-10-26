@@ -128,6 +128,16 @@ r = await post(s.tok, '/api/guided/sessions/start', { client_id: cf, pro_plan_id
 check(r.s === 201 && r.d.origin === 'ficha', 'ficha com plano ativo e vínculo ativo é autorizada')
 const snap = (await q('select auth_snapshot, pro_plan_version from sessions where client_id=$1', [cf])).rows[0]
 check(snap.auth_snapshot.kind === 'ficha' && snap.pro_plan_version === 1, 'autorização e versão da ficha guardadas na sessão')
+const previousLoad = +(await q(`select max(ss.weight)::float weight from session_sets ss join sessions x on x.id=ss.session_id
+  where x.id=(select s2.id from sessions s2 join session_sets y on y.session_id=s2.id where s2.user_id=$1 and s2.status='done' and s2.voided_at is null and y.exercise_id=$2 order by s2.started_at desc,s2.id desc limit 1)
+    and ss.exercise_id=$2 and ss.removed_at is null`, [s.id, prog.ex])).rows[0].weight
+r = await post(s.tok, '/api/guided/sessions', { client_id: cf, pro_plan_id: plan, workout_name: 'Ficha', sets: [set(0, previousLoad + 2)] })
+check(r.d.load_increases?.[0]?.previous_weight === previousLoad, 'aumento compara com a última sessão concluída do exercício')
+let loadNotices = (await q(`select body from notifications where user_id=$1 and dedupe_key=$2`, [pro.id, `carga-aumentada:${r.d.id}:${prog.ex}`])).rows
+check(loadNotices.length === 1 && loadNotices[0].body.includes(String(previousLoad + 2)), 'personal recebe aviso da carga aumentada')
+r = await post(s.tok, '/api/guided/sessions', { client_id: cf, pro_plan_id: plan, workout_name: 'Ficha', sets: [set(0, previousLoad + 4)] })
+loadNotices = (await q(`select body from notifications where user_id=$1 and dedupe_key=$2`, [pro.id, `carga-aumentada:${r.d.id}:${prog.ex}`])).rows
+check(loadNotices.length === 1 && loadNotices[0].body.includes(String(previousLoad + 4)), 'novo aumento atualiza o mesmo aviso, sem duplicar')
 await q(`update coach_students set status='encerrado', ended_at=now() where coach_id=$1 and student_id=$2`, [pro.id, s.id])
 r = await post(s.tok, '/api/guided/sessions', { client_id: cf, pro_plan_id: plan, workout_name: 'Ficha', finished_at: new Date().toISOString(), sets: [] })
 check(r.s === 200 && r.d.state === 'concluida', 'sessão iniciada antes do fim do vínculo pode ser finalizada')

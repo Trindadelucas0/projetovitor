@@ -124,6 +124,8 @@ body:has(.ag),html:has(.ag){background:var(--ag-bg)!important}
 .ag.g-run .g-stp{padding:8px 6px;border-radius:15px}
 .ag.g-run .g-stp .g-val{font-size:30px;margin:2px 0 4px}
 .ag.g-run .g-stp .g-pm button{height:46px}
+.ag.g-run .g-weight-input{margin:6px 0 8px;text-align:center;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.ag.g-run .g-stp #weight-reference{display:block;margin-top:8px;line-height:1.35}
 .ag.g-run .g-btn.g-xl{min-height:58px;font-size:18px;border-radius:15px}
 .ag .g-rest .g-timer-ring{width:min(48vw,180px);height:min(48vw,180px);margin:0}
 .ag .g-rest .g-timer-ring strong{font-size:clamp(34px,10vw,46px)}

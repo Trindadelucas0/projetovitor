@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import Icon from '../../components/Icon.jsx'
 import { clock, elapsedOf } from '../../lib/timing.js'
 import { planExercises, groupsOf, afterSet, restAfter, targetFor, SIDE_PT, TECH_PT } from '../../lib/workout.js'
-import { G, loadSession, saveSessionLocal, newSession, payloadOf, mediaOf, RESTR_PT, startRemote, logEvent, enqueue, idleMin, FORGOTTEN_MIN, restoreLiveSession, setLastFinished } from '../../lib/guided.js'
+import { G, loadSession, saveSessionLocal, newSession, payloadOf, mediaOf, RESTR_PT, startRemote, logEvent, enqueue, idleMin, FORGOTTEN_MIN, restoreLiveSession, setLastFinished, fmtKg } from '../../lib/guided.js'
 import { OpenSessionScreen, TimeFix } from './SessionRecovery.jsx'
 import { Spin } from './Programs.jsx'
 import { C } from '../../lib/care.js'
@@ -31,7 +31,7 @@ export default function Train() {
   const nav = useNavigate()
   const [sp] = useSearchParams()
   const [s, setS] = useState(() => loadSession())
-  const [draft, setDraft] = useState(null), [beginBusy, setBeginBusy] = useState(false)
+  const [draft, setDraft] = useState(null), [, setBeginBusy] = useState(false)
   // V4: treino aberto há ≥ 1h sem atividade (local) ou aberto no servidor (outro aparelho) → "Treino ainda em aberto"
   const [recover, setRecover] = useState(() => { const x = loadSession(); return x && !x.finishing && !x.finished_at && idleMin(x) >= FORGOTTEN_MIN ? { local: true } : null })
   const [fix, setFix] = useState(false), [rbusy, setRbusy] = useState(false)
@@ -49,7 +49,7 @@ export default function Train() {
     starting.current = true
     setBeginBusy(true)
     n.warmup_items = runtimeGeneralWarmups(n.warmup_items || [])
-    n.exercises = n.exercises.map(e => ({ ...e, warmup_sets: runtimeExerciseWarmups(e.warmup_sets || [], e.weight) }))
+    n.exercises = n.exercises.map(e => ({ ...e, warmup_sets: runtimeExerciseWarmups(e.warmup_sets || [], e.load_kg ?? e.weight) }))
     n.started_at = new Date().toISOString()
     const r = await startRemote(n)
     setBeginBusy(false)
@@ -67,7 +67,7 @@ export default function Train() {
     // plano prescrito por um profissional (Treinos → plano do profissional)
     if (sp.get('plan')) { C.plan(sp.get('plan')).then(({ plan }) => {
       const day = +(sp.get('day') || 0), exs = planExercises(plan, day), dd = plan.days?.[Math.min(day, (plan.days?.length || 1) - 1)]
-      const n = newSession({ active: { id: null, title: plan.title + ' · ' + plan.owner_name }, workout: { id: null, name: plan.title + (dd?.name && plan.days.length > 1 ? ' · ' + dd.name : ''), warmup_items: dd?.warmup_items || [], exercises: exs.map(e => ({ ...e, suggestion: { weight: e.weight, reps: e.reps } })) } })
+      const n = newSession({ active: { id: null, title: plan.title + ' · ' + plan.owner_name }, workout: { id: null, name: plan.title + (dd?.name && plan.days.length > 1 ? ' · ' + dd.name : ''), warmup_items: dd?.warmup_items || [], exercises: exs.map(e => ({ ...e, suggestion: { weight: null, reps: e.reps } })) } })
       n.exercises = n.exercises.map((e, i) => { const o = exs[i]; return { ...e, timed: o.timed, rest_sec: o.rest_sec ?? 60, group: o.group ?? null, per_set: o.per_set || [], warmup_sets: o.warmup_sets || [], tempo: o.tempo || '', rpe: o.rpe ?? null, rir: o.rir ?? null, side: o.side || 'bilateral', technique: o.technique || 'normal', notes: o.notes || '', reps_label: o.reps || '', load_kg: o.load_kg ?? null, video_url: o.video_url || null } })
       n.plan_desc = plan.description || plan.notes || ''; n.day_desc = dd?.description || ''
       n.next_time_guidance = dd?.next_time_guidance || ''
@@ -78,6 +78,9 @@ export default function Train() {
       setDraft(newSession(t))
     }).catch(() => setErr('Sem conexão para baixar o treino. Tente novamente.'))
   }, [s, sp, nav, recover]) // eslint-disable-line
+  // A lista prévia de cargas foi retirada: abrir o treino já solicita o início ao servidor.
+  // A carga realmente usada é informada somente quando o aluno chega a cada exercício.
+  useEffect(() => { if (!s && draft && !recover && !starting.current) begin(draft) }, [s, draft, recover]) // eslint-disable-line
   // sessão retomada criada antes de a mídia existir: completa mídia/instruções pelo servidor
   useEffect(() => {
     if (!s || !s.exercises.some(e => !e.media)) return
@@ -126,20 +129,6 @@ export default function Train() {
   if (recover && rinfo) return <OpenSessionScreen info={rinfo} busy={rbusy} onContinue={recContinue} onCorrect={() => setFix(true)} onDiscard={recDiscard} />
 
   if (err) return <div className="ag g-full"><p className="g-warn">{err}</p><button className="g-btn" style={{ marginTop: 16 }} onClick={() => nav('/hoje')}>Voltar</button></div>
-  if (!s && draft) return <div className="ag g-full" data-testid="workout-weights">
-    <h1>Defina os pesos</h1>
-    <p className="g-mut">{draft.workout_name} · O cronômetro só começa quando você confirmar. Use 0 kg nos exercícios sem carga.</p>
-    <form onSubmit={e => { e.preventDefault(); if (!beginBusy) begin(draft) }}>
-      {draft.exercises.map((e, i) => <div className="g-card" key={i}>
-        {e.timed ? <p>{e.name} · exercício por tempo, sem peso para informar.</p> : <label>{e.name} · Peso (kg)
-          <input className="g-in" type="number" inputMode="decimal" min="0" step="0.1" required disabled={beginBusy} value={e.weight ?? ''}
-            onChange={ev => { const value = ev.target.value; setDraft(x => ({ ...x, exercises: x.exercises.map((ex, k) => k === i ? { ...ex, weight: value === '' ? null : Number(value) } : ex) })) }} />
-        </label>}
-      </div>)}
-      <button className="g-btn" type="submit" disabled={beginBusy} data-testid="confirm-workout-weights">{beginBusy ? 'Iniciando…' : 'Confirmar pesos e iniciar treino'}</button>
-      <button className="g-btn g-ghost" type="button" disabled={beginBusy} onClick={() => nav('/hoje')}>Voltar</button>
-    </form>
-  </div>
   if (!s) return <Spin />
 
   function update(fn) {
@@ -169,9 +158,22 @@ export default function Train() {
   const adj = (k, d) => update(x => { const e = x.exercises[x.exIdx]; e[k] = Math.max(0, Math.round(((+e[k] || 0) + d) * 10) / 10) })
   const goNext = () => update(x => { endRest(x); x.cur_start = null; if (x.exIdx < x.exercises.length - 1) x.exIdx++ ; else x.finishing = true })
   const finishSet = () => {
+    const actualWeight = +ex.weight
+    if (!ex.timed && (ex.weight == null || ex.weight === '' || !Number.isFinite(actualWeight) || actualWeight < 0)) {
+      setFlash('Informe a carga usada nesta série. Use 0 kg se o exercício não tiver carga.')
+      return
+    }
+    setFlash('')
+    const previousMax = Number.isFinite(ex.last_max_weight) ? ex.last_max_weight : null
+    const currentSessionMax = ex.done.reduce((max, done) => done.weight == null ? max : Math.max(max, +done.weight), -Infinity)
+    const increased = !ex.timed && previousMax != null && +ex.weight > previousMax && +ex.weight > currentSessionMax
     logEvent(s, 'set_done', { exercise_id: ex.exercise_id, set_index: ex.done.length, weight: ex.timed ? null : ex.weight, reps: ex.reps })
     update(x => {
       const e = x.exercises[x.exIdx]
+      if (increased) {
+        const notice = { exercise_id: e.exercise_id, name: e.name, previous_weight: previousMax, weight: actualWeight }
+        x.load_increases = [...(x.load_increases || []).filter(item => item.exercise_id !== e.exercise_id), notice]
+      }
       const now = Date.now(), st = x.cur_start || x.last_end || new Date(x.started_at).getTime()
       e.done.push({ weight: e.weight, reps: e.reps, at: new Date(now).toISOString(), started_at: new Date(st).toISOString(),
         rest_sec_real: x.last_end ? Math.max(0, Math.round((st - x.last_end) / 1000)) : null, rest_sec_target: x.last_end ? (x.pending_target ?? null) : null })
@@ -180,11 +182,12 @@ export default function Train() {
       if (r.done) { x.finishing = true; x.rest = null; return }
       const sec = groupsOf(x.exercises)[x.exIdx] ? restAfter(x.exercises, x.exIdx) : (e.rest_sec ?? 60)
       const ne = x.exercises[r.next]
-      if (ne.per_set?.length) { const t = targetFor(ne, ne.done.length); if (t.load_kg != null && t.load_kg !== '') ne.weight = +t.load_kg; if (!ne.timed && (t.reps_max || t.reps_min)) ne.reps = t.reps_max || t.reps_min }
+      if (ne.per_set?.length) { const t = targetFor(ne, ne.done.length); if (!ne.timed && (t.reps_max || t.reps_min)) ne.reps = t.reps_max || t.reps_min }
       x.rest = r.rest && sec > 0 ? { until: Date.now() + sec * 1000, total: sec, afterNext: r.next !== x.exIdx } : null
       x.pending_target = r.rest ? sec : 0
       x.exIdx = r.next
     })
+    if (increased) setFlash(`Carga aumentada: ${fmtKg(previousMax)} → ${fmtKg(ex.weight)}.`)
   }
   if (s.finishing) return <Spin />
   const pause = () => { logEvent(s, 'pause'); update(x => { x.paused_at = new Date().toISOString() }) }
@@ -275,16 +278,20 @@ export default function Train() {
       <span className="g-mut g-xs">Série {setNo} de {ex.sets} · {ex.timed ? `meta ${setTarget} s` : `meta ${ex.reps} repetições${ex.weight ? ' · ' + ex.weight + ' kg' : ''}`}</span>
     </div>}
     <div className="g-steppers" style={ex.timed ? { gridTemplateColumns: '1fr' } : null}>
-      {!ex.timed && <div className="g-stp"><div className="g-lb">Carga</div>
-        <div className="g-val" data-testid="weight">{ex.weight || 0}<small>kg</small></div>
-        <div className="g-pm"><button onClick={() => adj('weight', -wStep)} aria-label="Diminuir carga">−</button><button onClick={() => adj('weight', wStep)} aria-label="Aumentar carga">+</button></div></div>}
+      {!ex.timed && <div className="g-stp"><label className="g-lb" htmlFor="workout-weight">Carga usada (kg)</label>
+        <input id="workout-weight" className="g-in g-weight-input" type="number" inputMode="decimal" min="0" step="0.1"
+          placeholder="Informe a carga" value={ex.weight ?? ''} aria-describedby="weight-reference" data-testid="weight"
+          onChange={ev => { const value = ev.target.value; update(x => { x.exercises[x.exIdx].weight = value === '' ? null : Number(value) }); setFlash('') }} />
+        <div className="g-pm"><button type="button" onClick={() => adj('weight', -wStep)} aria-label="Diminuir carga">−</button><button type="button" onClick={() => adj('weight', wStep)} aria-label="Aumentar carga">+</button></div>
+        <span id="weight-reference" className="g-xs g-mut">{Number.isFinite(ex.last_max_weight) ? `Última vez: ${fmtKg(ex.last_max_weight)}` : 'Primeiro registro deste exercício'}{targetFor(ex, Math.min(ex.done.length, ex.sets - 1)).load_kg != null ? ` · Meta do personal: ${fmtKg(targetFor(ex, Math.min(ex.done.length, ex.sets - 1)).load_kg)}` : ''}</span>
+      </div>}
       <div className="g-stp"><div className="g-lb">{ex.timed ? 'Segundos' : 'Repetições'}</div>
         <div className="g-val" data-testid="reps">{ex.reps}</div>
         <div className="g-pm"><button onClick={() => adj('reps', ex.timed ? -5 : -1)} aria-label="Diminuir">−</button><button onClick={() => adj('reps', ex.timed ? 5 : 1)} aria-label="Aumentar">+</button></div></div>
     </div>
 
     {isBlocked && <div className="g-blocked" data-testid="ex-blocked"><b>Exercício pausado</b><p className="g-mut g-sm">Você relatou dor ou desconforto. Ele fica bloqueado até seu profissional registrar uma orientação explícita. Siga para o próximo exercício.</p></div>}
-    {flash && <p className="g-note" style={{ marginTop: 8 }}>{flash}</p>}
+    {flash && <p className="g-note" style={{ marginTop: 8 }} role="status">{flash}</p>}
     {isBlocked ? null : allDoneEx ? <button className="g-btn g-xl" onClick={goNext}>{isLastEx ? 'FINALIZAR TREINO' : 'PRÓXIMO EXERCÍCIO'}</button>
       : setRunning == null ? <>
         <button className="g-btn g-xl" onClick={startSet} data-testid="start-set"><Icon name="play" /> INICIAR SÉRIE {setNo}</button>
@@ -316,6 +323,7 @@ export default function Train() {
       <button className="g-btn g-ghost" style={{ maxWidth: 360 }} onClick={() => nav('/hoje')}>Sair (o treino continua pausado)</button></div>}
     {s.rest && !s.paused_at && <div className="g-rest" data-testid="rest">
       <span className="g-eyebrow">Descanse</span>
+      {flash && <p className="g-note" role="status">{flash}</p>}
       <TimerRing seconds={Math.max(0, restLeft)} total={s.rest.total} label="Restam" testid="rest-clock" />
       <div className="g-pmrow">
         <button className="g-btn g-ghost" onClick={() => { logEvent(s, 'rest_adjust', { delta: -15 }); update(x => { x.rest.until -= 15000; x.rest.total = Math.max(0, x.rest.total - 15) }) }}>−15 s</button>

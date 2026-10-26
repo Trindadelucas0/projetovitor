@@ -56,8 +56,8 @@ export async function registerApi(rq, name, email, extra = {}) {
 }
 export const dismissTour = async page => { const s = page.getByTestId('tour-skip'); if (await s.isVisible({ timeout: 1500 }).catch(() => false)) await s.click() }
 export async function doWorkout(page, step, prefixo = '') {
-  await step(page, prefixo + 'Abrir o treino de hoje e ver a preparação dos pesos', () => go(page, '/#/treinar', 'workout-weights'))
-  await step(page, prefixo + 'Informar as cargas e iniciar o treino', async () => { for (const i of await page.locator('input[type=number]').all()) await i.fill('12'); await page.getByTestId('confirm-workout-weights').click(); await expect(page.getByTestId('train')).toBeVisible() })
+  await step(page, prefixo + 'Abrir o treino de hoje diretamente no exercício', () => go(page, '/#/treinar', 'train'))
+  await step(page, prefixo + 'Informar a carga do exercício', async () => { await page.getByLabel('Carga usada (kg)').fill('12') })
   await step(page, prefixo + 'Iniciar a série (cronômetro rodando)', async () => { await page.getByTestId('start-set').click(); await page.waitForTimeout(1500); await expect(page.getByTestId('finish-set')).toBeVisible() })
   await step(page, prefixo + 'Concluir a série e entrar no descanso', async () => { await page.getByTestId('finish-set').click(); await expect(page.getByTestId('skip-rest')).toBeVisible() })
   await step(page, prefixo + 'Pular o descanso', () => page.getByTestId('skip-rest').click())
@@ -65,6 +65,7 @@ export async function doWorkout(page, step, prefixo = '') {
   await step(page, prefixo + 'Avançar todos os exercícios até a conclusão', async () => {
     for (let i = 0; i < 40 && !(await page.getByTestId('done').isVisible()); i++) {
       const nx = page.getByTestId('next-ex'), st = page.getByTestId('start-set'), fin = page.getByTestId('finish-set'), sk = page.getByTestId('skip-rest')
+      const weight = page.getByLabel('Carga usada (kg)'); if (await weight.isVisible().catch(() => false)) if ((await weight.inputValue()) === '') await weight.fill('12')
       if (await nx.isVisible()) await nx.click(); else if (await sk.isVisible()) await sk.click(); else if (await fin.isVisible()) await fin.click(); else if (await st.isVisible()) await st.click(); else break
       await page.waitForTimeout(300) }
     await expect(page.getByTestId('done')).toBeVisible() })

@@ -269,7 +269,23 @@ export function proRoutes({ json, readBody }) {
       const by = Object.fromEntries(media.map(m => [m.id, m]))
       const ids2 = (p.days || []).flatMap(d => (d.exercises || []).map(e => e.exercise_id)).filter(i => !by[i])
       if (ids2.length) for (const m of (await q('select id, media_url, instructions_pt from exercises where id = any($1)', [ids2])).rows) by[m.id] = m
-      const enrich = e => ({ ...e, media: by[e.exercise_id]?.media_url || null, how_to: by[e.exercise_id]?.instructions_pt || null, instructions: e.instructions || e.notes || by[e.exercise_id]?.instructions_pt || null })
+      const allIds = [...new Set([...ids, ...ids2])]
+      const lastRows = allIds.length ? (await q(`with ranked as (
+          select ss.exercise_id,ss.set_index,ss.weight::float weight,ss.reps,s.started_at,s.id,
+            dense_rank() over(partition by ss.exercise_id order by s.started_at desc,s.id desc) session_rank
+          from session_sets ss join sessions s on s.id=ss.session_id
+          where s.user_id=$1 and s.tenant_id=$2 and s.status='done' and s.voided_at is null
+            and ss.removed_at is null and ss.exercise_id=any($3)
+        ) select exercise_id,set_index,weight,reps from ranked where session_rank=1 order by exercise_id,set_index`, [u.id, u.tenant_id, allIds])).rows : []
+      const lastBy = {}
+      for (const row of lastRows) (lastBy[row.exercise_id] ||= []).push({ weight: row.weight, reps: row.reps })
+      const enrich = e => {
+        const last = lastBy[e.exercise_id] || null
+        const weights = (last || []).map(x => x.weight).filter(x => x != null)
+        return { ...e, media: by[e.exercise_id]?.media_url || null, how_to: by[e.exercise_id]?.instructions_pt || null,
+          instructions: e.instructions || e.notes || by[e.exercise_id]?.instructions_pt || null,
+          last, last_max_weight: weights.length ? Math.max(...weights) : null }
+      }
       p.exercises = (p.exercises || []).map(enrich)
       p.days = (p.days || []).map(d => ({ ...d, exercises: (d.exercises || []).map(enrich) }))
       json(res, 200, { plan: p })

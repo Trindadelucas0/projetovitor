@@ -51,6 +51,10 @@ export const repsLabel = e => e.reps_min || e.reps_max
   : `${e.duration_sec} segundos`
 export const fmtMin = s => { const m = Math.round((s || 0) / 60); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min` }
 export const fmtKg = n => (Math.round((+n || 0) * 10) / 10).toLocaleString('pt-BR') + ' kg'
+export const lastMaxWeight = last => {
+  const weights = (last || []).map(x => x.weight).filter(x => x != null && Number.isFinite(+x)).map(Number)
+  return weights.length ? Math.max(...weights) : null
+}
 
 // ---------- sessão local ----------
 const KEY = 'avagym_guided_session_v1', QUEUE = 'avagym_guided_queue_v1', LAST = 'avagym_guided_last_v1'
@@ -78,8 +82,10 @@ export function newSession(today) {
       exercise_id: e.exercise_id, name: e.name, media: e.media, sets: e.sets || 3, reps_min: e.reps_min, reps_max: e.reps_max,
       duration_sec: e.duration_sec, rest_sec: e.rest_sec || 60, instructions: e.instructions, cautions: e.cautions || [],
       video_url: e.video_url || null,   // vídeo do personal neste exercício (fica na sessão, inclusive offline)
-      timed: !e.reps_min && !e.reps_max, weight: e.suggestion?.weight ?? null, reps: e.suggestion?.reps ?? (e.reps_min || e.reps_max || e.duration_sec || 10),
-      note: e.suggestion?.note || null, last: e.last, done: [], warmup_sets: runtimeExerciseWarmups(e.warmup_sets || [], e.suggestion?.weight ?? e.load_kg)
+      timed: !e.reps_min && !e.reps_max, weight: null, reps: e.suggestion?.reps ?? (e.reps_min || e.reps_max || e.duration_sec || 10),
+      note: e.suggestion?.note || null, last: e.last,
+      last_max_weight: e.last_max_weight ?? lastMaxWeight(e.last),
+      done: [], warmup_sets: runtimeExerciseWarmups(e.warmup_sets || [], e.suggestion?.weight ?? e.load_kg)
     }))
   }
 }
