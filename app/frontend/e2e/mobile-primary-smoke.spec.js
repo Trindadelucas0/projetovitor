@@ -6,6 +6,12 @@ const paths = {
   admin: ['/admin/painel', '/pro/treino', '/settings']
 }
 
+const readyTestId = {
+  '/comunidade': 'com-tabs',
+  '/progresso': 'progress',
+  '/perfil': 'profile'
+}
+
 for (const [role, routes] of Object.entries(paths)) for (const width of [320, 390]) {
   test(`${role}: telas principais cabem em ${width}px`, async ({ page }) => {
     const user = { id: `mobile-${role}`, name: 'Teste Mobile', status: 'ativo', roles: [role], context: role,
@@ -38,6 +44,7 @@ for (const [role, routes] of Object.entries(paths)) for (const width of [320, 39
     for (const route of routes) {
       await page.goto('/#' + route)
       await expect(page.locator('#app')).toBeVisible()
+      if (readyTestId[route]) await expect(page.getByTestId(readyTestId[route]).first(), `${role} ${route} abriu o conteudo da tela`).toBeVisible({ timeout: 9000 })
       await page.waitForTimeout(150)
       expect(errors.splice(0), `${role} ${route} renderizou sem erro`).toEqual([])
       const metrics = await page.evaluate(() => {

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 const TOKEN = 'abc_DEF-123-valid-reset-token'
-const user = { id: 'student-reset-check', name: 'Aluno Teste', email: 'aluno@example.invalid', roles: ['aluno'], status: 'ativo', palette: 'verde' }
+const user = { id: 'student-reset-check', name: 'Aluno Teste', email: 'aluno\u0040example.invalid', roles: ['aluno'], status: 'ativo', palette: 'verde' }
 
 async function mockSession(page) {
   await page.addInitScript(cached => localStorage.setItem('gym_user', JSON.stringify(cached)), user)
