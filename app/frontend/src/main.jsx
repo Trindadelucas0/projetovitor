@@ -8,9 +8,14 @@ import '@fontsource-variable/montserrat'
 import './index.css'
 import './styles/avadesk.css'
 import './styles/v41.css'
+import { passwordResetToken } from './lib/passwordReset.js'
 
 // Monetizacao F5: link publico /convite/CODIGO (fora do hash) -> rota do app
 if (/^\/convite\/[\w-]{4,32}\/?$/.test(location.pathname)) location.replace('/#' + location.pathname.replace(/\/$/, ''))
+// Alguns clientes de e-mail abrem o endereço como rota direta. Normaliza sem perder o token;
+// o HashRouter passa a tratar o mesmo fluxo usado pelo link gerado pelo servidor.
+const directResetToken = passwordResetToken(location.pathname, location.search)
+if (directResetToken) history.replaceState(null, '', '/#/redefinir?t=' + encodeURIComponent(directResetToken))
 
 createRoot(document.getElementById('root')).render(
   <StrictMode><App /></StrictMode>

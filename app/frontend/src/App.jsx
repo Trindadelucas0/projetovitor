@@ -95,6 +95,7 @@ import ThemeToggle from './components/ThemeToggle.jsx'
 import { NavigationAccess } from './components/NavigationAccess.jsx'
 import ProfileNotice from './components/ProfileNotice.jsx'
 import DeviceSetupFlow from './components/DeviceSetupFlow.jsx'
+import { passwordResetToken } from './lib/passwordReset.js'
 
 bindUI(useUI)   // lets the shared controls open sheets without importing the store at module scope
 
@@ -134,6 +135,11 @@ function Shell() {
       <BrandLoading />
     </div>
   )
+
+  // Redefinição é uma rota pública e precisa vencer a sessão já aberta neste navegador.
+  // Sem esta prioridade, o link era absorvido pelas rotas internas e podia cair no perfil.
+  const resetToken = passwordResetToken(loc.pathname, loc.search)
+  if (resetToken) return <div id="app" className="vfade"><ErrorBoundary><Login resetToken={resetToken} /></ErrorBoundary></div>
 
   // documentos legais: páginas públicas (com ou sem login), fora dos gates
   // V5 cobranca: pagina publica de planos (com ou sem login)

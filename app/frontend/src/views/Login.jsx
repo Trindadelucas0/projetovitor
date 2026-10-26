@@ -17,6 +17,7 @@ import { emptyProfileChoice, PROFILE_LABELS, PALETTE_LABELS } from '../component
 // antd só entra quando o cadastro mostra a escolha de perfil (chunk lazy), não no bundle inicial do login.
 const ProfileChoice = lazy(() => import('../components/ProfileChoice.jsx').then(m => ({ default: m.ProfileChoiceAnt })))
 import './login.css'
+import { passwordResetTokenFromHash } from '../lib/passwordReset.js'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
@@ -52,8 +53,9 @@ function Eye({ off }) {
 
 function ResetPassword({ token }) {
   const [pw, setPw] = useState(''), [pw2, setPw2] = useState(''), [msg, setMsg] = useState(''), [done, setDone] = useState(false)
+  const clearUser = useStore(s => s.setUser)
   const go = async e => { e.preventDefault(); if (pw.length < 8) return setMsg('A senha deve ter pelo menos 8 caracteres'); if (pw !== pw2) return setMsg('As senhas não conferem')
-    try { await api('/api/auth/reset', { method: 'POST', body: JSON.stringify({ token, password: pw }) }); setDone(true) } catch (er) { setMsg(er.message) } }
+    try { await api('/api/auth/reset', { method: 'POST', body: JSON.stringify({ token, password: pw }) }); clearUser(null); setDone(true) } catch (er) { setMsg(er.message) } }
   return <div className="lg-wrap"><form className="lg-card" onSubmit={go}>
     <div className="lg-brand"><Brand /></div>
     {done ? <><p className="lg-sub">Senha alterada! Entre com a nova senha.</p><button type="button" className="lg-btn" onClick={() => { location.hash = '#/hoje' }}>Ir para o login</button></> : <>
@@ -65,8 +67,8 @@ function ResetPassword({ token }) {
   </form></div>
 }
 
-export default function Login() {
-  const resetToken = /^#\/redefinir\?t=([\w-]+)/.exec(location.hash)?.[1]
+export default function Login({ resetToken: suppliedResetToken = '' }) {
+  const resetToken = suppliedResetToken || passwordResetTokenFromHash(location.hash)
   return resetToken ? <ResetPassword token={resetToken} /> : <LoginForm />
 }
 

@@ -2,7 +2,7 @@
 
 **Produto:** Projeto Vitor — aplicativo de treino de um personal trainer e seus alunos
 **Versão do documento:** 1.2 · 25/10/2026
-**Base de referência:** frontend 2.4.1 · API 2.4.1 (arquivos locais; publicação não verificada nesta revisão)
+**Base de referência:** frontend 2.4.2 · API 2.4.1 (arquivos locais; publicação não verificada nesta revisão)
 
 **Natureza deste documento:** especificação do produto desejado, com App Flow e estado de entrega. Requisitos descrevem como o Projeto Vitor deve funcionar; presença de tela, rota ou módulo não significa jornada homologada. O comportamento comprovado no código e as limitações locais ficam na [documentação oficial](../app/DOCUMENTACAO-SISTEMA.md).
 
