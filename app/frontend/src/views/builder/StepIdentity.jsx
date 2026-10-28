@@ -93,7 +93,7 @@ export default function StepIdentity({ st, dx, students, templates, isAdmin, onU
       </label>
 
       <label className="wb-campo">
-        <span className="g-mut g-xs">Como fazer o treino (orientação geral para o aluno)</span>
+        <span className="g-mut g-xs">Orientação geral (opcional)</span>
         <textarea className="g-in" rows={3} value={w.description} onChange={e => dx({ type: 'field', k: 'description', v: e.target.value })}
           placeholder="Aquecimento, ordem, intervalo, cuidados…" data-testid="wb-desc" />
       </label>

@@ -1,4 +1,5 @@
-// Cabeçalho padrão de TODA tela do admin: trilha (Breadcrumb), título e 1–2 frases do que dá para fazer ali.
+// Cabeçalho padrão do admin: trilha, título e ação de ajuda. A descrição permanece
+// disponível para tecnologia assistiva; a explicação visual completa fica no tour.
 // Mantém os data-testid adm-page-header / adm-breadcrumb / adm-title / adm-desc.
 import { Breadcrumb, Typography } from 'antd'
 export default function PageHeader({ crumbs = [], title, description, actions, onCrumb }) {
@@ -10,6 +11,6 @@ export default function PageHeader({ crumbs = [], title, description, actions, o
   return <header className="adm-ph" data-testid="adm-page-header">
     {crumbs.length > 0 && <Breadcrumb items={items} separator="›" aria-label="Você está em" data-testid="adm-breadcrumb" />}
     <div className="adm-ph-row"><Typography.Title level={1} data-testid="adm-title">{title}</Typography.Title>{actions && <div className="adm-ph-actions">{actions}</div>}</div>
-    {description && <Typography.Paragraph type="secondary" className="adm-ph-desc" data-testid="adm-desc">{description}</Typography.Paragraph>}
+    {description && <Typography.Paragraph className="sr-only" data-testid="adm-desc">{description}</Typography.Paragraph>}
   </header>
 }

@@ -31,17 +31,17 @@ export default function Profile() {
       {user && <ContextSwitch />}
       {user && (user.roles || []).includes('aluno') && <MyCoachesCard />}
       <div className="g-card g-list org-list">
-        <Li icon="person" t="Conta" s="Identificação e convites" to="/perfil?secao=dados" />
-        <Li icon="person" t="Perfil social" s="Foto, nome, @identificador e privacidade" to="/perfil/social" testid="profile-social" />
-        <Li icon="gear" t="Preferências" s="Aparência, idioma e treino" to="/perfil?secao=preferencias" testid="profile-preferences" />
-        {user && !user.admin && (user.roles || []).includes('aluno') && <Li icon="sparkles" t="Meu plano" s="Básico ou Completo" to="/planos" testid="my-plan" />}
-        {user && !user.admin && (user.roles || []).includes('aluno') && <Li icon="users" t="Meus benefícios" s="Calls com o personal, grupos, Close Friends e live" to="/beneficios" testid="my-benefits" />}
-        {user && <Li icon="lock" t="Privacidade e segurança" s="Senha, aparelhos e seus dados" to="/perfil?secao=privacidade" testid="profile-security" />}
+        <Li icon="person" t="Conta" to="/perfil?secao=dados" />
+        <Li icon="person" t="Perfil social" to="/perfil/social" testid="profile-social" />
+        <Li icon="gear" t="Preferências" to="/perfil?secao=preferencias" testid="profile-preferences" />
+        {user && !user.admin && (user.roles || []).includes('aluno') && <Li icon="sparkles" t="Meu plano" to="/planos" testid="my-plan" />}
+        {user && !user.admin && (user.roles || []).includes('aluno') && <Li icon="users" t="Meus benefícios" to="/beneficios" testid="my-benefits" />}
+        {user && <Li icon="lock" t="Privacidade e segurança" to="/perfil?secao=privacidade" testid="profile-security" />}
         <Li icon="bell" t="Notificações" to="/avisos" />
-        <Li icon="chat" t="Ajuda e suporte" s="Orientações e contato por e-mail" to="/perfil?secao=ajuda" />
+        <Li icon="chat" t="Ajuda e suporte" to="/perfil?secao=ajuda" />
       </div>
       {user && user.status === 'ativo' && !user.admin && <ReferralPanel compact />}
-      {user?.admin && <div className="org-list"><Li icon="shield" t="Painel administrativo" s="Alunos, fichas e meu perfil de personal" to="/admin/painel" testid="admin-area" /></div>}
+      {user?.admin && <div className="org-list"><Li icon="shield" t="Painel administrativo" to="/admin/painel" testid="admin-area" /></div>}
       {user?.pro && !proAcc && !user?.admin && <Li icon="clipboard" t="Área profissional" to="/pro" testid="pro-area" />}
       {user && <Btn variant="secondary" className="org-list" onClick={signOut}>Sair da conta</Btn>}
     </>}
@@ -51,7 +51,7 @@ export default function Profile() {
         (que só filtravam recomendações de programa) saíram daqui. */}
     {section === 'preferencias' && <>
       {user && <ThemePicker />}
-      <div className="g-card g-list org-list"><Li icon="gear" t="Idioma e configurações do treino" s="Unidades, descanso, som e lembretes" to="/settings" /></div>
+      <div className="g-card g-list org-list"><Li icon="gear" t="Idioma e configurações do treino" to="/settings" /></div>
     </>}
     {section === 'privacidade' && user && <><MeusDados /><Seguranca /></>}
     {section === 'ajuda' && <Support />}

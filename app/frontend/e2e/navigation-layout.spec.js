@@ -11,6 +11,8 @@ async function setup(page, role, theme) {
     else if (u.pathname === '/api/feed/categories') data = {can_publish:role !== 'aluno',can_comment:true,categories:[{id:'training',name_pt:'Treinamento'},{id:'technique',name_pt:'Técnica de execução'},{id:'education',name_pt:'Educação e qualidade de vida'}]}
     else if (u.pathname === '/api/guided/programs') data = {programs:[]}
     else if (u.pathname === '/api/guided/progress') data = {weeks:[],totals:{n:0,secs:0,vol:0},records:[],history:[]}
+    else if (u.pathname === '/api/guided/stats') data = {target_per_week:3,groups:[],kpis:{},comparison:{},weeks:[],days:[],weekdays:[],exercises:[],records:[]}
+    else if (u.pathname === '/api/guided/home') data = {week:{n:0,secs:0,vol:0},prev_week:{n:0,secs:0,vol:0},next:null}
     else if (u.pathname === '/api/pro/prescriptions') data = {prescriptions:[]}
     else if (u.pathname === '/api/pro/library') data = {exercises:[]}
     else if (u.pathname === '/api/pro/templates') data = {templates:[]}
@@ -51,15 +53,14 @@ for (const role of ['aluno','profissional','admin']) for (const width of [320,39
     await expect(page.getByRole('tab',{name:'Ranking',exact:true})).toHaveCount(0)
     if (role === 'aluno') {
       await page.goto('/#/programas')
-      await expect(page.getByRole('combobox',{name:'Objetivo',exact:true})).toBeVisible()
-      await page.getByRole('combobox',{name:'Objetivo',exact:true}).click(); await page.locator('[role=option][data-value="mobility"]').click()
-      await expect(page.getByRole('combobox',{name:'Objetivo',exact:true})).toHaveAttribute('data-value','mobility')
-      await expect(page.locator('[role=option][data-value="rehab"]')).toHaveCount(0)
+      await expect(page).toHaveURL(/#\/treinos$/)
+      await expect(page.getByTestId('tab-treinos')).toHaveAttribute('aria-current','page')
       await fit(page)
       await page.goto('/#/progresso')
       await expect(page.getByTestId('progress-trophies')).toHaveCount(0)
       await fit(page)
-      await expect(page.getByRole('heading',{name:'Histórico',exact:true})).toBeVisible()
+      await page.getByTestId('progress-period').locator('summary').click()
+      await expect(page.getByRole('heading',{name:'Treinos recentes',exact:true})).toBeVisible()
     }
     if (role === 'profissional') {
       await page.goto('/#/pro?tab=treinos')

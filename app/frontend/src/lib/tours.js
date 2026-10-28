@@ -5,16 +5,16 @@ import { api } from './api.js'
 const S = (target, title, text) => ({ target, title, text })
 const M = (target, title, text) => ({ target, title, text, reveal: 'adm-menu' })   // admin: abre o menu lateral no celular se preciso
 const common = {
-  progresso: [S('progress', 'Seu progresso', 'Veja a semana e os últimos 30 dias. Abra Estatísticas para escolher Evolução, Carga, Músculos ou Consistência.')],
-  perfil: [S('profile-preferences', 'Preferências', 'Aparência, idioma e as configurações do treino ficam aqui.'), S('profile-security', 'Privacidade e segurança', 'Troque a senha, saia de todos os aparelhos e peça uma cópia dos seus dados.')]
+  progresso: [S('progress', 'Seu progresso', 'A meta fica visível. Abra os resumos para ver métricas, músculos e histórico.')],
+  perfil: [S('profile-preferences', 'Preferências', 'Aparência, idioma e treino.'), S('profile-security', 'Privacidade e segurança', 'Senha, aparelhos e seus dados.')]
 }
 export const TOURS = {
   normal: {
     welcome: [S(null, 'Bem-vindo à ORNY', 'Um minuto para conhecer o app. Você pode pular quando quiser.'),
-      S('week-ring', 'Minha semana', 'Aqui você vê quantos treinos fez nesta semana e o que falta para a meta.'),
+      S('week-ring', 'Resumo da semana', 'Abra quando quiser ver meta, indicadores e músculos do próximo treino.'),
       S('bell', 'Notificações', 'Avisos do personal e lembretes chegam aqui.'),
-      S('tab-treinos', 'Treinos', 'Seu treino ativo, as outras fichas e a parte de consulta. Só um treino fica ativo por vez.'),
-      S('tab-perfil', 'Perfil', 'Conta, preferências, privacidade e segurança. Em Ajuda e suporte você reabre estas orientações.')],
+      S('tab-treinos', 'Treinos', 'Treino ativo e fichas para consulta.'),
+      S('tab-perfil', 'Perfil', 'Conta, preferências e segurança.')],
     treinos: [S('active-training', 'Treino ativo', 'Seu único treino ativo fica em destaque. Toque no botão grande para começar.'), S('tab-historico', 'Para consulta', 'As fichas anteriores e o histórico de treinos ficam aqui, só para leitura.')],
     comunidade: [S('comunidade', 'Comunidade', 'Veja todas as publicações ou somente as de perfis que você segue.')],
     // V5-AP: avaliação postural. Os alvos são data-testid das telas do módulo.
@@ -43,7 +43,7 @@ export const TOURS = {
     perfil: common.perfil
   },
   admin: {
-    welcome: [S(null, 'Painel do admin', 'O menu é separado por tarefa: Alunos, Personais, Planos e cobrança, Agenda de calls, Comunidade, Treinos e Configurações. Toda tela tem uma explicação embaixo do título.'),
+    welcome: [S(null, 'Painel do admin', 'O menu é organizado por tarefa. Use Ajuda desta tela quando precisar de contexto.'),
       M('adm-inicio', 'Início', 'O que precisa de atenção hoje: Close Friends, calls do dia e perguntas da live.'),
       M('adm-personais', 'Personais', 'Quem atende homens e quem atende mulheres.'),
       M('adm-calls', 'Agenda de calls', 'Horários, link do Zoom e calls marcadas.'),

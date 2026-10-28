@@ -31,31 +31,37 @@ function Painel({ go }) {
   const [d, err, reload] = useLoad(() => P.home())
   if (err) return <Err msg={err} retry={reload} />
   if (!d) return <Load rows={6} />
-  const k = d.kpis, used = k.capacity ? Math.min(100, Math.round(k.students / k.capacity * 100)) : 0
+  const k = d.kpis || {}, used = k.capacity ? Math.min(100, Math.round((k.students || 0) / k.capacity * 100)) : 0
   const K = ({ n, l, to, alert, id }) => <button type="button" className={'gk-kpi' + (alert && n ? ' gk-alert' : '')} onClick={to} data-testid={'kpi-' + id}>
     <Statistic title={l} value={n} /></button>
+  const pending = [
+    ['sem', k.sem_prescricao, 'Aguardando prescrição', () => go('alunos', { filter: 'sem_treino' })],
+    ['msg', k.mensagens, 'Mensagens sem resposta', () => go('atendimentos')],
+    ['occ', k.ocorrencias, 'Ocorrências pendentes', () => go('alunos', { filter: 'alertas' })],
+    ['prop', k.propostas, 'Propostas pendentes', () => go('atendimentos')],
+    ['req', k.solicitacoes, 'Solicitações abertas', () => go('capacidade')],
+  ].filter(([, n]) => n > 0)
   return <>
     <H>Atenção necessária</H>
-    <div className="gk-kpis">
-      <K id="alunos" n={k.students} l="Alunos vinculados" to={() => go('alunos')} />
-      <K id="sem" n={k.sem_prescricao} l="Aguardando prescrição" alert to={() => go('alunos', { filter: 'sem_treino' })} />
-      <K id="andamento" n={k.em_andamento} l="Treinando agora" to={() => go('alunos')} />
-      <K id="msg" n={k.mensagens} l="Mensagens sem resposta" alert to={() => go('atendimentos')} />
-      <K id="occ" n={k.ocorrencias} l="Ocorrências pendentes" alert to={() => go('alunos', { filter: 'alertas' })} />
-      <K id="prop" n={k.propostas} l="Propostas pendentes" to={() => go('atendimentos')} />
-      <K id="req" n={k.solicitacoes} l="Minhas solicitações abertas" to={() => go('capacidade')} />
-      <K id="vagas" n={k.available ?? '∞'} l="Vagas livres" to={() => go('capacidade')} />
-    </div>
-    <Collapse className="pp-collapse" items={[{ key: 'p', label: 'Plano e vagas', children: <div className="pp-cap">
-      <Progress type="circle" size={112} percent={used} strokeColor="var(--ag-acc)" railColor="var(--ag-card-2)" strokeWidth={10}
-        format={() => <span className="pp-cap-n">{k.students}/{k.capacity ?? '∞'}<small>alunos</small></span>} />
-      <div><span className="g-eyebrow">Meus alunos</span><p className="g-sm" style={{ margin: '4px 0 10px' }}>{k.available == null ? 'Sem limite no seu plano' : <><b>{k.available}</b> vaga(s) livre(s)</>}</p>
-        <Btn size="sm" onClick={() => go('capacidade')}>Ver limite</Btn></div>
-    </div> }]} />
-    <H>Atividade recente dos alunos</H>
-    {d.activity.length ? <Rows>{d.activity.map(a => <Row key={a.id} avatar={<Av name={a.student} size={40} />} title={a.student}
-      sub={`${a.workout_name || 'Treino'} · ${a.sets_count || 0} séries · ${dt(a.started_at)}`} onClick={() => go('alunos', { id: a.student_id })} />)}</Rows>
-      : <Empty icon="chart">Nenhum treino registrado ainda.</Empty>}
+    {pending.length ? <div className="gk-kpis">{pending.map(([id, n, label, to]) => <K key={id} id={id} n={n} l={label} alert to={to} />)}</div>
+      : <Empty icon="check">Nenhuma pendência agora.</Empty>}
+    <Collapse className="pp-collapse" items={[{ key: 'resumo', label: 'Resumo', children: <>
+      <div className="gk-kpis pp-summary-kpis">
+        <K id="alunos" n={k.students} l="Alunos vinculados" to={() => go('alunos')} />
+        <K id="andamento" n={k.em_andamento} l="Treinando agora" to={() => go('alunos')} />
+        <K id="vagas" n={k.available ?? '∞'} l="Vagas livres" to={() => go('capacidade')} />
+      </div>
+      <div className="pp-cap">
+        <Progress type="circle" size={112} percent={used} strokeColor="var(--ag-acc)" railColor="var(--ag-card-2)" strokeWidth={10}
+          format={() => <span className="pp-cap-n">{k.students}/{k.capacity ?? '∞'}<small>alunos</small></span>} />
+        <div><span className="g-eyebrow">Plano e vagas</span><p className="g-sm" style={{ margin: '4px 0 10px' }}>{k.available == null ? 'Sem limite' : <><b>{k.available}</b> vaga(s) livre(s)</>}</p>
+          <Btn size="sm" onClick={() => go('capacidade')}>Ver limite</Btn></div>
+      </div>
+      <h3 className="gk-h">Atividade recente</h3>
+      {d.activity?.length ? <Rows>{d.activity.map(a => <Row key={a.id} avatar={<Av name={a.student} size={40} />} title={a.student}
+        sub={`${a.workout_name || 'Treino'} · ${a.sets_count || 0} séries · ${dt(a.started_at)}`} onClick={() => go('alunos', { id: a.student_id })} />)}</Rows>
+        : <Empty icon="chart">Nenhum treino registrado ainda.</Empty>}
+    </> }]} />
     {d.state !== 'ativo' && <Note type="info">Seu perfil está “{d.state.replace('_', ' ')}”. Fale com o suporte para revisar a situação.</Note>}
   </>
 }

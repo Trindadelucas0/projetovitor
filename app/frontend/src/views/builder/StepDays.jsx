@@ -95,7 +95,6 @@ export default function StepDays({ st, dx, day, groups, clash, errosPorEx, onAvi
             <GSelect value={day.weekday ?? ''} onChange={v => dx({ type: 'dayField', k: 'weekday', v: v === '' ? null : +v })}
               label={'Dia da semana de ' + day.name} sheetTitle="Dia da semana" testid="wb-weekday"
               options={[{ value: '', label: 'Livre — o aluno escolhe o dia' }, ...WEEKDAYS.map((l, i) => ({ value: i, label: l }))]} />
-            <span className="g-mut g-xs">Marcando o dia, o app abre este treino no Início do aluno nesse dia da semana.</span>
           </label>
 
           {/* Recolhido: é opcional, e aberto empurrava a lista de exercícios para fora da tela. */}
@@ -131,7 +130,7 @@ export default function StepDays({ st, dx, day, groups, clash, errosPorEx, onAvi
             </Btn>
           )}
         </div>
-        {selecting && <p className="g-mut g-xs">Marque 2 exercícios para bi-set ou 3 para tri-set. Eles ficam em sequência, sem descanso entre si.</p>}
+        {selecting && <p className="g-mut g-xs">Marque 2 para bi-set ou 3 para tri-set.</p>}
 
         {!day.exercises.length
           ? <div className="wb-vazio">

@@ -4,7 +4,7 @@ Este guia descreve as ações do aplicativo de um personal e seus alunos. O nome
 
 ## Interface focada
 
-Cada tela destaca a próxima ação. No treino, use o botão principal no centro; **Dúvida** e **Dor ou problema** ficam logo abaixo. Abra **Mais opções** somente para registrar sem cronômetro, reiniciar, pular, finalizar antes ou consultar histórico. Em **Progresso → Estatísticas detalhadas**, escolha um assunto por vez: Evolução, Carga, Músculos ou Consistência.
+Cada tela destaca a próxima ação. No **Início**, a ficha e o botão para começar aparecem antes dos indicadores; abra **Ver exercícios do treino** para conferir a lista e **Resumo da semana** para ver meta, métricas e músculos do próximo treino. No treino, **Dúvida** e **Dor ou problema** continuam visíveis; abra **Mais opções** somente para alternativas. Em **Progresso**, a meta fica aberta e **Detalhes da semana** e **Últimos 30 dias** mostram as informações complementares.
 
 ## Perfil e atribuição de personal
 

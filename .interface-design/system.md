@@ -27,6 +27,8 @@
 
 - **Tela focada:** contexto curto → título → conteúdo necessário → ação primária → suporte curto → mais opções.
 - **Mais opções:** resumo com pelo menos 44 px; conteúdo operável por teclado; nunca contém a única forma de relatar dor ou corrigir um erro.
+- **Resumo progressivo:** métricas, histórico e explicações secundárias usam `details`, `Collapse`, drawer ou sheet com rótulo que antecipa o conteúdo. A informação principal e a próxima ação ficam antes do resumo.
+- **Texto visível:** no máximo uma frase de apoio por decisão. Não repetir no corpo o que o título, o rótulo ou o tour já explica.
 - **Relatórios:** resumo e métricas principais permanecem visíveis; uma navegação por assunto mostra um grupo de gráficos por vez.
 - **Formulários:** uma decisão por etapa, label visível, erro junto ao campo e dados preservados.
 - **Gestão:** pendências e ações frequentes vêm antes de métricas; filtros avançados ficam recolhidos.
@@ -36,6 +38,7 @@
 
 - Rótulos começam com verbo e evitam frases completas quando a ação já é clara.
 - Uma frase curta de apoio por decisão; explicação extensa somente sob demanda.
+- Cobrança, consentimento, dor, risco, privacidade e consequência destrutiva permanecem visíveis no ponto da decisão, mesmo quando o restante estiver recolhido.
 - Sem gamificação: não usar pontos, medalhas, confete, streaks, rankings artificiais ou linguagem de conquista.
 - Recordes e evolução podem aparecer apenas como dados factuais, sem recompensa visual.
 - Textos legais, de saúde e segurança não são removidos; são posicionados no ponto de risco.

@@ -196,7 +196,7 @@ function LoginForm() {
       <Hero />
       <form className="lg-card" onSubmit={submit} noValidate>
         <div className="lg-brand"><Brand /></div>
-        <p className="lg-sub">{reg ? 'Crie sua conta e comece a treinar.' : 'Seu progresso começa aqui'}</p>
+        {!reg && <p className="lg-sub">Seu progresso começa aqui</p>}
         {reg && <p className="lg-sub" data-testid="signup-step" style={{ marginTop: 0 }}>Etapa {step} de 5 · {['Perfil', 'Acesso', 'Seus dados', 'Assinatura', 'Confirmação'][step - 1]}</p>}
         {reg && step === 1 && <Suspense fallback={<div className="g-skel profile-choice-skel" role="status" aria-label="Carregando perfis" />}><ProfileChoice value={profile} onChange={pickProfile} error={errs.perfil} testId="signup-perfil" /></Suspense>}
         {(!reg || step === 2) && <>
@@ -205,7 +205,7 @@ function LoginForm() {
         {field('password', 'Senha', showPw ? 'text' : 'password', reg ? 'new-password' : 'current-password')}
         {reg && field('confirm', 'Confirmar senha', showPw ? 'text' : 'password', 'new-password')}
         </>}
-        {reg && (step === 2 || step === 5) && ref && <p className="lg-sub" data-testid="ref-banner">Você chegou pelo convite de <b>{ref.name || 'um amigo'}</b>. O convite não substitui a contratação: conclua o pagamento para acessar o sistema.</p>}
+        {reg && (step === 2 || step === 5) && ref && <p className="lg-sub" data-testid="ref-banner">Convite de <b>{ref.name || 'um amigo'}</b>. O acesso depende da contratação do plano.</p>}
         {reg && step === 3 && field('birth_date', 'Data de nascimento', 'date', 'bday', { max: maxBirth, min: '1900-01-01', 'aria-required': true, 'data-testid': 'birth-date' })}
         {reg && step === 3 && <fieldset className="lg-contact" data-testid="signup-contact"><legend className="lg-sub">Contato e endereço <small>(privados; você escolhe o que mostrar no perfil)</small></legend>
           <ContactFields value={ct} onChange={v => { setCt(v); setErrs({}) }} errors={errs} cls="lg-in" fieldCls="lg-field" /></fieldset>}
@@ -215,7 +215,7 @@ function LoginForm() {
             </div>}
         {reg && step === 4 && <div data-testid="signup-plans" className="lg-intent pl-signup" role="radiogroup" aria-label="Escolha o plano">
           {(plans?.plans || []).filter(p => SELLABLE.includes(p.id) && p.audience === 'aluno').map(p => <PlanCard key={p.id} p={p} compact selected={choice === p.id} onSelect={p.purchasable ? () => setChoice(p.id) : undefined} />)}
-          <p className="lg-sub">Escolha um plano. O acesso começa após a confirmação do pagamento.</p>
+          <p className="lg-sub">O acesso começa após a confirmação do pagamento.</p>
           {plansBusy && <p className="lg-sub" role="status">Carregando o plano…</p>}
           {plansError && <div className="lg-msg" role="alert" data-testid="signup-plans-error"><span>{plansError}</span><button type="button" className="lg-btn ghost" onClick={loadPlans}>Tentar novamente</button></div>}
         </div>}
@@ -224,7 +224,7 @@ function LoginForm() {
           <p>Perfil: {PROFILE_LABELS[profile.profile_kind]} · {PALETTE_LABELS[profile.accent_palette]}</p>
           {profile.prefers_female_coach && <p>Preferência: atendimento por uma personal mulher</p>}
           <p>Plano: {plans?.plans?.find(p => p.id === choice)?.name || choice}</p>
-          <p data-testid="signup-pay-note">Depois de criar a conta, revise e confirme o pagamento por cartão ou Pix.</p>
+          <p data-testid="signup-pay-note">Próximo passo: revisar e confirmar o pagamento.</p>
         </div>}
             {reg && step === 5 && <div className={'lg-terms' + (errs.terms ? ' err' : '')}>
           <label><input type="checkbox" checked={agree} onChange={e => { setAgree(e.target.checked); setErrs({ ...errs, terms: undefined }) }} data-testid="accept-terms" />

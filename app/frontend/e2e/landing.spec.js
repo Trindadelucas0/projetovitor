@@ -176,14 +176,12 @@ test('os três blocos essenciais aparecem com a tela do app ao lado', async ({ p
   }
 })
 
-test('os pilares levam para o bloco da tela correspondente', async ({ page }) => {
+test('a jornada publica evita uma navegacao intermediaria redundante', async ({ page }) => {
   await visitor(page)
   await page.goto('/')
-  await expect(page.getByTestId('landing-pillars').locator('.lp-pillar')).toHaveCount(3)
-  await page.getByTestId('landing-pillars').getByRole('button', { name: 'Ver a tela' }).nth(1).click()
-  await page.waitForTimeout(2000)   // scroll suave + a correcao do goTo apos o refresh do ScrollTrigger
-  await expect(page.getByTestId('deep-execucao')).toBeInViewport({ ratio: .2 })
-  await expect(page.locator('.lg-wrap')).toHaveCount(0)   // ancora interna nao troca a rota
+  await expect(page.getByTestId('landing-pillars')).toHaveCount(0)
+  await expect(page.getByTestId('landing-hero').getByRole('link', { name: /criar minha conta/i })).toHaveCount(1)
+  await expect(page.getByTestId('deep-execucao').getByRole('link', { name: /criar minha conta/i })).toHaveCount(0)
 })
 
 test('o Completo vem destacado com a equivalencia mensal calculada do preco da API', async ({ page }) => {

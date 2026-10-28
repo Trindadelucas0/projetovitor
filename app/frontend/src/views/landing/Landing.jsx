@@ -27,29 +27,19 @@ const AUDIENCE = {
     kicker: 'Sistema de treino para alunos',
     h1: ['Pare de treinar', 'no improviso.'],
     lead: 'Veja o treino do dia, registre séries e cargas e acompanhe seu histórico.',
-    bullets: ['Treino guiado', 'Cargas e repetições', 'Histórico e progresso'],
   },
 }
 
 const NAV = [['telas', 'Por dentro'], ['como-funciona', 'Como funciona'], ['planos', 'Planos'], ['duvidas', 'Dúvidas']]
 
-const PILLARS = [
-  ['01', 'clipboard', 'Treino do dia', 'treino-do-dia'],
-  ['02', 'timer', 'Execução guiada', 'execucao'],
-  ['03', 'chart', 'Progresso real', 'progresso'],
-]
-
 // Três decisões essenciais; detalhes ficam no próprio produto.
 const DEEP = [
   ['treino-do-dia', 'Treino do dia', 'Abra e saiba o que fazer',
-    'Seu treino aparece na ordem, com séries, repetições e a carga anterior.',
-    ['Exercícios na ordem', 'Séries e cargas à mão', 'Próximo treino indicado'], MkToday, false],
+    'Seu treino aparece na ordem, com séries, repetições e a carga anterior.', MkToday, false],
   ['execucao', 'Execução', 'Uma série por vez',
-    'O app mostra a próxima ação e registra cada série sem tirar o foco do treino.',
-    ['Cronômetro de série e descanso', 'Carga e repetições por série', 'Retomada de onde parou'], MkRun, true],
+    'O app mostra a próxima ação e registra cada série sem tirar o foco do treino.', MkRun, true],
   ['progresso', 'Progresso', 'Veja o que realmente mudou',
-    'Frequência, volume e histórico são calculados a partir do que você registrou.',
-    ['Resumo semanal', 'Comparação por período', 'Histórico completo'], MkProgress, false],
+    'Frequência, volume e histórico são calculados a partir do que você registrou.', MkProgress, false],
 ]
 
 const STEPS = [
@@ -174,15 +164,11 @@ export default function Landing() {
           {sel.h1.map((line, i) => <span className="lp-h1-line" key={line}><span className={i ? 'lp-accent' : ''}>{line}</span></span>)}
         </h1>
         <p className="lp-lead" data-hero>{sel.lead}</p>
-        <ul className="lp-bullets" data-hero>
-          {sel.bullets.map(b => <li key={b}><span className="lp-dot" aria-hidden="true" />{b}</li>)}
-        </ul>
         <div className="lp-actions" data-hero>
           <a href={href()} className="lp-btn lp-btn-primary lp-btn-lg" data-testid="landing-cta-primary">Criar minha conta<Icon name="chevronRight" /></a>
-          <button type="button" className="lp-btn lp-btn-ghost lp-btn-lg" onClick={() => goTo('planos')}>Ver os planos</button>
         </div>
         <p className="lp-trust" data-hero>
-          <span>Funciona no navegador</span><span>Instalação opcional</span><span>Personal homem para homens, personal mulher para mulheres</span><span>Acesso liberado após a confirmação do pagamento</span>
+          <span>Funciona no navegador</span><span>Acesso após a confirmação do pagamento</span>
         </p>
       </div>
     </section>
@@ -196,33 +182,14 @@ export default function Landing() {
       </div>
     </section>}
 
-    <section className="lp-section" data-testid="landing-pillars">
-      <div className="lp-shell">
-        <div data-reveal className="lp-head">
-          <span className="lp-kicker">O que a ORNY faz hoje</span>
-          <h2>Treine sem se perder</h2>
-        </div>
-        <div className="lp-grid lp-grid-4">
-          {PILLARS.map(([n, icon, title, target]) =>
-            <article key={n} data-card data-n={n} className="lp-card lp-pillar">
-              <span className="lp-card-ico"><Icon name={icon} /></span>
-              <h3>{title}</h3>
-              <button type="button" className="lp-link" onClick={() => goTo(target)}>Ver a tela<Icon name="chevronRight" /></button>
-            </article>)}
-        </div>
-      </div>
-    </section>
-
     <div id="telas">
-      {DEEP.map(([id, kicker, title, copy, items, Mock, flip], i) =>
+      {DEEP.map(([id, kicker, title, copy, Mock, flip], i) =>
         <section key={id} id={id} className={'lp-section lp-deep' + (i % 2 ? ' lp-section-alt' : '')} data-testid={'deep-' + id}>
           <div className={'lp-shell lp-deep-inner' + (flip ? ' is-flip' : '')}>
             <div data-reveal className="lp-deep-copy">
               <span className="lp-kicker">{kicker}</span>
               <h2>{title}</h2>
               <p className="lp-copy">{copy}</p>
-              <ul className="lp-ticks lp-ticks-lg">{items.map(t => <li key={t}><Icon name="check" />{t}</li>)}</ul>
-              <a href={href()} className="lp-btn lp-btn-primary">Criar minha conta<Icon name="chevronRight" /></a>
             </div>
             <div data-reveal className="lp-deep-art"><Mock /></div>
           </div>
@@ -282,18 +249,6 @@ export default function Landing() {
         </div>
         <div data-reveal className="lp-faq">
           {FAQ_LANDING.map(([q, a]) => <details key={q}><summary>{q}<Icon name="plus" /></summary><p>{a}</p></details>)}
-        </div>
-      </div>
-    </section>
-
-    <section className="lp-final">
-      <div data-reveal className="lp-shell lp-final-box">
-        <span className="lp-kicker">Seu próximo passo</span>
-        <h2>Pare de treinar no improviso.</h2>
-        <p className="lp-copy">Crie a sua conta e comece a usar a ORNY hoje.</p>
-        <div className="lp-actions">
-          <a href={href()} className="lp-btn lp-btn-primary lp-btn-lg">Criar minha conta<Icon name="chevronRight" /></a>
-          <a href="#/precos" className="lp-btn lp-btn-ghost lp-btn-lg">Ver os planos</a>
         </div>
       </div>
     </section>

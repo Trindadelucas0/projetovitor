@@ -32,6 +32,7 @@ async function setup(page,{locked=false,scoped=false,scopedWithGroups=false,stat
    data=scoped&&!scopedWithGroups?{...stats,groups:[],records:[],exercises:[]}:stats
   }
   else if(p==='/api/guided/programs')data={programs:[program,{...program,id:'strength-test',title:'Força — Base',goal:'strength',level:'intermediate',location:'home'}].filter(x=>!url.searchParams.get('goal')||x.goal===url.searchParams.get('goal'))}
+  else if(p==='/api/pro/home')data={state:'ativo',kpis:{students:0,capacity:0,available:null,sem_prescricao:0,em_andamento:0,mensagens:0,ocorrencias:0,propostas:0,solicitacoes:0},activity:[]}
   else if(p==='/api/guided/program')data={program:{...program,workouts:[{id:'workout-test',name:'Treino A',exercises:[exercise]}]}}
   else if(p==='/api/guided/sessions/start'){state.starts++;data={ok:true,started_at:new Date().toISOString()}}
   else if(p==='/api/guided/sessions'){if(req.postDataJSON()?.finished_at)state.saved++;data={ok:true,streak_weeks:1}}
@@ -54,7 +55,7 @@ async function setup(page,{locked=false,scoped=false,scopedWithGroups=false,stat
 async function fit(page){expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)}
 for(const width of [320,390,768,1280])for(const theme of ['light','dark'])test(`layout ${width} ${theme}: Início, Progresso, fichas e notificações`,async({page})=>{
  await page.setViewportSize({width,height:900});await setup(page)
- await page.goto('/#/hoje');await expect(page.getByTestId('home-widgets')).toBeVisible()
+ await page.goto('/#/hoje');await page.getByTestId('week-ring').locator('summary').click();await expect(page.getByTestId('home-widgets')).toBeVisible()
  await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme)
  await expect(page.getByRole('heading',{name:'Minha semana',exact:true})).toBeVisible()
  expect(await page.getByTestId('week-ring').evaluate(n=>getComputedStyle(n).position)).not.toBe('fixed')
@@ -64,36 +65,34 @@ for(const width of [320,390,768,1280])for(const theme of ['light','dark'])test(`
  if(width===390)await page.screenshot({path:`test-artifacts/improvements/estatisticas-${theme}.png`,fullPage:true})
  await expect(page.getByTestId('kpi-rec')).toContainText('2')
  await page.goto('/#/progresso');await expect(page.getByTestId('progress')).toBeVisible();await expect(page.getByText('Falta 2 treinos para sua meta')).toBeVisible()
+ await page.getByTestId('progress-period').locator('summary').click()
  await expect(page.getByTestId('progress-muscle-map').locator('.bm-v')).toHaveCount(2)
  await expect(page.getByTestId('progress-muscle-map')).toContainText('Peito · 100% das séries efetivas')
  await expect(page.getByTestId('progress-muscle-map').locator('.bm-m.l4')).not.toHaveCount(0)
  await fit(page)
  if(width===390)await page.screenshot({path:`test-artifacts/improvements/progresso-${theme}.png`,fullPage:true})
- await page.goto('/#/programas');await expect(page.getByTestId('program-card')).toHaveCount(2)
- await page.getByRole('combobox',{name:'Nível',exact:true}).click();await page.locator('[role=option][data-value=beginner]').click()
- await expect(page.getByTestId('program-card')).toHaveCount(1)
- await page.getByRole('combobox',{name:'Local',exact:true}).click();await page.locator('[role=option][data-value=home]').click()
- await expect(page.getByText('Nenhum programa encontrado para esses filtros.',{exact:false})).toBeVisible()
+ await page.goto('/#/programas');await expect(page).toHaveURL(/#\/treinos$/);await expect(page.getByTestId('tab-treinos')).toHaveAttribute('aria-current','page')
  await fit(page);await page.goto('/#/avisos');await expect(page.getByText('Seu profissional respondeu')).toBeVisible();await fit(page)
  if(width===390)await page.screenshot({path:`test-artifacts/improvements/avisos-${theme}.png`,fullPage:true})
 })
 test('aluno do personal vê o mapa de 30 dias e o estado sem treinos, mantendo o Corpo 3D oculto',async({page})=>{
  await setup(page,{scoped:true,scopedWithGroups:true});await page.goto('/#/progresso')
+ await page.getByTestId('progress-period').locator('summary').click()
  await expect(page.getByTestId('progress-muscle-map')).toContainText('Peito · 100% das séries efetivas')
  await expect(page.getByTestId('progress-muscle-map').locator('.bm-v')).toHaveCount(2)
  await expect(page.getByTestId('open-3d')).toHaveCount(0)
  await fit(page)
  await setup(page,{scoped:true});await page.reload()
+ await page.getByTestId('progress-period').locator('summary').click()
  await expect(page.getByTestId('progress-muscle-map')).toContainText('Nenhum músculo treinado nos últimos 30 dias')
  await expect(page.getByTestId('progress-muscle-map').locator('.bm-m.l4')).toHaveCount(0)
  await fit(page)
 })
 test('sem acesso: cadeados por seção e acesso direto bloqueado',async({page})=>{
  await setup(page,{locked:true});await page.goto('/#/progresso')
- await expect(page.getByTestId('progress-locked')).toBeVisible()
- await expect(page.locator('[data-feature=musculos]')).toBeVisible()
+ await expect(page.getByTestId('premium-page')).toBeVisible()
  await expect(page.getByTestId('tab-progresso').getByTestId('lock-badge')).toBeVisible()
- for(const path of ['/estatisticas','/treinar','/programas','/comunidade']){await page.goto('/#'+path);await expect(page.getByTestId('premium-page')).toBeVisible()}
+ for(const path of ['/estatisticas','/treinar','/comunidade']){await page.goto('/#'+path);await expect(page.getByTestId('premium-page')).toBeVisible()}
  await fit(page)
 })
 test('acesso ainda carregando não monta conteúdo premium',async({page})=>{
@@ -102,7 +101,7 @@ test('acesso ainda carregando não monta conteúdo premium',async({page})=>{
  await expect(page.getByTestId('premium-page')).toBeVisible()
 })
 test('ativação atualiza o cadeado e mostra agradecimento uma vez',async({page})=>{
- const s=await setup(page,{locked:true});await page.goto('/#/progresso');await expect(page.getByTestId('progress-locked')).toBeVisible()
+ const s=await setup(page,{locked:true});await page.goto('/#/progresso');await expect(page.getByTestId('premium-page')).toBeVisible()
  s.locked=false;s.welcome=true;await page.evaluate(()=>window.dispatchEvent(new CustomEvent('avagym:access-changed')))
  await expect(page.getByTestId('welcome-modal')).toBeVisible();await expect.poll(()=>s.seen).toBe(1)
  await page.getByTestId('welcome-close').click();await expect(page.getByTestId('progress')).toBeVisible()
@@ -115,7 +114,7 @@ test('agradecimento aguarda sair do treino; respeita recursos do aluno de person
  await expect(page.getByRole('button',{name:/Programas para o seu objetivo/})).toHaveCount(0)
  await expect(page.getByRole('button',{name:/Músculos trabalhados/})).toHaveCount(0)
  await expect.poll(()=>s.seen).toBe(1);await page.keyboard.press('Escape')
- await page.goto('/#/hoje');await expect(page.getByTestId('home-widgets')).toBeVisible();await expect(page.getByTestId('home-next-muscles')).toHaveCount(0)
+ await page.goto('/#/hoje');await page.getByTestId('week-ring').locator('summary').click();await expect(page.getByTestId('home-widgets')).toBeVisible();await expect(page.getByTestId('home-next-muscles')).toHaveCount(0)
  await page.goto('/#/estatisticas');await expect(page.getByTestId('st-kpis')).toBeVisible();await expect(page.getByTestId('st-trends')).toBeVisible();await expect(page.getByTestId('st-exercise')).toHaveCount(0)
  await page.getByTestId('st-section-carga').click();await expect(page.getByTestId('st-exercise')).toBeVisible();await expect(page.getByTestId('st-trends')).toHaveCount(0)
  await page.getByTestId('st-section-consistencia').click();await expect(page.getByTestId('st-calendar')).toBeVisible();await expect(page.getByTestId('st-groups')).toHaveCount(0)
@@ -128,13 +127,11 @@ test('estatísticas permitem tentar novamente depois de falha',async({page})=>{
 test('conta suspensa vê aviso em lugar dos recursos premium',async({page})=>{
  await setup(page,{status:'bloqueado'});await page.goto('/#/estatisticas');await expect(page.getByTestId('pending')).toBeVisible();await expect(page.getByTestId('st-kpis')).toHaveCount(0)
 })
-test('personal sem acesso vê cadeado no painel e nas abas premium',async({page})=>{
- await setup(page,{locked:true,role:'profissional'});await page.goto('/#/pro');await expect(page.getByTestId('premium-page')).toBeVisible();await expect(page.getByTestId('ptab-painel').getByTestId('lock-badge')).toBeVisible()
+test('personal abre o painel profissional sem depender do plano de aluno',async({page})=>{
+ await setup(page,{locked:true,role:'profissional'});await page.goto('/#/pro');await expect(page.getByTestId('pro')).toBeVisible();await expect(page.getByTestId('pro-tab-painel')).toHaveAttribute('aria-current','page')
 })
-test('treino: programa, pesos, série, conclusão e progresso',async({page})=>{
- const s=await setup(page);await page.goto('/#/programas');await page.getByTestId('program-card').first().click()
- await expect(page.getByTestId('program-detail')).toBeVisible()
- await page.goto('/#/hoje');await page.getByTestId('start-workout').click()
+test('treino: ficha ativa, pesos, série, conclusão e progresso',async({page})=>{
+ const s=await setup(page);await page.goto('/#/hoje');await page.getByTestId('start-workout').click()
  await expect(page.getByTestId('start-set')).toBeVisible();expect(s.starts).toBe(1)
  await page.getByLabel('Carga usada (kg)').fill('10')
  await page.getByTestId('start-set').click();await expect(page.getByTestId('set-clock')).toBeVisible()

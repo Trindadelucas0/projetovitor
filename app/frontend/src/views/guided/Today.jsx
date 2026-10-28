@@ -82,10 +82,23 @@ export default function Today() {
   if (!st) return <div className="ag" aria-busy="true"><span className="sr-only" role="status">Carregando…</span>
     <span className="g-skel g-skel-line" /><span className="g-skel g-skel-h1" /><span className="g-skel g-skel-card" />
     <span className="g-skel g-skel-btn" /><span className="g-skel g-skel-card sm" /></div>
-  const first = (user?.name || '').split(' ')[0]
   const w = today?.workout
   const cover = w && mediaOf(w.exercises.find(e => e.media)?.media)
   const estMin = w ? Math.round(w.exercises.reduce((a, e) => a + (e.sets || 3) * (((e.duration_sec || 40)) + (e.rest_sec || 60)), 0) / 60) : 0
+  const weekSummary = <details className="g-card g-focus-more hw-summary" data-testid="week-ring">
+    <summary>
+      <span><b>Resumo da semana</b><small>{st.week.done} de {st.week.target} treinos</small></span>
+      <span className="hw-summary-state">{st.week.done >= st.week.target ? 'Meta atingida' : `${Math.max(0, st.week.target - st.week.done)} restantes`}</span>
+    </summary>
+    <div className="hw-summary-content">
+      <div className="g-row hw-summary-head">
+        <div><h2 id="wk-ttl">Minha semana</h2><p className="g-mut g-sm">{st.week.done >= st.week.target ? 'Treinos previstos concluídos.' : (n => `${n === 1 ? 'Falta' : 'Faltam'} ${plural(n, 'treino', 'treinos')}.`)(Math.max(0, st.week.target - st.week.done))}</p></div>
+        <b>{st.week.done}/{st.week.target}</b>
+      </div>
+      <WeekStrip sessions={st.week.sessions} />
+      <HomeWidgets h={home} onRetry={reloadHome} />
+    </div>
+  </details>
   // Primeiro a tarefa do dia; semana e acompanhamento são apoio.
   return <div className="ag" data-testid="today">
     {head}
@@ -94,17 +107,6 @@ export default function Today() {
 
     {/* V5-AP: avaliação postural pendente (o cartão não aparece quando não há nenhuma solicitada) */}
     <AvaliacaoHomeCard />
-
-    {/* lote 7: 'Minha semana' fixa no topo, em destaque */}
-    <section className="av-hero hw-week" style={{ marginTop: 12 }} data-testid="week-ring" aria-labelledby="wk-ttl">
-      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-        <div className="av-ring"><svg width="112" height="112" viewBox="0 0 132 132" aria-hidden="true"><circle cx="66" cy="66" r="56" stroke="var(--ag-card-2)" strokeWidth="12" fill="none" />
-          <circle cx="66" cy="66" r="56" stroke="var(--ag-acc)" strokeWidth="12" fill="none" strokeLinecap="round" strokeDasharray={`${2 * Math.PI * 56 * Math.min(1, st.week.done / Math.max(1, st.week.target))} 999`} /></svg>
-          <b>{st.week.done}/{st.week.target}<small>treinos</small></b></div>
-        <div style={{ minWidth: 0 }}><h2 id="wk-ttl" style={{ margin: 0 }}>Minha semana</h2><p className="g-mut g-sm" style={{ margin: '4px 0 0' }}>{st.week.done >= st.week.target ? 'Treinos previstos concluídos.' : (n => `${n === 1 ? 'Falta' : 'Faltam'} ${plural(n, 'treino', 'treinos')} nesta semana.`)(Math.max(0, st.week.target - st.week.done))}</p></div>
-      </div>
-      <WeekStrip sessions={st.week.sessions} />
-    </section>
 
     {!st.active ? <><ResumeBar /><StartHere profile={!!st.profile} at={at} care={care} coaches={coaches} /></> : <>
       <div className="g-hero" style={{ marginTop: 14 }} data-testid="today-card">
@@ -120,13 +122,16 @@ export default function Today() {
         <Icon name={local ? 'play' : 'dumbbell'} /> {local ? 'CONTINUAR TREINO' : 'COMEÇAR TREINO'}
       </button>
       {at?.available?.pro_plans?.length > 0 && <p className="g-mut g-xs" style={{ marginTop: 8 }} data-testid="other-active-hint">Seu profissional tem uma ficha para você. <button className="g-link" onClick={() => nav('/treinos?aba=profissionais')}>Trocar treino ativo</button></p>}
-      {w && <div className="g-card" style={{ marginTop: 12 }}>
-        <div className="g-row"><b>O que vem hoje</b><span className="g-sp" /><button className="g-link" onClick={() => nav('/meu-programa')}>Ver programa</button></div>
-        {w.exercises.slice(0, 4).map(e => <div key={e.id} className="g-row g-sm" style={{ padding: '6px 0' }}><span className="g-acc" aria-hidden="true">•</span>{e.name}<span className="g-sp" /><span className="g-dim">{e.sets}x</span></div>)}
-        {w.exercises.length > 4 && <p className="g-mut g-xs">+ {plural(w.exercises.length - 4, 'exercício', 'exercícios')}</p>}
-      </div>}
+      {w && <details className="g-focus-more hw-workout-details">
+        <summary>Ver exercícios do treino</summary>
+        <div className="g-card">
+          <div className="g-row"><b>O que vem hoje</b><span className="g-sp" /><button className="g-link" onClick={() => nav('/meu-programa')}>Ver programa</button></div>
+          {w.exercises.slice(0, 4).map((e, i) => <div key={e.id || e.exercise_id || i} className="g-row g-sm" style={{ padding: '6px 0' }}><span className="g-acc" aria-hidden="true">•</span>{e.name}<span className="g-sp" /><span className="g-dim">{e.sets}x</span></div>)}
+          {w.exercises.length > 4 && <p className="g-mut g-xs">+ {plural(w.exercises.length - 4, 'exercício', 'exercícios')}</p>}
+        </div>
+      </details>}
     </>}
-    <HomeWidgets h={home} onRetry={reloadHome} />
+    {weekSummary}
 
     <div className="g-card g-list org-list" style={{ marginTop: 12 }}><Li icon="chat" t="Acompanhamento" s="Profissionais, conversas e ocorrências" to="/acompanhamento" testid="home-care" badge={care?.occurrences?.filter(o => o.status !== 'encerrada').length ? care.occurrences.filter(o => o.status !== 'encerrada').length + ' em aberto' : undefined} /></div>
   </div>
