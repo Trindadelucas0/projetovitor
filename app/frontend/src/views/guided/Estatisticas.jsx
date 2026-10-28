@@ -23,8 +23,6 @@ const dm = s => { const [, m, d] = String(s).slice(0, 10).split('-'); return `${
 const dBR = d => new Date(d).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: 'numeric', month: 'short' })
 const minutes = s => Math.round((s || 0) / 60)
 const changeText = (value, noun) => value == null ? `Sem base anterior para comparar ${noun}.` : value === 0 ? `${noun[0].toUpperCase() + noun.slice(1)} ficou igual ao período anterior.` : `${noun[0].toUpperCase() + noun.slice(1)} ${value > 0 ? 'aumentou' : 'caiu'} ${Math.abs(value)}% em relação ao período anterior.`
-const bestStreak = days => { const set = new Set(days.filter(x => x.n).map(x => x.d)), sorted = [...set].sort(); let best = 0, run = 0, last = null; for (const day of sorted) { const time = Date.parse(day + 'T12:00:00Z'); run = last != null && time - last === 864e5 ? run + 1 : 1; best = Math.max(best, run); last = time } return best }
-
 function Kpi({ v, l, s, testid }) { return <div className="st-kpi" data-testid={testid}><b>{v}</b><span>{l}</span>{s && <small>{s}</small>}</div> }
 
 // consistencia: calendario das ultimas semanas (ate 18), um quadrado por dia
@@ -45,7 +43,7 @@ export default function Estatisticas() {
   const nav = useNavigate(), body = useStore(s => s.S?.body) || 'male', can = useNavigationAccess()
   const [dias, setDias] = useState(() => { const saved = +(sessionStorage.getItem('avagym_st_dias') ?? 90); return PERIODOS.some(([v]) => v === saved) ? saved : 90 })
   const [retry, setRetry] = useState(0)
-  const [d, setD] = useState(null), [ex, setEx] = useState(null), [metric, setMetric] = useState('e1rm'), [gm, setGm] = useState('sets'), [trend, setTrend] = useState('n')
+  const [d, setD] = useState(null), [ex, setEx] = useState(null), [metric, setMetric] = useState('e1rm'), [gm, setGm] = useState('sets'), [trend, setTrend] = useState('n'), [section, setSection] = useState('evolucao')
   useEffect(() => { let live = true; setD(null); sessionStorage.setItem('avagym_st_dias', dias); G.stats(dias).then(r => { if (!live) return; setD(r); setEx(x => r.exercises.some(e => e.exercise_id === x) ? x : r.exercises[0]?.exercise_id || null) }).catch(() => { if (live) setD(false) }); return () => { live = false } }, [dias, retry])
   const chips = <div className="st-chips"><Chips items={PERIODOS} value={dias} onChange={setDias} testid={v => 'st-per-' + v} ariaLabel="Período" /></div>
   const top = <><Btn variant="tertiary" className="st-back" onClick={() => nav("/progresso")} aria-label="Voltar ao Progresso"><Icon name="chevronLeft" /> Progresso</Btn>
@@ -69,18 +67,22 @@ export default function Estatisticas() {
       <Kpi v={k.n} l="Treinos" s={`${k.per_week.toLocaleString('pt-BR')} por semana`} testid="kpi-n" />
       <Kpi v={k.consistency_pct + '%'} l="Consistência" s={`${k.weeks_hit} de ${plural(k.weeks, 'semana', 'semanas')} na meta (${d.target_per_week}/sem.)`} testid="kpi-cons" />
       <Kpi v={ton(k.vol)} l="Volume" s={cmp?.vol == null ? `média ${ton(k.avg_volume)} por treino` : `${cmp.vol >= 0 ? '+' : ''}${cmp.vol}% vs. período anterior`} testid="kpi-vol" />
-      <Kpi v={k.records_count ?? d.records.filter(r => r.new).length} l="Recordes no período" s={d.records[0] ? `maior 1RM: ${d.records[0].e1rm} kg` : 'sem cargas registradas'} testid="kpi-rec" />
+      <Kpi v={k.records_count ?? d.records.filter(r => r.new).length} l="Melhores cargas" s={d.records[0] ? `maior 1RM: ${d.records[0].e1rm} kg` : 'sem cargas registradas'} testid="kpi-rec" />
     </div>
     {empty && <Note type="info">Nenhum treino concluído neste período. Escolha um período maior ou treine para ver os gráficos.</Note>}
 
-    <h2>Evolução</h2>
+    <div className="st-section-nav"><Chips items={[
+      ['evolucao', 'Evolução'], ['carga', 'Carga'], ...(can('musculos') ? [['corpo', 'Músculos']] : []), ['consistencia', 'Consistência']
+    ]} value={section} onChange={setSection} testid={v => 'st-section-' + v} ariaLabel="Assunto das estatísticas" /></div>
+
+    {section === 'evolucao' && <><h2>Evolução</h2>
     <div className="g-card" data-testid="st-trends"><div className="st-seg" role="tablist" aria-label="Indicador do gráfico">{Object.entries(trendOptions).map(([value, option]) => <button key={value} role="tab" aria-selected={trend === value} className={trend === value ? 'g-on' : ''} onClick={() => setTrend(value)}>{option.label}</button>)}</div>
       <BarChart data={wk.map(w => ({ label: w.label, value: selectedTrend.value(w), title: `Semana de ${w.label}: ${selectedTrend.fmt(selectedTrend.value(w))}` }))} fmt={selectedTrend.fmt} goal={selectedTrend.goal} color={trend === 'secs' ? 'var(--st-bar2)' : 'var(--st-bar)'} label={selectedTrend.title} testid={'st-' + trend} />
       {bestWeek && selectedTrend.value(bestWeek) > 0 && <p className="st-fact"><b>Melhor semana:</b> {selectedTrend.fmt(selectedTrend.value(bestWeek))} · semana de {bestWeek.label}.</p>}
       {trend === 'n' && <><h3 className="st-h3">Dias em que você mais treina</h3><BarChart h={110} data={d.weekdays.map(x => ({ label: DOW[x.dow - 1], value: x.n }))} label="Treinos por dia da semana" testid="st-dow" /></>}
-    </div>
+    </div></>}
 
-    <h2>Carga por exercício</h2>
+    {section === 'carga' && <><h2>Carga por exercício</h2>
     <div className="g-card" data-testid="st-exercise">
       {d.exercises.length ? <>
         <label className="g-mut g-xs" htmlFor="st-ex">Exercício</label>
@@ -94,14 +96,14 @@ export default function Estatisticas() {
       </> : <p className="g-mut g-sm">Sem cargas registradas no período.</p>}
     </div>
 
-    <h2>Recordes</h2>
-    <p className="g-mut g-xs">Melhores marcas de todo o histórico. O indicador acima conta cada superação no período; a primeira carga registrada é a base.</p>
+    <h2>Melhores cargas</h2>
+    <p className="g-mut g-xs">Melhores marcas registradas em todo o histórico.</p>
     <div className="g-card g-list" data-testid="st-records">{d.records.length ? d.records.map(r => <div key={r.exercise_id} className="g-row st-rec">
-      <span className="g-ico"><Icon name="trophy" /></span><span style={{ minWidth: 0 }}><b>{r.name}</b><br /><span className="g-mut g-xs">{r.weight} kg × {r.reps} · {dBR(r.at)}</span></span><span className="g-sp" />
-      <span className="st-rec-v">{r.e1rm.toLocaleString('pt-BR')} kg{r.new && <i className="st-new">novo</i>}</span></div>)
-      : <p className="g-mut g-sm">Registre cargas nos treinos para ver seus recordes.</p>}</div>
+      <span className="g-ico"><Icon name="dumbbell" /></span><span style={{ minWidth: 0 }}><b>{r.name}</b><br /><span className="g-mut g-xs">{r.weight} kg × {r.reps} · {dBR(r.at)}</span></span><span className="g-sp" />
+      <span className="st-rec-v">{r.e1rm.toLocaleString('pt-BR')} kg</span></div>)
+      : <p className="g-mut g-sm">Registre cargas nos treinos para ver as melhores marcas.</p>}</div></>}
 
-    {can('musculos') && <><h2>Distribuição por grupo muscular</h2>
+    {section === 'corpo' && can('musculos') && <><h2>Distribuição por grupo muscular</h2>
     <div className="g-card" data-testid="st-groups">
       {d.groups.length ? <>
         <div className="st-seg" role="tablist" aria-label="Medida">{[['sets', 'Séries'], ['vol', 'Volume']].map(([v, l]) => <button key={v} role="tab" aria-selected={gm === v} className={gm === v ? 'g-on' : ''} onClick={() => setGm(v)}>{l}</button>)}</div>
@@ -112,10 +114,10 @@ export default function Estatisticas() {
       </> : <p className="g-mut g-sm">Sem séries registradas no período.</p>}
     </div></>}
 
-    <h2>Consistência</h2>
+    {section === 'consistencia' && <><h2>Consistência</h2>
     <div className="g-card"><Calendar days={d.days} weeks={Math.min(18, Math.max(1, k.weeks))} />
       {k.weeks > 18 && <p className="g-mut g-xs">Calendário limitado às últimas 18 semanas. Os indicadores consideram todo o período selecionado.</p>}
-      <p className="st-fact"><b>{k.weeks_hit} de {plural(k.weeks, 'semana', 'semanas')}</b> atingiram a meta · melhor sequência: {plural(bestStreak(d.days), 'dia ativo', 'dias ativos')}.</p>
-      <details className="st-details"><summary>Como a consistência é calculada</summary><p>Semanas sem treino e semanas parciais nas bordas do período entram no cálculo. A meta usada é a meta semanal atual.</p></details></div>
+      <p className="st-fact"><b>{k.weeks_hit} de {plural(k.weeks, 'semana', 'semanas')}</b> atingiram a meta do período.</p>
+      <details className="st-details"><summary>Como a consistência é calculada</summary><p>Semanas sem treino e semanas parciais nas bordas do período entram no cálculo. A meta usada é a meta semanal atual.</p></details></div></>}
   </div>
 }

@@ -116,7 +116,9 @@ test('agradecimento aguarda sair do treino; respeita recursos do aluno de person
  await expect(page.getByRole('button',{name:/Músculos trabalhados/})).toHaveCount(0)
  await expect.poll(()=>s.seen).toBe(1);await page.keyboard.press('Escape')
  await page.goto('/#/hoje');await expect(page.getByTestId('home-widgets')).toBeVisible();await expect(page.getByTestId('home-next-muscles')).toHaveCount(0)
- await page.goto('/#/estatisticas');await expect(page.getByTestId('st-kpis')).toBeVisible();await expect(page.getByTestId('st-groups')).toHaveCount(0)
+ await page.goto('/#/estatisticas');await expect(page.getByTestId('st-kpis')).toBeVisible();await expect(page.getByTestId('st-trends')).toBeVisible();await expect(page.getByTestId('st-exercise')).toHaveCount(0)
+ await page.getByTestId('st-section-carga').click();await expect(page.getByTestId('st-exercise')).toBeVisible();await expect(page.getByTestId('st-trends')).toHaveCount(0)
+ await page.getByTestId('st-section-consistencia').click();await expect(page.getByTestId('st-calendar')).toBeVisible();await expect(page.getByTestId('st-groups')).toHaveCount(0)
 })
 test('estatísticas permitem tentar novamente depois de falha',async({page})=>{
  const s=await setup(page);s.statsFail=true;await page.goto('/#/estatisticas')

@@ -34,9 +34,9 @@ async function doWorkout(page, F) {
   await step(page, F, 'Iniciar série (cronômetro rodando)', async () => { await page.getByTestId('start-set').click(); await page.waitForTimeout(1500); await expect(page.getByTestId('finish-set')).toBeVisible() })
   await step(page, F, 'Concluir série e entrar no descanso', async () => { await page.getByTestId('finish-set').click(); await expect(page.getByTestId('skip-rest')).toBeVisible() })
   await step(page, F, 'Pular descanso', () => page.getByTestId('skip-rest').click())
-  await step(page, F, 'Relatar dor visível durante o treino', () => expect(page.getByTestId('report')).toContainText('Relatar dor'))
+  await step(page, F, 'Dor ou problema visível durante o treino', () => expect(page.getByTestId('report')).toContainText('Dor ou problema'))
   await step(page, F, 'Ir até o fim e concluir', async () => {
-    for (let i = 0; i < 30 && !(await page.getByTestId('done').isVisible()); i++) { const nx = page.getByTestId('next-ex'); if (await nx.isVisible()) await nx.click(); else break; await page.waitForTimeout(250) }
+    for (let i = 0; i < 30 && !(await page.getByTestId('done').isVisible()); i++) { const more = page.getByTestId('train-more'); if (await more.isVisible() && !(await more.evaluate(e => e.open))) await more.locator('summary').click(); const nx = page.getByTestId('next-ex'); if (await nx.isVisible()) await nx.click(); else break; await page.waitForTimeout(250) }
     await expect(page.getByTestId('done')).toBeVisible() })
   await step(page, F, 'Conclusão: Resumo → Como se sentiu → Sentiu dor', async () => { await expect(page.getByTestId('done-step-resumo')).toBeVisible(); await expect(page.getByTestId('done-step-feel')).toBeVisible(); await page.getByTestId('pain-no').click() })
   await step(page, F, 'Concluir treino (salvo no servidor)', async () => { await page.getByTestId('save-session').click(); await expect(page.getByTestId('see-progress')).toBeVisible() })

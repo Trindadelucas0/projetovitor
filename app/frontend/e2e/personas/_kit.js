@@ -61,9 +61,10 @@ export async function doWorkout(page, step, prefixo = '') {
   await step(page, prefixo + 'Iniciar a série (cronômetro rodando)', async () => { await page.getByTestId('start-set').click(); await page.waitForTimeout(1500); await expect(page.getByTestId('finish-set')).toBeVisible() })
   await step(page, prefixo + 'Concluir a série e entrar no descanso', async () => { await page.getByTestId('finish-set').click(); await expect(page.getByTestId('skip-rest')).toBeVisible() })
   await step(page, prefixo + 'Pular o descanso', () => page.getByTestId('skip-rest').click())
-  await step(page, prefixo + 'Botão "Relatar dor" visível durante o treino', () => expect(page.getByTestId('report')).toContainText('Relatar dor'))
+  await step(page, prefixo + 'Ação "Dor ou problema" visível durante o treino', () => expect(page.getByTestId('report')).toContainText('Dor ou problema'))
   await step(page, prefixo + 'Avançar todos os exercícios até a conclusão', async () => {
     for (let i = 0; i < 40 && !(await page.getByTestId('done').isVisible()); i++) {
+      const more = page.getByTestId('train-more'); if (await more.isVisible() && !(await more.evaluate(e => e.open))) await more.locator('summary').click()
       const nx = page.getByTestId('next-ex'), st = page.getByTestId('start-set'), fin = page.getByTestId('finish-set'), sk = page.getByTestId('skip-rest')
       const weight = page.getByLabel('Carga usada (kg)'); if (await weight.isVisible().catch(() => false)) if ((await weight.inputValue()) === '') await weight.fill('12')
       if (await nx.isVisible()) await nx.click(); else if (await sk.isVisible()) await sk.click(); else if (await fin.isVisible()) await fin.click(); else if (await st.isVisible()) await st.click(); else break

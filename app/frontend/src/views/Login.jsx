@@ -215,7 +215,7 @@ function LoginForm() {
             </div>}
         {reg && step === 4 && <div data-testid="signup-plans" className="lg-intent pl-signup" role="radiogroup" aria-label="Escolha o plano">
           {(plans?.plans || []).filter(p => SELLABLE.includes(p.id) && p.audience === 'aluno').map(p => <PlanCard key={p.id} p={p} compact selected={choice === p.id} onSelect={p.purchasable ? () => setChoice(p.id) : undefined} />)}
-          <p className="lg-sub">É necessário contratar o plano para criar a conta. Cupom de desconto pode ser informado na contratação; o acesso só é liberado após a confirmação do pagamento.</p>
+          <p className="lg-sub">Escolha um plano. O acesso começa após a confirmação do pagamento.</p>
           {plansBusy && <p className="lg-sub" role="status">Carregando o plano…</p>}
           {plansError && <div className="lg-msg" role="alert" data-testid="signup-plans-error"><span>{plansError}</span><button type="button" className="lg-btn ghost" onClick={loadPlans}>Tentar novamente</button></div>}
         </div>}
@@ -223,9 +223,8 @@ function LoginForm() {
           <p><b>{f.name}</b> · {f.email}</p>
           <p>Perfil: {PROFILE_LABELS[profile.profile_kind]} · {PALETTE_LABELS[profile.accent_palette]}</p>
           {profile.prefers_female_coach && <p>Preferência: atendimento por uma personal mulher</p>}
-          <p>Personal: será escolhido pelo administrador depois do cadastro.</p>
-          <p>Plano: {plans?.plans?.find(p => p.id === choice)?.name || choice} (pagamento antes de acessar o sistema)</p>
-          <p data-testid="signup-pay-note">Depois de criar a conta, abrimos <b>Planos e pagamento</b> com o plano escolhido. Você conclui o pagamento por cartão ou Pix; nada é cobrado sem sua confirmação.</p>
+          <p>Plano: {plans?.plans?.find(p => p.id === choice)?.name || choice}</p>
+          <p data-testid="signup-pay-note">Depois de criar a conta, revise e confirme o pagamento por cartão ou Pix.</p>
         </div>}
             {reg && step === 5 && <div className={'lg-terms' + (errs.terms ? ' err' : '')}>
           <label><input type="checkbox" checked={agree} onChange={e => { setAgree(e.target.checked); setErrs({ ...errs, terms: undefined }) }} data-testid="accept-terms" />

@@ -260,7 +260,6 @@ export default function Train() {
     </div> : <div className="g-media g-x g-noimg" data-testid="ex-media-placeholder">
       <Icon name="stretch" /><span className="g-xs g-mut">Sem vídeo para este exercício — siga as instruções abaixo</span>
     </div>}
-    {video && <button className="g-btn g-ghost g-sm" style={{ marginTop: 4 }} onClick={() => setSheet('ask')} data-testid="ask-video"><Icon name="chat" /> Tenho uma dúvida neste vídeo</button>}
     <ExtraMedia id={ex.exercise_id} />
     <p className="g-mut g-sm" style={{ marginTop: 6 }}>{ex.instructions || 'Faça o movimento devagar e com controle. Pare se sentir dor.'}</p>
     {(s.plan_desc || s.day_desc) && s.exIdx === 0 && ex.done.length === 0 && <div className="g-card g-sm" style={{ marginTop: 8 }} data-testid="plan-desc">{s.plan_desc && <p style={{ margin: 0 }}><b>Como fazer o treino:</b> {s.plan_desc}</p>}{s.day_desc && <p style={{ margin: s.plan_desc ? '6px 0 0' : 0 }}><b>Hoje:</b> {s.day_desc}</p>}</div>}
@@ -293,26 +292,30 @@ export default function Train() {
     {isBlocked && <div className="g-blocked" data-testid="ex-blocked"><b>Exercício pausado</b><p className="g-mut g-sm">Você relatou dor ou desconforto. Ele fica bloqueado até seu profissional registrar uma orientação explícita. Siga para o próximo exercício.</p></div>}
     {flash && <p className="g-note" style={{ marginTop: 8 }} role="status">{flash}</p>}
     {isBlocked ? null : allDoneEx ? <button className="g-btn g-xl" onClick={goNext}>{isLastEx ? 'FINALIZAR TREINO' : 'PRÓXIMO EXERCÍCIO'}</button>
-      : setRunning == null ? <>
-        <button className="g-btn g-xl" onClick={startSet} data-testid="start-set"><Icon name="play" /> INICIAR SÉRIE {setNo}</button>
-        <button className="g-link g-center" style={{ width: '100%', minHeight: 44 }} onClick={finishSet} data-testid="finish-set-quick">Já fiz esta série — registrar sem cronômetro</button>
-      </> : <>
-        <button className="g-btn g-xl" onClick={finishSet} data-testid="finish-set"><Icon name="check" /> CONCLUIR SÉRIE</button>
-        <button className="g-link g-center" style={{ width: '100%', minHeight: 44 }} onClick={startSet} data-testid="restart-set">Reiniciar cronômetro da série</button>
-      </>}
-    <button className="g-btn g-ghost g-sm" style={{ marginTop: 10 }} onClick={goNext} data-testid="next-ex">{isLastEx ? 'Finalizar treino' : 'Pular para o próximo exercício'}</button>
-    <details className="g-run-details"><summary>Séries e última vez</summary>
-      {chips.length > 0 && <div className="g-chips" data-testid="ex-chips">{chips.map(c => <span key={c}>{c}</span>)}</div>}
-      {ex.notes && <p className="g-mut g-xs">Obs.: {ex.notes}</p>}
-      {ex.per_set?.length > 0 && <div className="g-sets-wrap"><table className="g-sets" data-testid="sets-table"><thead><tr><th>Série</th><th>Reps</th><th>Carga</th><th /></tr></thead><tbody>{Array.from({ length: ex.sets }, (_, k) => { const t = targetFor(ex, k), d = ex.done[k]; return <tr key={k} className={k === ex.done.length ? 'cur' : d ? 'ok' : ''}><td>{k + 1}</td><td>{t.reps}</td><td>{t.load_kg != null && t.load_kg !== '' ? t.load_kg + ' kg' : '—'}</td><td>{d ? '✓ ' + (d.weight ? d.weight + '×' : '') + d.reps : ''}</td></tr> })}</tbody></table></div>}
-      {ex.last && <p className="g-dim g-xs">Última vez: {ex.last.map(l => ex.timed ? `${l.reps ?? '—'}` : `${l.weight ? l.weight + ' kg × ' : ''}${l.reps}`).join(' · ')}</p>}
-      {ex.note && <p className="g-acc g-xs">Sugestão: {ex.note}</p>}
-    </details>
+      : setRunning == null
+        ? <button className="g-btn g-xl" onClick={startSet} data-testid="start-set"><Icon name="play" /> INICIAR SÉRIE {setNo}</button>
+        : <button className="g-btn g-xl" onClick={finishSet} data-testid="finish-set"><Icon name="check" /> CONCLUIR SÉRIE</button>}
 
-    <div className="g-actions">
-      <button className="g-btn g-ghost g-sm" onClick={() => setSheet('ask')} data-testid="ask"><Icon name="chat" /> Tenho uma dúvida</button>
-      <button className="g-btn g-ghost g-sm" onClick={() => setSheet('report')} data-testid="report" style={{ borderColor: "var(--ag-warn, #f5a524)" }}><Icon name="flag" /> Relatar dor ou problema</button>
+    <div className="g-run-support" aria-label="Ajuda durante o treino">
+      <button className="g-link" onClick={() => setSheet('ask')} data-testid="ask"><Icon name="chat" /> Dúvida</button>
+      <button className="g-link g-run-pain" onClick={() => setSheet('report')} data-testid="report"><Icon name="flag" /> Dor ou problema</button>
     </div>
+
+    <details className="g-run-details" data-testid="train-more"><summary>Mais opções</summary>
+      <div className="g-run-more-actions">
+        {!isBlocked && !allDoneEx && setRunning == null && <button className="g-btn g-ghost g-sm" onClick={finishSet} data-testid="finish-set-quick">Registrar sem cronômetro</button>}
+        {!isBlocked && !allDoneEx && setRunning != null && <button className="g-btn g-ghost g-sm" onClick={startSet} data-testid="restart-set">Reiniciar cronômetro</button>}
+        <button className="g-btn g-ghost g-sm" onClick={goNext} data-testid="next-ex">{isLastEx ? 'Finalizar treino' : 'Pular exercício'}</button>
+      </div>
+      <div className="g-run-history">
+        <b className="g-sm">Séries e última vez</b>
+        {chips.length > 0 && <div className="g-chips" data-testid="ex-chips">{chips.map(c => <span key={c}>{c}</span>)}</div>}
+        {ex.notes && <p className="g-mut g-xs">Obs.: {ex.notes}</p>}
+        {ex.per_set?.length > 0 && <div className="g-sets-wrap"><table className="g-sets" data-testid="sets-table"><thead><tr><th>Série</th><th>Reps</th><th>Carga</th><th /></tr></thead><tbody>{Array.from({ length: ex.sets }, (_, k) => { const t = targetFor(ex, k), d = ex.done[k]; return <tr key={k} className={k === ex.done.length ? 'cur' : d ? 'ok' : ''}><td>{k + 1}</td><td>{t.reps}</td><td>{t.load_kg != null && t.load_kg !== '' ? t.load_kg + ' kg' : '—'}</td><td>{d ? '✓ ' + (d.weight ? d.weight + '×' : '') + d.reps : ''}</td></tr> })}</tbody></table></div>}
+        {ex.last && <p className="g-dim g-xs">Última vez: {ex.last.map(l => ex.timed ? `${l.reps ?? '—'}` : `${l.weight ? l.weight + ' kg × ' : ''}${l.reps}`).join(' · ')}</p>}
+        {ex.note && <p className="g-acc g-xs">Orientação: {ex.note}</p>}
+      </div>
+    </details>
     {sheet === 'ask' && <AskSheet ctx={{ exercise_id: ex.exercise_id, exercise_name: ex.name, plan_id: s.plan_id, context_type: 'exercicio' }}
       videoSec={video?.canControl ? videoSec : null} onClose={() => setSheet(null)} onDone={() => { setSheet(null); setFlash('Dúvida enviada ao seu personal.') }} />}
     {sheet === 'report' && <ReportSheet ctx={{ exercise_id: ex.exercise_id, exercise_name: ex.name, plan_id: s.plan_id, session_client_id: s.client_id }} onClose={() => setSheet(null)}

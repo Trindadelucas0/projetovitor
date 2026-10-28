@@ -43,19 +43,17 @@ export function HomeWidgets({ h, onRetry }) {
   const nav = useNavigate(), can = useNavigationAccess()
   if (h === false) return <section className="g-card hw-card" role="status"><p className="g-mut">Não foi possível carregar os indicadores.</p><button className="g-link" onClick={onRetry}>Tentar novamente</button></section>
   if (!h) return <p className="g-mut" role="status">Carregando indicadores…</p>
-  const dv = pct(h.week.vol, h.prev_week.vol)
+  const week = h.week || {}, prev = h.prev_week || {}
+  const dv = pct(week.vol || 0, prev.vol || 0)
   return <>
     <div className="hw-grid" data-testid="home-widgets">
-      <button className="hw-w" onClick={() => nav('/estatisticas')} data-testid="hw-streak"><span className="hw-ico hw-fire"><Icon name="flame" /></span>
-        <b>{plural(h.streak_days, 'dia', 'dias')}</b><span>Sequência atual</span><small>Recorde: {plural(h.best_streak_days, 'dia', 'dias')}</small></button>
+      <button className="hw-w" onClick={() => nav('/estatisticas')} data-testid="hw-workouts"><span className="hw-ico"><Icon name="check" /></span>
+        <b>{plural(week.n || 0, 'treino', 'treinos')}</b><span>Feitos nesta semana</span><small>{prev.n ? `Semana passada: ${prev.n}` : 'Sem base anterior'}</small></button>
       <button className="hw-w" onClick={() => nav('/estatisticas')} data-testid="hw-volume"><span className="hw-ico"><Icon name="dumbbell" /></span>
-        <b>{h.week.vol >= 1000 ? (h.week.vol / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' t' : fmtKg(h.week.vol)}</b><span>Volume da semana</span>
-        <small className={dv == null ? '' : dv >= 0 ? 'hw-up' : 'hw-down'}>{dv == null ? (h.prev_week.vol ? '' : 'Sem treinos na semana passada') : `${dv >= 0 ? '▲' : '▼'} ${Math.abs(dv)}% x semana passada`}</small></button>
+        <b>{(week.vol || 0) >= 1000 ? (week.vol / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' t' : fmtKg(week.vol || 0)}</b><span>Volume da semana</span>
+        <small className={dv == null ? '' : dv >= 0 ? 'hw-up' : 'hw-down'}>{dv == null ? (prev.vol ? '' : 'Sem treinos na semana passada') : `${dv >= 0 ? '▲' : '▼'} ${Math.abs(dv)}% x semana passada`}</small></button>
       <button className="hw-w" onClick={() => nav('/estatisticas')} data-testid="hw-time"><span className="hw-ico"><Icon name="clock" /></span>
-        <b>{fmtMin(h.week.secs)}</b><span>Tempo treinando</span><small>Semana passada: {fmtMin(h.prev_week.secs)}</small></button>
-      <button className="hw-w" onClick={() => nav('/estatisticas')} data-testid="hw-records"><span className="hw-ico"><Icon name="trophy" /></span>
-        <b>{h.recent_records.length ? plural(h.recent_records.length, 'recorde', 'recordes') : 'Nenhum'}</b><span>Recordes em 14 dias</span>
-        <small>{h.recent_records[0] ? `${h.recent_records[0].name}: ${h.recent_records[0].weight} kg × ${h.recent_records[0].reps}` : 'Supere uma carga para marcar'}</small></button>
+        <b>{fmtMin(week.secs || 0)}</b><span>Tempo treinando</span><small>Semana passada: {fmtMin(prev.secs || 0)}</small></button>
     </div>
     {can('musculos') && <NextMuscles next={h.next} />}
   </>

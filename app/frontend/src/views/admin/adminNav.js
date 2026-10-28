@@ -4,34 +4,34 @@
 // As chaves antigas continuam valendo (links, testes e tours); OLD_TABS redireciona as que saíram.
 export const NAV = [
  ['Início', 'house', [
-   ['inicio','Início','house','O que precisa de atenção hoje: Close Friends para adicionar ou remover, calls do dia e perguntas da live. Clique num cartão para ir direto à tela.'],
-   ['dashboard','Números e gráficos','chart','Indicadores de alunos, pagamentos e uso do app. Use para acompanhar o crescimento; o trabalho do dia fica em Início.']]],
+   ['inicio','Início','house','Pendências e tarefas de hoje.'],
+   ['dashboard','Números e gráficos','chart','Indicadores de alunos, pagamentos e uso.']]],
  ['Alunos', 'person', [
-   ['usuarios','Alunos','person','Todas as contas de alunos. Cadastre aluno novo (Homem ou Mulher), veja quem está pendente e abra um aluno para ver ficha, plano e vínculos.'],
-   ['vinculos','Vínculos e convites','users','Qual aluno está com qual personal e os convites enviados. Para mover um aluno, abra o aluno em Alunos e use Transferir.'],
-   ['filas','Dúvidas dos alunos','bell','Dúvidas e relatos dos alunos, com prazo de resposta. Dor ou desconforto pausam o exercício até a orientação; dúvida não pausa o treino.']]],
+   ['usuarios','Alunos','person','Contas, planos e dados dos alunos.'],
+   ['vinculos','Vínculos e convites','users','Alunos vinculados e convites enviados.'],
+   ['filas','Dúvidas dos alunos','bell','Dúvidas e relatos que precisam de resposta.']]],
  ['Personais', 'clipboard', [
-   ['personais','Personais','clipboard','Quem são os personais, se atendem homens ou mulheres e quantos alunos têm. Aluno novo vai sozinho para o personal principal do público dele.'],
-   ['perfil','Meu perfil de personal','person','É o perfil que os alunos veem na comunidade e nas fichas. Mantenha foto, apresentação e registro profissional atualizados.']]],
+   ['personais','Personais','clipboard','Equipe, público atendido e alunos.'],
+   ['perfil','Meu perfil de personal','person','Perfil exibido aos alunos.']]],
  ['Planos e cobrança', 'sparkles', [
-   ['cobranca','Assinaturas e cobrança','sparkles','Quem pagou, quem está pendente, preços, cupons e cobranças dos planos Básico e Completo.'],
-   ['planos-regras','Cotas dos planos','list','O que cada plano dá: fichas novas, calls, Close Friends, grupos e prioridade na live. Mudar aqui vale para todos os alunos do plano.']]],
+   ['cobranca','Assinaturas e cobrança','sparkles','Pagamentos, preços, cupons e pendências.'],
+   ['planos-regras','Cotas dos planos','list','Limites e benefícios de cada plano.']]],
  ['Agenda de calls', 'clock', [
-   ['calls','Agenda de calls','clock','Calls de 15 minutos pelo Zoom. Veja as calls marcadas, confirme pelo WhatsApp, cadastre horários e link do Zoom de cada personal ou marque uma call manualmente.']]],
+   ['calls','Agenda de calls','clock','Horários, confirmações e links das calls.']]],
  ['Comunidade', 'users', [
-   ['comunidade-externa','WhatsApp e Close Friends','users','Quem você precisa adicionar ou remover do Close Friends e do grupo exclusivo, e os links dos grupos do WhatsApp que cada plano vê.'],
-   ['lives','Live semanal','play','Marque a live da semana e responda as perguntas dos alunos. Alunos do Completo aparecem primeiro na fila.'],
-   ['publicacoes','Publicações e moderação','chat','Posts e comentários da comunidade do app, conteúdo oficial e denúncias para moderar.'],
-   ['tapago','Campanha #TáPago','trophy','Campanha de constância: regras, participantes e premiação.']]],
+   ['comunidade-externa','WhatsApp e Close Friends','users','Acessos e links das comunidades externas.'],
+   ['lives','Live semanal','play','Agenda e perguntas da live.'],
+   ['publicacoes','Publicações e moderação','chat','Conteúdo, comentários e denúncias.'],
+   ['tapago','Campanha #TáPago','chart','Regras e participantes da campanha.']]],
  ['Treinos e avaliações', 'dumbbell', [
-   ['exercicios','Exercícios e vídeos','dumbbell','Biblioteca de exercícios usada nas fichas: nome, músculos, vídeo e instruções.'],
-   ['avaliacao','Avaliações posturais','clipboard','Fila de avaliações posturais enviadas pelos alunos para analisar e devolver.'],
-   ['avaliacao-adm','Protocolos de avaliação','list','Versões do protocolo de avaliação postural, termo de consentimento, indicadores e retenção das fotos.']]],
+   ['exercicios','Exercícios e vídeos','dumbbell','Biblioteca usada nas fichas.'],
+   ['avaliacao','Avaliações posturais','clipboard','Avaliações aguardando análise.'],
+   ['avaliacao-adm','Protocolos de avaliação','list','Protocolos, consentimento e retenção.']]],
  ['Configurações', 'gear', [
-   ['config','Configurações gerais','gear','Regras do app: personal principal de cada público, prazos das calls, o que o aluno mantém quando o plano acaba e outros ajustes.'],
-   ['empresa','Dados da empresa','list','Razão social, CNPJ e contatos que aparecem nos termos, recibos e rodapé.'],
-   ['lgpd','Privacidade e termos','lock','Pedidos de cópia e exclusão de dados dos alunos e as versões dos termos de uso. Nada é apagado sem a sua análise.'],
-   ['auditoria','Logs e auditoria','history','Registro de quem fez o quê e quando no painel e na API. Use para investigar um problema.']]]]
+   ['config','Configurações gerais','gear','Regras gerais do aplicativo.'],
+   ['empresa','Dados da empresa','list','Dados exibidos em termos e recibos.'],
+   ['lgpd','Privacidade e termos','lock','Pedidos de dados e versões legais.'],
+   ['auditoria','Logs e auditoria','history','Histórico de ações no painel e na API.']]]]
 export const PAGES = Object.fromEntries(NAV.flatMap(([g, gi, items]) => items.map(([k, l, ic, desc]) => [k, { group: g, label: l, icon: ic, desc }])))
 export const TITLE = Object.fromEntries(Object.entries(PAGES).map(([k, v]) => [k, v.label]))
 // Subtelas: nome + descrição próprios (o cabeçalho mostra a descrição da subtela quando existe).

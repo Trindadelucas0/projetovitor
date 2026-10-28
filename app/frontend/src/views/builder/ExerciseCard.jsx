@@ -182,9 +182,8 @@ export default function ExerciseCard({
               </label>
             </div>
             {['tempo', 'rpe', 'rir'].map(f => erroDe(f) ? <p key={f} className="wb-erro" role="alert">{erroDe(f)}</p> : null)}
-          </details>
 
-          <VideoField e={e} i={i} dayIndex={dayIndex} set={set} media={media} erro={erroDe('video_url')} />
+            <VideoField e={e} i={i} dayIndex={dayIndex} set={set} media={media} erro={erroDe('video_url')} />
 
           <label className="wb-chk">
             <input type="checkbox" className="wb-check" checked={perOn} data-testid={`wb-per-${i}`}
@@ -222,6 +221,7 @@ export default function ExerciseCard({
             <span className="g-mut g-xs">Observações</span>
             <input className="g-in" value={e.notes} onChange={v => set({ notes: v.target.value })} placeholder="ex.: pare se sentir dor no joelho" />
           </label>
+          </details>
 
           <Btn variant="tertiary" onClick={onOpen}>Fechar este exercício</Btn>
         </div>

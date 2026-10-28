@@ -114,6 +114,13 @@ body:has(.ag),html:has(.ag){background:var(--ag-bg)!important}
 .ag .g-run-details{margin:12px 0;border:1px solid var(--ag-line);border-radius:14px;background:var(--ag-card);padding:0 12px}
 .ag .g-run-details summary{cursor:pointer;min-height:48px;display:flex;align-items:center;font-weight:700}
 .ag .g-run-details p{margin:8px 0}
+.ag .g-run-support{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.ag .g-run-support .g-link{min-height:44px;display:flex;align-items:center;justify-content:center;gap:7px;border-radius:12px;color:var(--ag-txt);font-weight:700;background:transparent}
+.ag .g-run-support .g-link:active{background:var(--ag-card-2)}
+.ag .g-run-support .g-run-pain{color:var(--ag-warn,#d97706)}
+.ag .g-run-more-actions{display:grid;gap:8px;padding-bottom:12px}
+.ag .g-run-more-actions .g-btn{width:100%;margin:0}
+.ag .g-run-history{padding:12px 0;border-top:1px solid var(--ag-line)}
 .ag .g-sets-wrap{overflow-x:auto;max-width:100%}
 .ag .g-timer-ring{width:148px;height:148px;border-radius:50%;padding:9px;display:grid;place-items:center;background:conic-gradient(var(--ag-acc) var(--ring-progress),var(--ag-card-2) 0);flex:none;margin:8px auto 6px;transform:rotate(-90deg)}
 .ag .g-timer-ring-inner{width:100%;height:100%;border-radius:50%;background:var(--ag-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(90deg)}

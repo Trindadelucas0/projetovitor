@@ -8,9 +8,7 @@
 // O acesso só é liberado após a confirmação do pagamento (api/auth.js exige um plano vendável),
 // por isso não há CTA de "começar grátis" em lugar nenhum.
 //
-// Formato da página (página longa, no padrão das landings de app): hero → faixa de números reais
-// → 4 pilares → seis blocos profundos, cada um com o print real da tela correspondente (moldura
-// de celular, ver mockups.jsx) ao lado da lista de capacidades → objetivos atendidos → como funciona → planos → instalação → dúvidas.
+// Formato enxuto: hero → números reais → três telas essenciais → como funciona → planos → dúvidas.
 // Os números da faixa vêm de GET /api/public/stats (contagem real do catálogo); se a API falhar
 // ou vier zero, a faixa simplesmente não aparece — nenhum número é inventado.
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -18,10 +16,9 @@ import Brand from '../../components/Brand.jsx'
 import Icon from '../../components/Icon.jsx'
 import { api } from '../../lib/api.js'
 import { useStore } from '../../store/useStore.js'
-import InstallWalkthrough from '../../components/InstallWalkthrough.jsx'
 import { parseEntry, signupHref, rememberEntry } from '../../lib/landingParams.js'
-import { PlanGrid, TrialSeal, Faq } from '../billing/PlansShowcase.jsx'
-import { MkToday, MkRun, MkProgress, MkHistory, MkPrograms, MkCall, MkSignup } from './mockups.jsx'
+import { PlanGrid, TrialSeal } from '../billing/PlansShowcase.jsx'
+import { MkToday, MkRun, MkProgress, MkSignup } from './mockups.jsx'
 import './landing.css'
 
 const AUDIENCE = {
@@ -31,98 +28,28 @@ const AUDIENCE = {
     h1: ['Pare de treinar', 'no improviso.'],
     lead: 'Veja o treino do dia, registre séries e cargas e acompanhe seu histórico.',
     bullets: ['Treino guiado', 'Cargas e repetições', 'Histórico e progresso'],
-    image: '/landing/aluno-orny.webp',
-    alt: 'Pessoa seguindo o treino do dia pelo celular na academia',
-    panelTitle: 'O treino deixa de depender de memória, print ou improviso.',
-    panelCopy: 'Chegar na academia sem saber exatamente o que fazer atrapalha a rotina. Na ORNY o treino fica no celular: exercícios, séries, cargas, cronômetro e o registro do que foi feito.',
   },
 }
 
-const NAV = [['recursos', 'O que faz'], ['telas', 'Por dentro'], ['como-funciona', 'Como funciona'], ['planos', 'Planos'], ['duvidas', 'Dúvidas']]
+const NAV = [['telas', 'Por dentro'], ['como-funciona', 'Como funciona'], ['planos', 'Planos'], ['duvidas', 'Dúvidas']]
 
-// Os 4 pilares (cada um aponta para o bloco profundo que mostra a tela)
 const PILLARS = [
-  ['01', 'clipboard', 'A ficha do seu personal', 'treino-do-dia', [
-    'Treino do dia e próximo treino na abertura do app',
-    'Exercícios, séries, repetições e dias da semana',
-    'Vídeo de execução em cada exercício da ficha',
-  ]],
-  ['02', 'timer', 'Execução guiada', 'execucao', [
-    'Exercício por exercício, com as orientações da ficha',
-    'Cronômetro de série e de descanso',
-    'Carga e repetições registradas série a série',
-  ]],
-  ['03', 'chart', 'Progresso e histórico', 'progresso', [
-    'Volume, frequência e recordes pessoais',
-    'Histórico de tudo que você já treinou',
-    'Comparação com as semanas anteriores',
-  ]],
-  ['04', 'users', 'Seu personal de perto', 'personal', [
-    'Call de 15 minutos no Zoom, marcada no app',
-    'Avaliação postural enviada ao seu personal',
-    'Comunidade no WhatsApp e live semanal',
-  ]],
+  ['01', 'clipboard', 'Treino do dia', 'treino-do-dia'],
+  ['02', 'timer', 'Execução guiada', 'execucao'],
+  ['03', 'chart', 'Progresso real', 'progresso'],
 ]
 
-// Blocos profundos: [id, kicker, h2, parágrafo, bullets, mockup, invertido]
+// Três decisões essenciais; detalhes ficam no próprio produto.
 const DEEP = [
-  ['treino-do-dia', 'Treino do dia', 'Você abre o app e já sabe o que fazer',
-    'A ficha montada pelo seu personal vira a tela inicial. O treino do dia aparece com os exercícios na ordem, as séries, as repetições e a carga que você usou na última vez — e o próximo treino já fica indicado.',
-    ['Treino do dia e próximo treino sempre visíveis',
-      'Exercícios na ordem, com séries e repetições da ficha',
-      'A carga da última sessão aparece como referência',
-      'Barra de progresso do treino enquanto você avança',
-      'Vídeo de execução em cada exercício'],
-    MkToday, false],
-  ['execucao', 'Execução', 'Cronômetro, carga e repetições na mão',
-    'Durante o treino a ORNY conduz exercício por exercício. Você confirma a carga antes de começar, registra o que levantou em cada série e o descanso deixa de ser chute entre uma série e outra.',
-    ['Cronômetro de descanso entre séries, com aviso',
-      'Confirmação da carga antes de iniciar o exercício',
-      'Registro de carga e repetições série a série',
-      'Orientações da ficha junto do exercício',
-      'Retoma de onde você parou se sair do app'],
-    MkRun, true],
-  ['progresso', 'Progresso', 'Não é só treinar — é ver a evolução',
-    'Cada série registrada alimenta o seu progresso: volume por semana, frequência, sequência de semanas treinadas e recordes pessoais por exercício. A comparação com as semanas anteriores fica na tela.',
-    ['Volume de treino por semana, em gráfico',
-      'Frequência semanal e sequência de semanas',
-      'Recordes pessoais por exercício',
-      'Comparação com o período anterior',
-      'Tudo calculado do que você registrou'],
-    MkProgress, false],
-  ['historico', 'Histórico', 'Nada do que você treinou se perde',
-    'Todo treino concluído fica guardado com data, duração e volume. Se você parar e voltar depois, o histórico continua lá — e seu personal usa esse registro para montar a ficha seguinte.',
-    ['Lista de treinos concluídos por data',
-      'Duração e volume de cada sessão',
-      'Calendário da semana com os dias treinados',
-      'Base para a próxima ficha do seu personal',
-      'Os dados ficam salvos mesmo sem plano ativo'],
-    MkHistory, true],
-  ['programas', 'Sua ficha', 'O treino montado para você, na aba Treinos',
-    'Você não garimpa catálogo: o seu personal monta a ficha no app, com o objetivo, os dias e os exercícios escolhidos para você. Ela aparece na aba Treinos dividida em dias — Treino A, B, C, D — e é só tocar no dia para começar o treino guiado.',
-    ['Ficha do personal dividida em dias (A, B, C, D)',
-      'Séries, repetições, carga e descanso definidos por ele',
-      'Imagem ou vídeo do exercício e o passo a passo em "Como fazer"',
-      'Você escolhe em que dia da semana cada treino aparece',
-      'Tocou no dia, o treino guiado começa'],
-    MkPrograms, false],
-  ['personal', 'Acompanhamento', 'Um personal acompanhando, não um app sozinho',
-    'A ficha é montada por uma pessoa. Homens são atendidos por um personal e mulheres por uma personal. A call de 15 minutos no Zoom é marcada no app, num horário livre da agenda dele, com pelo menos 12 horas de antecedência.',
-    ['Ficha montada pelo seu personal, não automática',
-      'Call de 15 minutos no Zoom marcada pelo app',
-      'Avaliação postural registrada e enviada',
-      'Comunidade no WhatsApp: grupo geral e avisos',
-      'Live semanal e Close Friends no Instagram'],
-    MkCall, true],
-]
-
-const GOALS = [
-  ['dumbbell', 'Hipertrofia', 'Ficha com volume e progressão de carga, da iniciante à avançada.'],
-  ['flame', 'Emagrecimento', 'Rotinas com gasto maior e frequência ajustada ao seu tempo.'],
-  ['barbell', 'Força', 'Trabalho nos movimentos principais, com registro de recorde pessoal.'],
-  ['figureRun', 'Condicionamento', 'Treinos para constância e resistência ao longo da semana.'],
-  ['house', 'Treino em casa', 'Ficha sem equipamento ou com o mínimo que você tem em casa.'],
-  ['machine', 'Academia', 'Exercícios escolhidos pelo equipamento disponível, de máquina a peso livre.'],
+  ['treino-do-dia', 'Treino do dia', 'Abra e saiba o que fazer',
+    'Seu treino aparece na ordem, com séries, repetições e a carga anterior.',
+    ['Exercícios na ordem', 'Séries e cargas à mão', 'Próximo treino indicado'], MkToday, false],
+  ['execucao', 'Execução', 'Uma série por vez',
+    'O app mostra a próxima ação e registra cada série sem tirar o foco do treino.',
+    ['Cronômetro de série e descanso', 'Carga e repetições por série', 'Retomada de onde parou'], MkRun, true],
+  ['progresso', 'Progresso', 'Veja o que realmente mudou',
+    'Frequência, volume e histórico são calculados a partir do que você registrou.',
+    ['Resumo semanal', 'Comparação por período', 'Histórico completo'], MkProgress, false],
 ]
 
 const STEPS = [
@@ -269,19 +196,17 @@ export default function Landing() {
       </div>
     </section>}
 
-    <section id="recursos" className="lp-section" data-testid="landing-pillars">
+    <section className="lp-section" data-testid="landing-pillars">
       <div className="lp-shell">
         <div data-reveal className="lp-head">
           <span className="lp-kicker">O que a ORNY faz hoje</span>
-          <h2>Os quatro pilares do seu treino</h2>
-          <p className="lp-copy">Tudo abaixo já existe no sistema. Nenhuma promessa de resultado.</p>
+          <h2>Treine sem se perder</h2>
         </div>
         <div className="lp-grid lp-grid-4">
-          {PILLARS.map(([n, icon, title, target, items]) =>
+          {PILLARS.map(([n, icon, title, target]) =>
             <article key={n} data-card data-n={n} className="lp-card lp-pillar">
               <span className="lp-card-ico"><Icon name={icon} /></span>
               <h3>{title}</h3>
-              <ul className="lp-ticks">{items.map(t => <li key={t}><Icon name="check" />{t}</li>)}</ul>
               <button type="button" className="lp-link" onClick={() => goTo(target)}>Ver a tela<Icon name="chevronRight" /></button>
             </article>)}
         </div>
@@ -303,41 +228,6 @@ export default function Landing() {
           </div>
         </section>)}
     </div>
-
-    <section id="objetivos" className="lp-section lp-section-alt">
-      <div className="lp-shell">
-        <div data-reveal className="lp-head">
-          <span className="lp-kicker">Para o seu objetivo</span>
-          <h2>Serve para o treino que você faz</h2>
-          <p className="lp-copy">O seu personal define o objetivo da ficha e escolhe os exercícios de acordo com o local de treino e o que você tem disponível.</p>
-        </div>
-        <div className="lp-grid lp-goals">
-          {GOALS.map(([icon, title, copy]) =>
-            <article key={title} data-card className="lp-goal">
-              <span className="lp-card-ico"><Icon name={icon} /></span>
-              <div><h3>{title}</h3><p className="lp-copy">{copy}</p></div>
-            </article>)}
-        </div>
-      </div>
-    </section>
-
-    <section id="beneficios" className="lp-section">
-      <div className="lp-shell">
-        <div data-reveal className="lp-head">
-          <span className="lp-kicker">Para quem treina com personal</span>
-          <h2>O seu treino, no seu celular</h2>
-        </div>
-        <div data-reveal className="lp-panel">
-          <div className="lp-panel-copy">
-            <span className="lp-kicker">{sel.tab}</span>
-            <h3>{sel.panelTitle}</h3>
-            <p className="lp-copy">{sel.panelCopy}</p>
-            <a href={href()} className="lp-btn lp-btn-primary">Criar minha conta<Icon name="chevronRight" /></a>
-          </div>
-          <div className="lp-panel-img"><img key={sel.image} src={sel.image} alt={sel.alt} width="1448" height="1086" loading="lazy" decoding="async" /></div>
-        </div>
-      </div>
-    </section>
 
     <section id="como-funciona" className="lp-section lp-section-alt">
       <div className="lp-shell lp-how">
@@ -364,7 +254,7 @@ export default function Landing() {
         <div data-reveal className="lp-head">
           <span className="lp-kicker">Planos e valores</span>
           <h2>Básico ou Completo</h2>
-          <p className="lp-copy">Nos dois planos você treina com acompanhamento de um personal: homens com um personal, mulheres com uma personal. Os valores vêm do catálogo atual da ORNY e o acesso começa depois que o pagamento é confirmado.</p>
+          <p className="lp-copy">Veja o valor e revise antes de pagar. Homens com um personal, mulheres com uma personal. O acesso começa após a confirmação.</p>
         </div>
         {plans?.test_mode && <p className="lp-status" role="status">Ambiente de teste: os pagamentos desta versão não geram cobrança real.</p>}
         {error ? <p className="lp-error" role="alert">{error}</p>
@@ -384,18 +274,6 @@ export default function Landing() {
       </div>
     </section>
 
-    <section id="instalacao" className="lp-section lp-section-alt">
-      <div className="lp-shell">
-        <div data-reveal className="lp-head">
-          <span className="lp-kicker">No seu celular</span>
-          <h2>Instale quando quiser</h2>
-          <p className="lp-copy">A ORNY funciona normalmente no navegador. Adicionar à tela inicial é opcional e deixa o acesso mais rápido.</p>
-        </div>
-        <InstallWalkthrough />
-        <p className="lp-status">As notificações são opcionais. Você pode ativá-las depois em Perfil, Configurações. Elas nunca bloqueiam o seu acesso.</p>
-      </div>
-    </section>
-
     <section id="duvidas" className="lp-section" data-testid="landing-faq">
       <div className="lp-shell lp-narrow">
         <div data-reveal className="lp-head">
@@ -405,7 +283,6 @@ export default function Landing() {
         <div data-reveal className="lp-faq">
           {FAQ_LANDING.map(([q, a]) => <details key={q}><summary>{q}<Icon name="plus" /></summary><p>{a}</p></details>)}
         </div>
-        <Faq />
       </div>
     </section>
 
@@ -431,8 +308,6 @@ export default function Landing() {
           <nav className="lp-footer-group" aria-labelledby="lp-footer-conheca">
             <h2 id="lp-footer-conheca">Conheça</h2>
             {NAV.map(([id, label]) => <button key={id} type="button" onClick={() => goTo(id)}>{label}</button>)}
-            <button type="button" onClick={() => goTo('objetivos')}>Objetivos</button>
-            <button type="button" onClick={() => goTo('instalacao')}>Instalação</button>
           </nav>
           <nav className="lp-footer-group" aria-labelledby="lp-footer-acesso">
             <h2 id="lp-footer-acesso">Acesso</h2>

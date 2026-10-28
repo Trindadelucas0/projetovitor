@@ -2,6 +2,10 @@
 
 Este guia descreve as ações do aplicativo de um personal e seus alunos. O nome Projeto Vitor identifica o produto nesta documentação; a marca mostrada nas telas ainda é a anterior nesta cópia. Consulte o [PRD e App Flow](PRD-PROJETO-VITOR.md) para a jornada completa e a [documentação oficial](../app/DOCUMENTACAO-SISTEMA.md) para o comportamento confirmado e os limites de validação.
 
+## Interface focada
+
+Cada tela destaca a próxima ação. No treino, use o botão principal no centro; **Dúvida** e **Dor ou problema** ficam logo abaixo. Abra **Mais opções** somente para registrar sem cronômetro, reiniciar, pular, finalizar antes ou consultar histórico. Em **Progresso → Estatísticas detalhadas**, escolha um assunto por vez: Evolução, Carga, Músculos ou Consistência.
+
 ## Perfil e atribuição de personal
 
 1. No cadastro ou no primeiro acesso de uma conta antiga, escolha **Menino**, **Menina** ou **Outro**. Em **Outro**, escolha roxo, azul ou laranja.
@@ -30,9 +34,9 @@ O domínio e os três logins foram verificados. O aluno de teste entra com papel
 4. Quando a ficha estiver disponível, abra **Organizar semana** para associar os treinos aos dias ou deixar **Livre**. A agenda muda apenas os dias; os exercícios continuam sob responsabilidade do personal.
 5. Escolha o treino. Ele começa direto, sem pedir o nome ou a carga de todos os exercícios antes. Se o personal prescreveu aquecimento, o app mostra primeiro **Antes do treino** e depois, quando aplicável, **Antes de [exercício]**. Use **Iniciar aquecimento** e **Concluir aquecimento**, ou **Pular aquecimento**; o pulo fica registrado. Depois, em cada série por repetições, toque em **Iniciar série**, informe a **Carga usada (kg)** e toque em **Concluir série**. Use `0 kg` quando o exercício não tiver carga. **Última vez** serve apenas como referência e **Meta do personal** mostra a prescrição, sem preencher o campo por você. Se superar a maior carga da sessão válida anterior, o aplicativo avisa você e envia um aviso ao personal; carga igual, menor ou o primeiro registro não gera aviso. Aquecimento conta no tempo total, mas não em volume, recordes, séries ou mapa muscular.
 6. No descanso, use **−15 s** ou **+15 s** se precisar. Ao chegar a zero, toque em **Iniciar série** para continuar; a série não começa sozinha. Também é possível tocar em **Iniciar próxima série agora** ou **Pular descanso**.
-7. Use **Tenho uma dúvida** para perguntar sobre a execução. Use o relato de dor ou desconforto quando necessário; esse caso pode pausar o exercício até a orientação do personal. Depois de **Concluir treino**, consulte **Para a próxima vez** para ler a orientação do personal daquele treino. Se ele não deixou uma orientação, aparece uma mensagem neutra.
+7. Use **Dúvida** para perguntar sobre a execução. Use **Dor ou problema** quando necessário; esse caso pode pausar o exercício até a orientação do personal. Abra **Mais opções** para registrar sem cronômetro, reiniciar, pular ou finalizar antes. Depois de **Concluir treino**, consulte **Para a próxima vez** para ler a orientação do personal daquele treino. Se ele não deixou uma orientação, aparece uma mensagem neutra.
    Na mesma confirmação, **Músculos trabalhados neste treino** mostra o mapa de frente e costas e o grupo com mais séries realizadas. Se o treino estiver aguardando conexão, o mapa aparece depois que o servidor confirmar o salvamento.
-8. Ao concluir, abra **Progresso**. Em **Destaques recentes**, veja no mapa de frente e costas quais grupos musculares foram trabalhados nos últimos 30 dias e qual recebeu mais séries efetivas; toque em **Ver estatísticas detalhadas** para aprofundar. O mapa também aparece para o aluno vinculado ao personal. Sem treino válido no período, o corpo fica sem áreas coloridas e a tela informa que não há músculos treinados. Comparação indisponível significa ausência de base suficiente, e não desempenho zero.
+8. Ao concluir, abra **Progresso** para ver meta semanal, tempo, volume e músculos trabalhados. Toque em **Ver estatísticas detalhadas** e escolha Evolução, Carga, Músculos ou Consistência. Sem treino válido no período, o corpo fica sem áreas coloridas; comparação indisponível significa ausência de base suficiente, não desempenho zero.
 
 ## Comunidade
 

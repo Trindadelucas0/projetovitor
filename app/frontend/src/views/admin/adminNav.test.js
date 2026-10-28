@@ -8,8 +8,9 @@ describe('menu do admin', () => {
   it('toda tela tem título e descrição curta (1–2 frases)', () => {
     for (const [k, p] of Object.entries(PAGES)) {
       expect(p.label, k).toBeTruthy()
-      expect(p.desc.length, k).toBeGreaterThan(30)
-      expect(p.desc.split(/[.!?](\s|$)/).filter(x => x && x.trim()).length, k).toBeLessThanOrEqual(3)
+      expect(p.desc.length, k).toBeGreaterThan(15)
+      expect(p.desc.length, k).toBeLessThanOrEqual(70)
+      expect(p.desc.split(/[.!?](\s|$)/).filter(x => x && x.trim()).length, k).toBeLessThanOrEqual(2)
     }
     for (const [tab, list] of Object.entries(SUBS)) for (const [k, l, d] of list) { expect(PAGES[tab], tab).toBeTruthy(); expect(l && d, tab + ':' + k).toBeTruthy() }
   })

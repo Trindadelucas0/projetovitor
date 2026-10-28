@@ -100,18 +100,18 @@ export default function StepDays({ st, dx, day, groups, clash, errosPorEx, onAvi
 
           {/* Recolhido: é opcional, e aberto empurrava a lista de exercícios para fora da tela. */}
           <details className="org-details wb-detalhe" open={!!day.description}>
-            <summary>Orientação do {day.name} {day.description ? '' : '(opcional)'}</summary>
+            <summary>Orientações e aquecimento (opcional)</summary>
             <textarea className="g-in" rows={2} value={day.description || ''} data-testid="wb-day-desc"
               onChange={e => dx({ type: 'dayField', k: 'description', v: e.target.value })}
               placeholder="ex.: foco em membros inferiores; 5 min de bicicleta antes" />
+            <label className="wb-campo">
+              <span className="g-mut g-xs">Para a próxima vez</span>
+              <textarea className="g-in" rows={3} maxLength={1500} value={day.next_time_guidance || ''} data-testid="wb-next-time-guidance"
+                onChange={e => dx({ type: 'dayField', k: 'next_time_guidance', v: e.target.value })}
+                placeholder="Orientação que o aluno verá ao concluir este treino" />
+            </label>
+            <DayWarmups id={`wb-f-${st.day}-d-warmup_items`} items={day.warmup_items || []} onChange={v => dx({ type: 'dayField', k: 'warmup_items', v })} />
           </details>
-          <label className="wb-campo">
-            <span className="g-mut g-xs">Para a próxima vez (opcional)</span>
-            <textarea className="g-in" rows={3} maxLength={1500} value={day.next_time_guidance || ''} data-testid="wb-next-time-guidance"
-              onChange={e => dx({ type: 'dayField', k: 'next_time_guidance', v: e.target.value })}
-              placeholder="Orientação que o aluno verá ao concluir este treino" />
-          </label>
-          <DayWarmups id={`wb-f-${st.day}-d-warmup_items`} items={day.warmup_items || []} onChange={v => dx({ type: 'dayField', k: 'warmup_items', v })} />
         </div>
 
         {clash && <p className="wb-erro wb-alerta" role="alert" data-testid="wb-weekday-clash">{clash}</p>}

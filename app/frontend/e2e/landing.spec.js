@@ -162,10 +162,10 @@ test('nenhuma prova social na pagina', async ({ page }) => {
   for (const proibido of [/depoimento/i, /avalia(ç|c)(õ|o)es nas lojas/i, /downloads/i, /estrelas/i, /usu(á|a)rios/i, /mil alunos/i]) await expect(lp).not.toContainText(proibido)
 })
 
-test('os seis blocos profundos aparecem com a tela do app ao lado', async ({ page }) => {
+test('os três blocos essenciais aparecem com a tela do app ao lado', async ({ page }) => {
   await visitor(page)
   await page.goto('/')
-  for (const id of ['treino-do-dia', 'execucao', 'progresso', 'historico', 'programas', 'personal']) {
+  for (const id of ['treino-do-dia', 'execucao', 'progresso']) {
     const bloco = page.getByTestId('deep-' + id)
     await expect(bloco.locator('h2')).toHaveCount(1)
     // a tela e um print real do app, com alt descritivo em pt-BR e carregamento adiado
@@ -179,7 +179,7 @@ test('os seis blocos profundos aparecem com a tela do app ao lado', async ({ pag
 test('os pilares levam para o bloco da tela correspondente', async ({ page }) => {
   await visitor(page)
   await page.goto('/')
-  await expect(page.getByTestId('landing-pillars').locator('.lp-pillar')).toHaveCount(4)
+  await expect(page.getByTestId('landing-pillars').locator('.lp-pillar')).toHaveCount(3)
   await page.getByTestId('landing-pillars').getByRole('button', { name: 'Ver a tela' }).nth(1).click()
   await page.waitForTimeout(2000)   // scroll suave + a correcao do goTo apos o refresh do ScrollTrigger
   await expect(page.getByTestId('deep-execucao')).toBeInViewport({ ratio: .2 })

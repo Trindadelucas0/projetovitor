@@ -5,7 +5,7 @@ import { api } from './api.js'
 const S = (target, title, text) => ({ target, title, text })
 const M = (target, title, text) => ({ target, title, text, reveal: 'adm-menu' })   // admin: abre o menu lateral no celular se preciso
 const common = {
-  progresso: [S('progress', 'Seu progresso', 'Sua semana, os destaques dos últimos 30 dias e os treinos recentes. As estatísticas detalhadas abrem em outra tela.')],
+  progresso: [S('progress', 'Seu progresso', 'Veja a semana e os últimos 30 dias. Abra Estatísticas para escolher Evolução, Carga, Músculos ou Consistência.')],
   perfil: [S('profile-preferences', 'Preferências', 'Aparência, idioma e as configurações do treino ficam aqui.'), S('profile-security', 'Privacidade e segurança', 'Troque a senha, saia de todos os aparelhos e peça uma cópia dos seus dados.')]
 }
 export const TOURS = {

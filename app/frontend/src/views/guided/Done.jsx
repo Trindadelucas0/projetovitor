@@ -75,7 +75,7 @@ export default function Done() {
 
   return <div className="ag g-full" data-testid="done">
     <div className="g-center" style={{ marginTop: 10 }}>
-      <div style={{ fontSize: 46, color: 'var(--ag-acc)' }}><Icon name="trophy" /></div>
+      <div style={{ fontSize: 46, color: 'var(--ag-acc)' }}><Icon name="check" /></div>
       <span className="g-eyebrow">{saved || view ? 'Treino salvo' : 'Treino concluído'}</span>
       <h1>{src.workout_name}</h1>
       <p className="g-mut g-sm">{src.program_title}</p>

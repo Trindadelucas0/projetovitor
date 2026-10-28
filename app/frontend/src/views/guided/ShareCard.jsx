@@ -10,7 +10,7 @@ import { F } from '../../lib/care.js'
 import { ask } from '../../lib/dialog.js'
 import './guided.css'
 
-const KINDS = [['treino', 'Treino'], ['foto', 'Minha foto'], ['semana', 'Semana'], ['musculos', 'Músculos'], ['recorde', 'Recorde'], ['sequencia', 'Sequência']]
+const KINDS = [['treino', 'Treino'], ['foto', 'Minha foto'], ['semana', 'Semana'], ['musculos', 'Músculos'], ['recorde', 'Melhor carga']]
 const DEFAULTS = { fmt: '9:16', showStats: true, showWho: true, statsPosition: 'baixo', gradient: 70 }
 const dataKind = kind => kind === 'foto' ? 'treino' : kind
 const fileData = file => new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file) })
@@ -28,7 +28,7 @@ export default function ShareCard() {
   const [campaign, setCampaign] = useState(null), [proofOpen, setProofOpen] = useState(false), [proof, setProof] = useState({ instagram_handle: '', publication_url: '', evidence: '', accept_terms: false }), [proofMsg, setProofMsg] = useState('')
   const loadCampaign = () => api('/api/tapago/me').then(x => { setCampaign(x); if (x.preferences) setOpt({ fmt: x.preferences.format, showStats: x.preferences.show_stats, showWho: x.preferences.show_who, statsPosition: x.preferences.stats_position, gradient: x.preferences.gradient }) }).catch(() => setCampaign(null))
 
-  useEffect(loadCampaign, [])
+  useEffect(() => { loadCampaign() }, [])
   useEffect(() => { if (kind === 'musculos' && !bodyPaths) import('../../lib/body-paths.js').then(m => setBodyPaths(m.default)).catch(() => {}) }, [kind, bodyPaths])
   useEffect(() => { setD(null); setErr(''); setMsg(''); api('/api/me/share-card?kind=' + dataKind(kind) + (sessionId && ['treino','foto'].includes(kind) ? '&session_id=' + encodeURIComponent(sessionId) : '')).then(setD).catch(e => setErr(e.message)) }, [kind, sessionId])
   useEffect(() => { const url = d?.who?.avatar; if (!url) { setAvatar(null); return } const i = new Image(); i.onload = () => setAvatar(i); i.onerror = () => setAvatar(null); i.src = url }, [d?.who?.avatar])

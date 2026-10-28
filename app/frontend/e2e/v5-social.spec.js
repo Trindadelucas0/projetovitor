@@ -82,7 +82,7 @@ test('perfil social: foto (enviar, trocar, remover), @identificador, bio, objeti
 
 test('#TáPago: acesso por Progresso, treino sem dado não inventa, formatos, ocultar e salvar imagem', async ({ page }) => {
   await newUser(page, 'cartao')
-  await page.goto('/#/progresso'); await page.getByTestId('progress-share').click()
+  await page.goto('/#/progresso'); await page.getByText('Mais opções').click(); await page.getByTestId('progress-share').click()
   await expect(page.getByTestId('share-card')).toBeVisible()
   const c = page.getByTestId('card-canvas'); await expect(c).toBeVisible()
   await expect(c).toHaveAttribute('data-format', '9:16')

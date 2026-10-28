@@ -50,7 +50,7 @@ export function Price({ p }) {
   </div>
 }
 export function TrialSeal({ compact }) {
-  return <div className={'pl-seal' + (compact ? ' pl-seal-c' : '')} data-testid="trial-seal"><Icon name="sparkles" /><span><b>Pagamento confirmado</b> libera seu plano{compact ? '' : ' · cupons válidos podem dar desconto na contratação'}</span></div>
+  return <div className={'pl-seal' + (compact ? ' pl-seal-c' : '')} data-testid="trial-seal"><Icon name="check" /><span><b>Pagamento confirmado</b> libera seu plano{compact ? '' : ' · cupons válidos aparecem na revisão'}</span></div>
 }
 export function PlanCard({ p, cta, current, selected, onSelect, compact, badge, equiv }) {
   const Tag = onSelect ? 'button' : 'article'

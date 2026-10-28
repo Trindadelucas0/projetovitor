@@ -56,7 +56,7 @@ export function PublicPlans() {
   return <div className="bl-page" data-testid="public-plans">
     <header className="pl-hero"><a href="#/" className="bl-logo"><Brand /></a>
       <h1>Treine com método.<br /><em>Evolua de verdade.</em></h1>
-      <p>Um plano para quem treina, outro para quem prescreve. Cupons podem oferecer desconto na contratação; o acesso começa após a confirmação do pagamento.</p>
+      <p>Escolha o plano e revise o valor. O acesso começa após a confirmação.</p>
       <TrialSeal /></header>
     {err ? <div className="bl-err" role="alert" data-testid="public-plans-error"><p>{err}</p><button type="button" className="bl-btn" onClick={load}>Tentar novamente</button></div> : !d || busy ? <p className="bl-load g-skel" role="status">Carregando planos…</p> : <>
       <PlansCompare plans={d.plans} testMode={d.test_mode} hostedCheckout={d.hosted_checkout} cta={cta} />

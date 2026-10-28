@@ -68,7 +68,7 @@ export default function Today() {
     </div>
   // sem plano vigente -> Início com cadeado; depois do Completo a comunidade continua aberta
   if (locked && !isPending(user)) return <div className="ag" data-testid="today">{head}
-    <PremiumLock title="Escolha um plano para treinar" feature="inicio" desc="Com o Básico ou o Completo você libera treinos, progresso e a ficha do personal. A comunidade continua aberta se você já pagou o Completo. Seus dados continuam guardados." preview={<div className="hw-grid">{['Minha semana', 'Sequência', 'Volume', 'Recordes'].map(t => <div key={t} className="hw-w"><b>—</b><span>{t}</span></div>)}</div>} />
+    <PremiumLock title="Escolha um plano para treinar" feature="inicio" desc="Com o Básico ou o Completo você libera treinos, progresso e a ficha do personal. A comunidade continua aberta se você já pagou o Completo. Seus dados continuam guardados." preview={<div className="hw-grid">{['Treinos', 'Tempo', 'Volume'].map(t => <div key={t} className="hw-w"><b>—</b><span>{t}</span></div>)}</div>} />
     <PremiumLock compact title="Músculos para o próximo treino" feature="proximo-treino" />
     <AvaliacaoHomeCard />
     <div className="g-card g-list org-list" style={{ marginTop: 12 }}>
@@ -101,8 +101,7 @@ export default function Today() {
         <div className="av-ring"><svg width="112" height="112" viewBox="0 0 132 132" aria-hidden="true"><circle cx="66" cy="66" r="56" stroke="var(--ag-card-2)" strokeWidth="12" fill="none" />
           <circle cx="66" cy="66" r="56" stroke="var(--ag-acc)" strokeWidth="12" fill="none" strokeLinecap="round" strokeDasharray={`${2 * Math.PI * 56 * Math.min(1, st.week.done / Math.max(1, st.week.target))} 999`} /></svg>
           <b>{st.week.done}/{st.week.target}<small>treinos</small></b></div>
-        <div style={{ minWidth: 0 }}><h2 id="wk-ttl" style={{ margin: 0 }}>Minha semana</h2><p className="g-mut g-sm" style={{ margin: '4px 0 0' }}>{st.week.done >= st.week.target ? 'Meta da semana cumprida!' : (n => `${n === 1 ? 'Falta' : 'Faltam'} ${plural(n, 'treino', 'treinos')} para a meta.`)(Math.max(0, st.week.target - st.week.done))}</p>
-          {st.streak_weeks > 0 && <span className="g-ring hw-streak" title="Semanas seguidas treinando"><Icon name="flame" /> {plural(st.streak_weeks, 'semana seguida', 'semanas seguidas')}</span>}</div>
+        <div style={{ minWidth: 0 }}><h2 id="wk-ttl" style={{ margin: 0 }}>Minha semana</h2><p className="g-mut g-sm" style={{ margin: '4px 0 0' }}>{st.week.done >= st.week.target ? 'Treinos previstos concluídos.' : (n => `${n === 1 ? 'Falta' : 'Faltam'} ${plural(n, 'treino', 'treinos')} nesta semana.`)(Math.max(0, st.week.target - st.week.done))}</p></div>
       </div>
       <WeekStrip sessions={st.week.sessions} />
     </section>

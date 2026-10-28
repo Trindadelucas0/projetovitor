@@ -145,7 +145,6 @@ export default function Wizard() {
         <summary>Ver orientações completas</summary>
         <ul className="ap-step-list" data-testid="ap-general">{d.version.general_instructions.map((t, k) => <li key={k}>{t}</li>)}</ul>
       </details>}
-      <p className="g-mut g-sm">Confira cada imagem antes de usar.</p>
     </>, <Btn onClick={() => vai(1)} disabled={itens.length > 0 && !todos} data-testid="ap-prep-done">
       {itens.length > 0 && !todos ? 'Confirme a lista para seguir' : 'Estou preparado'}
     </Btn>, `Preparação · ${i + 1} de ${telas.length}`)
