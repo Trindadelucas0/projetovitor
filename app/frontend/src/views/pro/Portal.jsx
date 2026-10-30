@@ -31,9 +31,14 @@ function Painel({ go }) {
   const [d, err, reload] = useLoad(() => P.home())
   if (err) return <Err msg={err} retry={reload} />
   if (!d) return <Load rows={6} />
-  const k = d.kpis || {}, used = k.capacity ? Math.min(100, Math.round((k.students || 0) / k.capacity * 100)) : 0
-  const K = ({ n, l, to, alert, id }) => <button type="button" className={'gk-kpi' + (alert && n ? ' gk-alert' : '')} onClick={to} data-testid={'kpi-' + id}>
-    <Statistic title={l} value={n} /></button>
+  const k = d.kpis || {}
+  const trends = Array.isArray(d.trends) ? d.trends : []
+  const weekNow = trends.at(-1)?.completed_sessions ?? 0
+  const weekBefore = trends.at(-2)?.completed_sessions ?? 0
+  const weekDelta = weekNow - weekBefore
+  const rhythm = weekNow === 0 ? 'Nenhum treino concluído nesta semana'
+    : weekDelta === 0 ? 'Mesmo número da semana passada'
+      : `${Math.abs(weekDelta)} ${Math.abs(weekDelta) === 1 ? 'treino' : 'treinos'} a ${weekDelta > 0 ? 'mais' : 'menos'} que na semana passada`
   const pending = [
     ['sem', k.sem_prescricao, 'Aguardando prescrição', () => go('alunos', { filter: 'sem_treino' })],
     ['msg', k.mensagens, 'Mensagens sem resposta', () => go('atendimentos')],
@@ -42,27 +47,50 @@ function Painel({ go }) {
     ['req', k.solicitacoes, 'Solicitações abertas', () => go('capacidade')],
   ].filter(([, n]) => n > 0)
   return <>
-    <H>Atenção necessária</H>
-    {pending.length ? <div className="gk-kpis">{pending.map(([id, n, label, to]) => <K key={id} id={id} n={n} l={label} alert to={to} />)}</div>
-      : <Empty icon="check">Nenhuma pendência agora.</Empty>}
-    <Collapse className="pp-collapse" items={[{ key: 'resumo', label: 'Resumo', children: <>
-      <div className="gk-kpis pp-summary-kpis">
-        <K id="alunos" n={k.students} l="Alunos vinculados" to={() => go('alunos')} />
-        <K id="andamento" n={k.em_andamento} l="Treinando agora" to={() => go('alunos')} />
-        <K id="vagas" n={k.available ?? '∞'} l="Vagas livres" to={() => go('capacidade')} />
-      </div>
-      <div className="pp-cap">
-        <Progress type="circle" size={112} percent={used} strokeColor="var(--ag-acc)" railColor="var(--ag-card-2)" strokeWidth={10}
-          format={() => <span className="pp-cap-n">{k.students}/{k.capacity ?? '∞'}<small>alunos</small></span>} />
-        <div><span className="g-eyebrow">Plano e vagas</span><p className="g-sm" style={{ margin: '4px 0 10px' }}>{k.available == null ? 'Sem limite' : <><b>{k.available}</b> vaga(s) livre(s)</>}</p>
-          <Btn size="sm" onClick={() => go('capacidade')}>Ver limite</Btn></div>
-      </div>
-      <h3 className="gk-h">Atividade recente</h3>
-      {d.activity?.length ? <Rows>{d.activity.map(a => <Row key={a.id} avatar={<Av name={a.student} size={40} />} title={a.student}
+    {d.state !== 'ativo' && <Note type="info" className="pp-dashboard-status">Seu perfil está “{d.state.replace('_', ' ')}”. Fale com o suporte para revisar a situação.</Note>}
+    <div className="pp-dashboard-grid">
+      <section className="pp-dashboard-section pp-dashboard-attention" aria-labelledby="pp-attention-title">
+        <h2 id="pp-attention-title" className="pp-dashboard-title">Atenção necessária</h2>
+        {pending.length ? <div className="pp-pending-list">
+          {pending.map(([id, n, label, to]) => <button key={id} type="button" className="pp-pending-row" onClick={to} data-testid={'kpi-' + id}>
+            <span className="pp-pending-count">{n}</span>
+            <span className="pp-pending-label">{label}</span>
+            <span className="pp-pending-chevron" aria-hidden="true"><Icon name="chevronRight" /></span>
+          </button>)}
+        </div> : <div className="pp-all-clear" role="status">
+          <span className="pp-all-clear-icon"><Icon name="check" /></span>
+          <span><b>Tudo em dia</b><small>Nenhuma pendência agora.</small></span>
+        </div>}
+      </section>
+
+      <section className="pp-dashboard-section pp-dashboard-summary" aria-labelledby="pp-summary-title">
+        <h2 id="pp-summary-title" className="pp-dashboard-title">Resumo</h2>
+        <div className="pp-overview-card">
+          <div className="pp-overview-metrics">
+            <button type="button" className="pp-overview-metric" onClick={() => go('alunos')} data-testid="kpi-alunos">
+              <strong>{k.students ?? 0}</strong><span>Alunos</span>
+            </button>
+            <button type="button" className="pp-overview-metric" onClick={() => go('alunos')} data-testid="kpi-andamento">
+              <strong>{k.em_andamento ?? 0}</strong><span>Treinando agora</span>
+            </button>
+            <div className="pp-overview-metric pp-overview-metric-static" data-testid="kpi-semana">
+              <strong>{weekNow}</strong><span>Treinos na semana</span>
+            </div>
+          </div>
+          <div className="pp-rhythm-row" data-testid="weekly-rhythm">
+            <small>Ritmo semanal</small>
+            <b>{rhythm}</b>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section className="pp-dashboard-section pp-dashboard-activity" aria-labelledby="pp-activity-title">
+      <h2 id="pp-activity-title" className="pp-dashboard-title">Atividade recente</h2>
+      {d.activity?.length ? <Rows className="pp-activity-list">{d.activity.map(a => <Row key={a.id} avatar={<Av name={a.student} size={40} />} title={a.student}
         sub={`${a.workout_name || 'Treino'} · ${a.sets_count || 0} séries · ${dt(a.started_at)}`} onClick={() => go('alunos', { id: a.student_id })} />)}</Rows>
-        : <Empty icon="chart">Nenhum treino registrado ainda.</Empty>}
-    </> }]} />
-    {d.state !== 'ativo' && <Note type="info">Seu perfil está “{d.state.replace('_', ' ')}”. Fale com o suporte para revisar a situação.</Note>}
+        : <div className="pp-activity-empty"><Icon name="chart" /><span><b>Nenhuma atividade recente</b><small>Os treinos concluídos pelos seus alunos aparecerão aqui.</small></span></div>}
+    </section>
   </>
 }
 

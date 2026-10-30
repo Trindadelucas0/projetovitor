@@ -22,7 +22,7 @@ async function boot(page, profile = 'aluno', { scoped = false, fail = null } = {
       '/api/notifications': { unread: 1, notifications: [{id:'n1',title:'Resposta do profissional',body:'Confira seu acompanhamento',created_at:now,link:'/acompanhamento'}, {id:'n2',title:'Notificação antiga',body:'Já lida',created_at:now,read_at:now}] },
       '/api/guided/progress': { totals: { n: 4, secs: 7200, vol: 2000 }, weeks: [], records: [], history: [{id:'s1',workout_name:'Treino A concluído',started_at:now,sets_count:3,duration_sec:1800,volume:300}] },
       '/api/me/trophies': { trophies: [] }, '/api/me/code': {code:'TESTUI'}, '/api/me/invites':{invites:[]}, '/api/me/requests':{requests:[]}, '/api/me/unlock-request':{locked:false,requests:[]},
-      '/api/pro/home': { state: 'ativo', kpis: {students:1,capacity:2,available:1,sem_prescricao:1,em_andamento:0,mensagens:1,ocorrencias:0,propostas:0,solicitacoes:0}, activity: [] },
+      '/api/pro/home': { state: 'ativo', kpis: {students:1,capacity:2,available:1,sem_prescricao:1,em_andamento:0,mensagens:1,ocorrencias:0,propostas:0,solicitacoes:0}, trends:[{completed_sessions:2},{completed_sessions:4}], activity: [] },
       '/api/pro/students': {students:[{id:'s1',name:'Aluno da interface',goal:'strength',alerts:0,drafts:0}]}, '/api/pro/clients': { clients: [] },
       '/api/pro/student/full': {student:{id:'s1',name:'Aluno da interface',goal:'strength'},link:{since:now},plans:[],sessions:[],evolution:[],threads:[],occurrences:[],proposals:[]},
       '/api/pro/prescriptions': {prescriptions:[]}, '/api/pro/templates': {templates:[{id:'t1',title:'Modelo de força',scope:'global'}]}, '/api/pro/library':{exercises:[],groups:[],equipment:[]},
@@ -128,12 +128,66 @@ test('profissional: adicionar aluno, modelos, detalhe e atendimentos agrupados',
   await expect(page.getByText('Ana',{exact:true})).toHaveCount(0)
   expect(errors).toEqual([])
 })
-for (const width of [360,390,768,1440]) for (const colorScheme of ['light','dark']) {
+test('painel profissional: pendências, resumo e atividade permanecem visíveis e acionáveis',async({page})=>{
+  const errors=await boot(page,'profissional')
+  await page.goto('/#/pro')
+  await expect(page.getByRole('heading',{name:'Atenção necessária',exact:true})).toBeVisible()
+  await expect(page.getByRole('heading',{name:'Resumo',exact:true})).toBeVisible()
+  await expect(page.getByRole('heading',{name:'Atividade recente',exact:true})).toBeVisible()
+  await expect(page.getByRole('button',{name:'Resumo',exact:true})).toHaveCount(0)
+  await expect(page.getByText('Nenhuma atividade recente',{exact:true})).toBeVisible()
+  await expect(page.getByTestId('kpi-semana')).toContainText('4')
+  await expect(page.getByTestId('weekly-rhythm')).toContainText('2 treinos a mais que na semana passada')
+  await expect(page.getByText('Vagas',{exact:true})).toHaveCount(0)
+  await expect(page.getByText('Plano e vagas',{exact:true})).toHaveCount(0)
+  await expect(page.getByText('Ver plano',{exact:true})).toHaveCount(0)
+  await page.getByTestId('kpi-sem').click()
+  await expect(page).toHaveURL(/tab=alunos.*filter=sem_treino/)
+  await page.goto('/#/pro')
+  await page.getByTestId('kpi-msg').click()
+  await expect(page).toHaveURL(/tab=atendimentos/)
+  expect(errors).toEqual([])
+})
+test('painel profissional: trata perfil inativo, ausência de pendências e atividade recente',async({page})=>{
+  const errors=await boot(page,'profissional')
+  await page.route('**/api/pro/home',route=>route.fulfill({json:{
+    state:'suspenso',
+    kpis:{students:2,capacity:null,available:null,sem_prescricao:0,em_andamento:0,mensagens:0,ocorrencias:0,propostas:0,solicitacoes:0},
+    trends:[],
+    activity:[{id:'a1',student_id:'s1',student:'Aluno da interface',workout_name:'Treino A',sets_count:3,started_at:now}]
+  }}))
+  await page.goto('/#/pro')
+  await expect(page.getByText(/Seu perfil está “suspenso”/)).toBeVisible()
+  await expect(page.getByText('Tudo em dia',{exact:true})).toBeVisible()
+  await expect(page.getByTestId('kpi-semana')).toContainText('0')
+  await expect(page.getByText('Nenhum treino concluído nesta semana',{exact:true})).toBeVisible()
+  await expect(page.getByText('Aluno da interface',{exact:true})).toBeVisible()
+  expect(errors).toEqual([])
+})
+test('painel profissional: compara o ritmo semanal e aceita histórico incompleto',async({page})=>{
+  let trends=[]
+  const errors=await boot(page,'profissional')
+  await page.route('**/api/pro/home',route=>route.fulfill({json:{
+    state:'ativo',kpis:{students:2,em_andamento:0,sem_prescricao:0,mensagens:0,ocorrencias:0,propostas:0,solicitacoes:0},trends,activity:[]
+  }}))
+  const cases=[
+    [[{completed_sessions:4},{completed_sessions:6}],'2 treinos a mais que na semana passada'],
+    [[{completed_sessions:4},{completed_sessions:1}],'3 treinos a menos que na semana passada'],
+    [[{completed_sessions:4},{completed_sessions:4}],'Mesmo número da semana passada'],
+    [[{completed_sessions:4},{completed_sessions:0}],'Nenhum treino concluído nesta semana'],
+    [[], 'Nenhum treino concluído nesta semana'],
+    [[{completed_sessions:1}], '1 treino a mais que na semana passada']
+  ]
+  for(const [value,label] of cases){trends=value;await page.goto('/#/pro');await expect(page.getByTestId('weekly-rhythm')).toHaveText(/Ritmo semanal/);await expect(page.getByText(label,{exact:true})).toBeVisible()}
+  expect(errors).toEqual([])
+})
+for (const width of [320,390,768,1280,1440]) for (const colorScheme of ['light','dark']) {
   test(`layouts ${width}px ${colorScheme}`, async({page})=>{
     await page.setViewportSize({width,height:900}); await page.emulateMedia({colorScheme})
     const errors=await boot(page,'profissional')
     for(const path of ['/pro','/pro?tab=alunos','/pro?tab=treinos','/pro?tab=mais','/perfil','/perfil?secao=preferencias']){
       await page.goto('/#'+path);await expect(page.locator('h1')).toBeVisible();await fits(page)
+      if(path==='/pro')await page.screenshot({path:`test-artifacts/organization/pro-painel-${width}-${colorScheme}.png`,fullPage:true,animations:'disabled'})
     }
     await page.evaluate(()=>document.fonts.ready)
     await page.screenshot({path:`test-artifacts/organization/pro-${width}-${colorScheme}.png`,fullPage:true,animations:'disabled'})

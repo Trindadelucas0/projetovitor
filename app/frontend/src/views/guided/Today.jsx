@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useCoaches, CoachContext } from '../../components/MyCoaches.jsx'
+import { useCoaches } from '../../components/MyCoaches.jsx'
 import { trainingPriority, shouldOfferOnboarding, coachContextState } from '../../lib/trainingPriority.js'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon.jsx'
 import { useStore } from '../../store/useStore.js'
 import { G, loadSession, flushQueue, pendingCount, rejectedCount, mediaOf } from '../../lib/guided.js'
-import { useNavigationAccess } from '../../components/NavigationAccess.jsx'
 import { PendingCard, isPending } from '../app/Locked.jsx'
 import Bell from '../../components/Bell.jsx'
 import { AT } from '../../lib/active.js'
@@ -14,18 +13,44 @@ import { Li } from '../app/Treinos.jsx'
 import { ResumeBar } from '../v3/StartHub.jsx'
 import { usePremium, PremiumLock } from '../billing/Premium.jsx'
 import { HomeWidgets, useHome, plural } from './HomeWidgets.jsx'
+import { buildWeekAgenda } from '../../lib/weekAgenda.js'
 import { AvaliacaoHomeCard } from '../postural/AvaliacaoHomeCard.jsx'   // V5-AP
 import './guided.css'
 
-const DN = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']
-export function WeekStrip({ sessions }) {
-  const now = new Date(), mon = new Date(now); mon.setHours(0, 0, 0, 0); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7))
-  const done = new Set((sessions || []).map(s => new Date(s.started_at).toDateString()))
-  return <div className="g-week">{DN.map((l, i) => {
-    const d = new Date(mon); d.setDate(mon.getDate() + i)
-    const isT = d.toDateString() === now.toDateString(), isD = done.has(d.toDateString())
-    return <div key={i} className={'g-d' + (isD ? ' g-done' : '') + (isT ? ' g-today' : '')}><i>{isD ? '✓' : d.getDate()}</i>{l}</div>
+export function WeekStrip({ days }) {
+  return <div className="g-week" aria-label="Agenda desta semana">{days.map(day => {
+    const state = day.done ? 'Feito' : (day.workoutLabel || '—')
+    const label = `${day.dayName}, dia ${day.dateNumber}${day.workout?.name ? `, ${day.workout.name}` : ''}${day.done ? ', concluído' : ''}${day.isToday ? ', hoje' : ''}`
+    return <div key={day.date.toISOString()} className={'g-d' + (day.done ? ' g-done' : '') + (day.isToday ? ' g-today' : '')} aria-label={label}>
+      <b>{day.dayName}</b><i>{day.done ? <Icon name="check" /> : day.dateNumber}</i><small>{day.isToday && !day.done ? 'Hoje' : state}</small>
+    </div>
   })}</div>
+}
+
+function WeekOverview({ agenda, week, local, nav }) {
+  const meta = week?.target || 0, done = week?.done || 0
+  const status = {
+    system: ['Treino de hoje', 'Sua programação ativa'],
+    scheduled: ['Treino de hoje', 'Programado para hoje'],
+    suggested: ['Treino sugerido para hoje', 'Sua ficha está com os dias livres'],
+    rest: ['Dia de descanso', 'Nenhum treino foi marcado para hoje'],
+    empty: ['Aguardando sua ficha', 'Ela aparecerá aqui quando o personal publicar']
+  }[agenda.status]
+  const canTrain = ['system', 'scheduled', 'suggested'].includes(agenda.status)
+  const action = local ? 'Continuar treino' : canTrain ? 'Começar treino' : agenda.status === 'rest' ? 'Escolher outro treino' : 'Ver treinos'
+  return <section className="g-card hw-overview" data-testid="week-ring" aria-labelledby="week-title">
+    <div className="g-row hw-week-head"><div><span className="g-eyebrow">Sua semana</span><h2 id="week-title">Agenda de treinos</h2></div><b>{done} de {meta}</b></div>
+    <WeekStrip days={agenda.days} />
+    <div className={`hw-today hw-today-${agenda.status}`} data-testid="today-workout-state">
+      <span className="g-eyebrow">{status[0]}</span>
+      <div className="g-row hw-today-title"><div><h2>{agenda.title}</h2><p className="g-mut g-sm">{canTrain
+        ? [agenda.exercises ? plural(agenda.exercises, 'exercício', 'exercícios') : null, agenda.owner ? `Personal ${agenda.owner}` : status[1]].filter(Boolean).join(' · ')
+        : status[1]}</p></div><span className="hw-today-ico"><Icon name={agenda.status === 'rest' ? 'clock' : agenda.status === 'empty' ? 'clipboard' : 'dumbbell'} /></span></div>
+      <button className={`g-btn${canTrain || local ? '' : ' g-ghost'}`} onClick={() => nav(local ? '/treinar' : agenda.to)} data-testid="start-workout">
+        <Icon name={local ? 'play' : canTrain ? 'dumbbell' : 'calendar'} /> {action}
+      </button>
+    </div>
+  </section>
 }
 
 export default function Today() {
@@ -85,21 +110,9 @@ export default function Today() {
   const w = today?.workout
   const cover = w && mediaOf(w.exercises.find(e => e.media)?.media)
   const estMin = w ? Math.round(w.exercises.reduce((a, e) => a + (e.sets || 3) * (((e.duration_sec || 40)) + (e.rest_sec || 60)), 0) / 60) : 0
-  const weekSummary = <details className="g-card g-focus-more hw-summary" data-testid="week-ring">
-    <summary>
-      <span><b>Resumo da semana</b><small>{st.week.done} de {st.week.target} treinos</small></span>
-      <span className="hw-summary-state">{st.week.done >= st.week.target ? 'Meta atingida' : `${Math.max(0, st.week.target - st.week.done)} restantes`}</span>
-    </summary>
-    <div className="hw-summary-content">
-      <div className="g-row hw-summary-head">
-        <div><h2 id="wk-ttl">Minha semana</h2><p className="g-mut g-sm">{st.week.done >= st.week.target ? 'Treinos previstos concluídos.' : (n => `${n === 1 ? 'Falta' : 'Faltam'} ${plural(n, 'treino', 'treinos')}.`)(Math.max(0, st.week.target - st.week.done))}</p></div>
-        <b>{st.week.done}/{st.week.target}</b>
-      </div>
-      <WeekStrip sessions={st.week.sessions} />
-      <HomeWidgets h={home} onRetry={reloadHome} />
-    </div>
-  </details>
-  // Primeiro a tarefa do dia; semana e acompanhamento são apoio.
+  const plans = care?.plans || []
+  const proPlan = at?.kind === 'profissional' ? ((at.pro_plan && plans.find(x => x.id === at.pro_plan.id)) || plans[0] || (at.pro_plan && { exercises: [], days: [], ...at.pro_plan })) : null
+  const agenda = buildWeekAgenda({ sessions: st.week.sessions, plan: proPlan, next: home && home.next, systemWorkout: proPlan ? null : w })
   return <div className="ag" data-testid="today">
     {head}
 
@@ -108,19 +121,10 @@ export default function Today() {
     {/* V5-AP: avaliação postural pendente (o cartão não aparece quando não há nenhuma solicitada) */}
     <AvaliacaoHomeCard />
 
-    {!st.active ? <><ResumeBar /><StartHere profile={!!st.profile} at={at} care={care} coaches={coaches} /></> : <>
-      <div className="g-hero" style={{ marginTop: 14 }} data-testid="today-card">
-        {cover && <img src={cover.img} alt="" />}
-        <div className="g-in">
-          <span className="g-activebadge"><Icon name="check" /> Treino ativo · sistema</span>
-          <h2 style={{ margin: '8px 0 4px' }}>{w ? w.name : 'Carregando…'}</h2>
-          {w && <p className="g-mut g-sm">{w.exercises.length} exercícios · ~{estMin} min</p>}
-          <p className="g-dim g-xs" style={{ marginTop: 6 }}>{st.active.title} · semana {st.active.week_index} de {st.active.weeks}</p>
-        </div>
-      </div>
-      <button className="g-btn g-xl" style={{ marginTop: 12 }} disabled={!w && !local} onClick={() => nav('/treinar')} data-testid="start-workout">
-        <Icon name={local ? 'play' : 'dumbbell'} /> {local ? 'CONTINUAR TREINO' : 'COMEÇAR TREINO'}
-      </button>
+    <ResumeBar />
+    <WeekOverview agenda={agenda} week={st.week} local={local} nav={nav} />
+
+    {st.active && <>
       {at?.available?.pro_plans?.length > 0 && <p className="g-mut g-xs" style={{ marginTop: 8 }} data-testid="other-active-hint">Seu profissional tem uma ficha para você. <button className="g-link" onClick={() => nav('/treinos?aba=profissionais')}>Trocar treino ativo</button></p>}
       {w && <details className="g-focus-more hw-workout-details">
         <summary>Ver exercícios do treino</summary>
@@ -131,29 +135,9 @@ export default function Today() {
         </div>
       </details>}
     </>}
-    {weekSummary}
+    <HomeWidgets h={home} onRetry={reloadHome} />
 
     <div className="g-card g-list org-list" style={{ marginTop: 12 }}><Li icon="chat" t="Acompanhamento" s="Profissionais, conversas e ocorrências" to="/acompanhamento" testid="home-care" badge={care?.occurrences?.filter(o => o.status !== 'encerrada').length ? care.occurrences.filter(o => o.status !== 'encerrada').length + ' em aberto' : undefined} /></div>
   </div>
 }
 
-// V3 · F6 — Início do aluno gratuito sem programa ativo: ficha do profissional (se houver) ou caminhos para começar
-function StartHere({ profile, at, care, coaches }) {
-  const nav = useNavigate(), can = useNavigationAccess(), plans = care?.plans
-  const p = (at?.pro_plan && plans?.find(x => x.id === at.pro_plan.id)) || plans?.[0], multi = p?.days?.length > 1
-  return <section data-testid="start-here" style={{ marginTop: 14 }}>
-    {p ? <div className="g-hero" data-testid="start-pro-card"><div className="g-in" style={{ maxWidth: '100%' }}>
-      <span className="g-activebadge"><Icon name="check" /> Treino ativo · profissional</span>
-      <h2 style={{ margin: '6px 0 4px' }}>{p.title}</h2>
-      <p className="g-mut g-sm">{p.owner_name} · {p.exercises.length} exercícios{multi ? ' · ' + p.days.length + ' dias' : ''}</p>
-      <button className="g-btn" style={{ marginTop: 12 }} onClick={() => nav(multi ? '/treinos?aba=profissionais' : '/treinar?plan=' + p.id)} data-testid="start-pro-plan"><Icon name="dumbbell" /> {multi ? 'Escolher o treino do dia' : 'Começar treino'}</button>
-    </div></div>
-      : <div className="g-hero" data-testid="client-wait"><div className="g-in" style={{ maxWidth: '100%' }}>
-        <span className="g-eyebrow">Comece por aqui</span>
-        <h2 style={{ marginTop: 6 }}>Aguardando sua ficha</h2>
-        <p className="g-mut g-sm">Seu personal ainda não adicionou sua ficha de treino. Quando ela for publicada, aparecerá aqui.</p>
-        <button className="g-btn g-ghost" style={{ marginTop: 8 }} onClick={() => nav('/treinos')}>VER TREINOS</button>
-      </div></div>}
-
-  </section>
-}
